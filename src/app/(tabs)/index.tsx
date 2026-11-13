@@ -1,0 +1,113 @@
+import { useSQLiteContext } from 'expo-sqlite';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { DaySelector } from '@/components/DaySelector';
+import { Checklist } from '@/components/home/Checklist';
+import { SleepCard } from '@/components/home/SleepCard';
+import { SleepSheet } from '@/components/home/SleepSheet';
+import { StepsCard } from '@/components/home/StepsCard';
+import { WaterCard } from '@/components/home/WaterCard';
+import { WorkoutCard } from '@/components/home/WorkoutCard';
+import { Icon } from '@/components/Icon';
+import { Screen } from '@/components/Screen';
+import { getSetting, setSetting } from '@/db/repos/settings';
+import { getSleep } from '@/db/repos/sleep';
+import { addTrackerValue } from '@/db/repos/trackers';
+import { useDb } from '@/db/useDb';
+import { formatLongTR, today } from '@/services/dates';
+import { startStepTracking } from '@/services/steps';
+import { useAppStore } from '@/stores/useAppStore';
+import { colors, radius, spacing, type } from '@/theme';
+
+export default function TodayScreen() {
+  const db = useSQLiteContext();
+  const date = useAppStore((s) => s.selectedDate);
+  const setDate = useAppStore((s) => s.setSelectedDate);
+  const setStepSensor = useAppStore((s) => s.setStepSensor);
+  const header = useDb(async (db) => ({
+    name: (await getSetting(db, 'profile')).name,
+    streak: (await db.getFirstAsync<{ current: number }>('SELECT current FROM streak_state WHERE id = 1'))?.current ?? 0,
+  }), []);
+  const [morningPrompt, setMorningPrompt] = useState(false);
+
+  // Canlı adım sayımı: uygulama açıkken atılan adımlar bugüne eklenir. Sensör/izin yoksa manuel giriş kalır.
+  useEffect(() => {
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    startStepTracking((delta) => addTrackerValue(db, 'steps', today(), delta)).then((s) => {
+      if (cancelled) { s?.(); return; }
+      stop = s;
+      setStepSensor(s ? 'on' : 'off');
+    });
+    return () => { cancelled = true; stop?.(); };
+  }, [db, setStepSensor]);
+
+  // Sabah ilk açılışta "Dün gece nasıl uyudun?" (04:00–12:00, bugün kayıt yoksa, günde bir kez)
+  useEffect(() => {
+    (async () => {
+      const hour = new Date().getHours();
+      if (hour < 4 || hour >= 12) return;
+      if (!(await getSetting(db, 'morningSleepPrompt'))) return;
+      if ((await getSetting(db, 'lastSleepPrompt')) === today()) return;
+      if (await getSleep(db, today())) return;
+      await setSetting(db, 'lastSleepPrompt', today());
+      setMorningPrompt(true);
+    })();
+  }, [db]);
+
+  const name = header?.name ?? '';
+  return (
+    <Screen>
+      <View style={styles.header}>
+        <View style={styles.avatar}><Text style={styles.avatarText}>{name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text></View>
+        <View style={styles.flex}>
+          <Text style={type.caption}>{formatLongTR(date)}</Text>
+          <Text style={type.hero} numberOfLines={1} adjustsFontSizeToFit>Selam{name ? `, ${name}` : ''}!</Text>
+        </View>
+        {/* Streak alevi: hesaplama ve animasyon Aşama 5'te */}
+        <View style={styles.flame} accessibilityLabel={`${header?.streak ?? 0} günlük seri`}>
+          <Icon name="local_fire_department" size={24} color={colors.textSecondary} />
+          <Text style={styles.flameText}>{header?.streak ?? 0}</Text>
+        </View>
+      </View>
+
+      <DaySelector value={date} onChange={setDate} />
+      <WorkoutCard date={date} />
+
+      <Text style={type.title}>Günlük check-in</Text>
+      <View style={styles.grid}>
+        <WaterCard date={date} />
+        <StepsCard date={date} />
+      </View>
+      <SleepCard date={date} />
+
+      <Checklist date={date} />
+
+      <SleepSheet
+        visible={morningPrompt}
+        date={today()}
+        log={null}
+        title="Dün gece nasıl uyudun?"
+        onClose={() => setMorningPrompt(false)}
+        onNeverAsk={async () => { await setSetting(db, 'morningSleepPrompt', false); setMorningPrompt(false); }}
+      />
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  flex: { flex: 1 },
+  avatar: {
+    width: 48, height: 48, borderRadius: radius.pill, backgroundColor: colors.surfaceElevated,
+    borderWidth: 1, borderColor: colors.accentMuted, alignItems: 'center', justifyContent: 'center',
+  },
+  avatarText: { fontSize: 20, fontWeight: '800', color: colors.accent },
+  flame: {
+    flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: spacing.md, minHeight: 40,
+    borderRadius: radius.pill, backgroundColor: colors.surface,
+  },
+  flameText: { fontSize: 16, fontWeight: '800', color: colors.textSecondary },
+  grid: { flexDirection: 'row', gap: spacing.md },
+});

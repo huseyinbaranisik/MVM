@@ -13,7 +13,8 @@ export function pickTime(initial: string): Promise<string | null> {
       value,
       mode: 'time',
       is24Hour: true,
-      onChange: (event, date) => resolve(event.type === 'set' && date ? toHM(date.getHours() * 60 + date.getMinutes()) : null),
+      onValueChange: (_event, date) => resolve(toHM(date.getHours() * 60 + date.getMinutes())),
+      onDismiss: () => resolve(null),
     });
   });
 }

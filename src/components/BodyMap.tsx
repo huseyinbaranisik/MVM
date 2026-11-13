@@ -58,7 +58,7 @@ export function BodyMap({ side, mode, width, primary = [], secondary = [], onPre
   useEffect(() => { pressRef.current = onPress; });
   const handlePress = useCallback((unit: string) => pressRef.current?.(unit), []);
 
-  // küçük parçalar için en az 44×44 pt görünmez dokunma alanı (path'lerin üstünde)
+  // küçük parçalar için en az 44×44 pt görünmez dokunma alanı
   const hitBoxes = useMemo(() => onPress ? Object.entries(data.boxes).flatMap(([id, bs]) => bs
     .filter((b) => b.w * scale < MIN_HIT || b.h * scale < MIN_HIT)
     .map((b, i) => ({ key: `${id}-${i}`, id, ...b, size: MIN_HIT / scale }))) : [], [data, scale, onPress]);
@@ -74,6 +74,12 @@ export function BodyMap({ side, mode, width, primary = [], secondary = [], onPre
           ) : null)}
         </Defs>
         {data.silhouette.map((d, i) => <Path key={i} d={d} fill={colors.surfaceElevated} />)}
+        {/* büyütülmüş dokunma alanları kasların ALTINDA: gerçek kas her zaman önce kazanır, alan sadece yakındaki boşluğu yakalar */}
+        {hitBoxes.map((b) => (
+          <Rect key={b.key} x={b.cx - Math.max(b.w, b.size) / 2} y={b.cy - Math.max(b.h, b.size) / 2}
+            width={Math.max(b.w, b.size)} height={Math.max(b.h, b.size)}
+            fill={colors.background} fillOpacity={0} onPress={() => onPress?.(unitOf(b.id))} />
+        ))}
         {data.muscles.map((m, i) => {
           const tone = mode === 'region' ? regionTone.get(muscleRegion.get(m.id)!)! : partTone.get(m.id)!;
           return (
@@ -82,11 +88,6 @@ export function BodyMap({ side, mode, width, primary = [], secondary = [], onPre
               unit={unitOf(m.id)} onPress={onPress ? handlePress : undefined} />
           );
         })}
-        {hitBoxes.map((b) => (
-          <Rect key={b.key} x={b.cx - Math.max(b.w, b.size) / 2} y={b.cy - Math.max(b.h, b.size) / 2}
-            width={Math.max(b.w, b.size)} height={Math.max(b.h, b.size)}
-            fill={colors.background} fillOpacity={0} onPress={() => onPress?.(unitOf(b.id))} />
-        ))}
       </Svg>
     </View>
   );

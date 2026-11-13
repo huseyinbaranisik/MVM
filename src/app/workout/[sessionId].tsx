@@ -53,6 +53,10 @@ export default function ActiveWorkout() {
   const totalSets = plan.reduce((a, x) => a + x.sets, 0);
   const elapsed = (now - new Date(session.started_at).getTime()) / 1000;
 
+  // Bu antrenmanda o hareket için en son girilen ağırlık: kg boş bırakılırsa varsayılan bu olur
+  const lastKgThisSession = (exId: string) =>
+    done.filter((s) => s.exercise_id === exId && s.weight_kg != null).sort((a, b) => b.set_index - a.set_index)[0]?.weight_kg ?? null;
+
   const setInput = (key: string, field: 'kg' | 'reps', v: string) => setInputs((s) => ({ ...s, [key]: { ...s[key], [field]: v } }));
 
   const restFor = (x: TemplateExercise, index: number) => {
@@ -66,7 +70,7 @@ export default function ActiveWorkout() {
     const key = keyOf(x.exercise_id, setIndex);
     if (doneMap.has(key)) { await deleteSet(db, sessionId, x.exercise_id, setIndex); return; }
     const p = prev[x.exercise_id]?.[setIndex] ?? prev[x.exercise_id]?.at(-1);
-    const kg = parseNumber(inputs[key]?.kg ?? '') ?? p?.weight_kg ?? null;
+    const kg = parseNumber(inputs[key]?.kg ?? '') ?? lastKgThisSession(x.exercise_id) ?? p?.weight_kg ?? null;
     const reps = parseNumber(inputs[key]?.reps ?? '') ?? p?.reps ?? x.rep_max ?? x.rep_min ?? null;
     await saveSet(db, sessionId, x.exercise_id, setIndex, {
       weight_kg: kg, reps: x.duration_sec ? null : reps && Math.round(reps),
@@ -134,6 +138,7 @@ export default function ActiveWorkout() {
                 const key = keyOf(x.exercise_id, i);
                 const d = doneMap.get(key);
                 const p = prevSets[i];
+                const kgHint = lastKgThisSession(x.exercise_id) ?? p?.weight_kg ?? null;
                 const running = stopwatch?.key === key;
                 const prevLabel = p ? (p.duration_sec ? `${p.duration_sec} sn` : `${p.weight_kg ?? 0}×${p.reps ?? 0}`) : '—';
                 return (
@@ -143,7 +148,7 @@ export default function ActiveWorkout() {
                     <TextInput
                       style={[styles.input, styles.colIn]} keyboardType="decimal-pad"
                       value={d ? String(d.weight_kg ?? '') : inputs[key]?.kg ?? ''}
-                      placeholder={p?.weight_kg != null ? String(p.weight_kg) : 'kg'}
+                      placeholder={d ? '—' : kgHint != null ? String(kgHint) : 'kg'}
                       placeholderTextColor={colors.textSecondary} editable={!d}
                       onChangeText={(v) => setInput(key, 'kg', v)} accessibilityLabel={`Set ${i + 1} ağırlık`} />
                     {x.duration_sec ? (

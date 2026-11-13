@@ -26,7 +26,7 @@ export default function MuscleDetail() {
   if (!parentRegion) return <BackHeader title="Bulunamadı" />;
 
   return (
-    <View style={styles.flex}>
+    <View style={styles.screen}>
       <BackHeader title={region ? region.nameTr : muscle!.nameTr} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.top}>
@@ -81,7 +81,8 @@ export default function MuscleDetail() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
+  screen: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl * 2 },
   top: { flexDirection: 'row', gap: spacing.lg, alignItems: 'flex-start' },
   latin: { fontSize: 13, fontStyle: 'italic', color: colors.accentMuted },

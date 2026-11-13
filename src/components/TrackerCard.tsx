@@ -51,7 +51,8 @@ export function TrackerCard({ title, icon, color, progress, value, caption, onMe
   const ring = (
     <Animated.View style={ringStyle}>
       <RingGauge size={ringSize} progress={progress} color={color}>
-        <Text style={styles.value} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+        {/* Android'da yazının küçülebilmesi için sabit genişlik gerekir; halkanın iç çapına sığdır */}
+        <Text style={[styles.value, { width: ringSize * 0.6 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{value}</Text>
         <Text style={styles.caption} numberOfLines={2}>{caption}</Text>
       </RingGauge>
     </Animated.View>
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
   ringWrap: { alignItems: 'center' },
   wideRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   side: { flex: 1, gap: spacing.sm },
-  value: { fontSize: 26, fontWeight: '800', color: colors.textPrimary, maxWidth: 96 },
+  value: { fontSize: 26, fontWeight: '800', color: colors.textPrimary, textAlign: 'center' },
   caption: { fontSize: 11, fontWeight: '500', color: colors.textSecondary, textAlign: 'center', maxWidth: 92 },
   badge: { position: 'absolute', top: spacing.lg + 28, alignSelf: 'center' },
   badgeText: {

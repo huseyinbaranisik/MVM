@@ -50,7 +50,13 @@ export function SleepCard({ date }: { date: string }) {
   const setReminder = async () => {
     const t = await pickTime(data.notif.bedtimeReminder ?? '23:30');
     if (!t) return;
-    const ok = await scheduleDaily(BEDTIME_ID, t, 'Yatma vakti 🌙', 'Uyku hedefin için yatmaya hazırlanma zamanı.');
+    let ok: boolean;
+    try {
+      ok = await scheduleDaily(BEDTIME_ID, t, 'Yatma vakti 🌙', 'Uyku hedefin için yatmaya hazırlanma zamanı.');
+    } catch {
+      setNotice('Hatırlatıcı kurulamadı, tekrar dene.');
+      return;
+    }
     if (!ok) { setNotice('Bildirim izni verilmedi.'); return; }
     await setSetting(db, 'notifications', { ...data.notif, bedtimeReminder: t });
     setNotice('');

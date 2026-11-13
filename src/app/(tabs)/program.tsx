@@ -11,7 +11,7 @@ import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { getWeekPlan, type DayPlan } from '@/db/repos/schedule';
 import { createTemplate, getTemplates, setDaySchedule } from '@/db/repos/templates';
 import { useDb } from '@/db/useDb';
-import { today, weekday, WEEKDAYS_TR } from '@/services/dates';
+import { today, weekday, WEEKDAYS_SHORT_TR, WEEKDAYS_TR } from '@/services/dates';
 import { colors, radius, spacing, type } from '@/theme';
 
 export default function ProgramScreen() {
@@ -19,6 +19,9 @@ export default function ProgramScreen() {
   const data = useDb(async (db) => ({ week: await getWeekPlan(db), templates: await getTemplates(db) }), []);
   const [assigning, setAssigning] = useState<DayPlan | null>(null);
   const todayWd = weekday(today());
+  // React Compiler closure bağımlılıklarını render sırasında okur: null olabilen state'ten alanları burada güvenle çıkar
+  const day = assigning?.weekday ?? 0;
+  const dayTemplateId = assigning?.kind === 'workout' ? assigning.templateId : null;
 
   const newTemplate = async (assignTo?: number) => {
     const id = await createTemplate(db, 'Yeni antrenman');
@@ -36,7 +39,7 @@ export default function ProgramScreen() {
           <Pressable key={d.weekday} onPress={() => setAssigning(d)} style={styles.row} accessibilityRole="button"
             accessibilityLabel={`${WEEKDAYS_TR[d.weekday]}: ${d.kind === 'workout' ? d.templateName : d.kind === 'walk' ? 'Yürüyüş' : 'Dinlenme'}`}>
             <View style={[styles.dayBadge, d.weekday === todayWd && styles.today]}>
-              <Text style={[styles.dayText, d.weekday === todayWd && styles.todayText]}>{WEEKDAYS_TR[d.weekday].slice(0, 3)}</Text>
+              <Text style={[styles.dayText, d.weekday === todayWd && styles.todayText]}>{WEEKDAYS_SHORT_TR[d.weekday]}</Text>
             </View>
             <View style={styles.flex}>
               <Text style={type.subtitle}>{d.kind === 'workout' ? d.templateName : d.kind === 'walk' ? 'Yürüyüş günü' : 'Dinlenme günü'}</Text>
@@ -67,15 +70,15 @@ export default function ProgramScreen() {
       <Sheet visible={!!assigning} onClose={() => setAssigning(null)} title={assigning ? WEEKDAYS_TR[assigning.weekday] : ''}>
         {data?.templates.map((t) => (
           <SheetRow key={t.id} label={t.name} value={assigning?.templateId === t.id ? '✓' : `${t.exerciseCount} hareket`}
-            onPress={async () => { await setDaySchedule(db, assigning!.weekday, 'workout', t.id); setAssigning(null); }} />
+            onPress={async () => { await setDaySchedule(db, day, 'workout', t.id); setAssigning(null); }} />
         ))}
         <SheetRow label="Yürüyüş günü" value={assigning?.kind === 'walk' ? '✓' : ''}
-          onPress={async () => { await setDaySchedule(db, assigning!.weekday, 'walk', null); setAssigning(null); }} />
+          onPress={async () => { await setDaySchedule(db, day, 'walk', null); setAssigning(null); }} />
         <SheetRow label="Dinlenme günü" value={assigning?.kind === 'rest' ? '✓' : ''}
-          onPress={async () => { await setDaySchedule(db, assigning!.weekday, 'rest', null); setAssigning(null); }} />
-        <SheetRow label="+ Yeni şablon oluştur ve ata" onPress={() => newTemplate(assigning!.weekday)} />
-        {assigning?.kind === 'workout' && assigning.templateId ? (
-          <SheetRow label="Bu günün şablonunu düzenle" onPress={() => { const id = assigning.templateId; setAssigning(null); router.push(`/template/${id}`); }} />
+          onPress={async () => { await setDaySchedule(db, day, 'rest', null); setAssigning(null); }} />
+        <SheetRow label="+ Yeni şablon oluştur ve ata" onPress={() => newTemplate(day)} />
+        {dayTemplateId ? (
+          <SheetRow label="Bu günün şablonunu düzenle" onPress={() => { setAssigning(null); router.push(`/template/${dayTemplateId}`); }} />
         ) : null}
       </Sheet>
     </Screen>

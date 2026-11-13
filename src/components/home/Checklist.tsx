@@ -80,6 +80,7 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
     }
   }
   const valid = name.trim().length > 0 && days !== 0;
+  const habitId = habit?.id; // closure'larda null olabilen habit'e dokunmamak için
 
   return (
     <Sheet visible={!!habit} onClose={onClose} title={habit?.id ? 'Alışkanlığı düzenle' : 'Yeni alışkanlık'}>
@@ -103,11 +104,11 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
         ))}
       </View>
       <PillButton label="Kaydet" variant="primary" disabled={!valid}
-        onPress={async () => { await saveHabit(db, { id: habit?.id, name: name.trim(), icon, weekdays: days }); onClose(); }} />
+        onPress={async () => { await saveHabit(db, { id: habitId, name: name.trim(), icon, weekdays: days }); onClose(); }} />
       {habit?.id ? (
         <PillButton label="Sil" onPress={() => Alert.alert('Silinsin mi?', `"${habit.name}" listeden kaldırılacak. Geçmiş kayıtlar istatistiklerde kalır.`, [
           { text: 'Vazgeç', style: 'cancel' },
-          { text: 'Sil', style: 'destructive', onPress: async () => { await archiveHabit(db, habit.id!); onClose(); } },
+          { text: 'Sil', style: 'destructive', onPress: async () => { if (habitId) await archiveHabit(db, habitId); onClose(); } },
         ])} />
       ) : null}
     </Sheet>

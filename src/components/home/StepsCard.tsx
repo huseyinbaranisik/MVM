@@ -11,6 +11,7 @@ import { addTrackerValue, getLatestMeasurement, getTrackerSettings, getTrackerVa
 import { useDb } from '@/db/useDb';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatSteps, kmToSteps, stepsToKm, stepUnitLabel, strideCm, type StepUnit } from '@/services/units';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing } from '@/theme';
 
 const STEP_DECREMENT = 500;
@@ -26,7 +27,7 @@ export function StepsCard({ date }: { date: string }) {
   }), [date]);
   const [open, setOpen] = useState<'menu' | 'goal' | 'stride' | 'add' | null>(null);
 
-  if (!data?.s) return <View style={styles.placeholder} />;
+  if (!data?.s) return <Skeleton height={300} style={styles.placeholder} />;
   const unit = data.s.display_unit as StepUnit;
   const stride = strideCm(data.s.unit_size, data.heightCm);
   const fmt = (n: number) => formatSteps(n, unit, stride);

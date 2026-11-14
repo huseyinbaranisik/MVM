@@ -1,14 +1,16 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
+import { confirm } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
 import { Sheet } from '@/components/ui/Sheet';
 import { ALL_DAYS, archiveHabit, getHabitsForDate, saveHabit, setHabitDone, type Habit } from '@/db/repos/habits';
 import { useDb } from '@/db/useDb';
 import { WEEKDAYS_SHORT_TR } from '@/services/dates';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, radius, spacing, type } from '@/theme';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
@@ -20,7 +22,8 @@ const HABIT_ICONS: IconName[] = [
 
 export function Checklist({ date }: { date: string }) {
   const db = useSQLiteContext();
-  const habits = useDb((db) => getHabitsForDate(db, date), [date]) ?? [];
+  const loaded = useDb((db) => getHabitsForDate(db, date), [date]);
+  const habits = loaded ?? [];
   const [editing, setEditing] = useState<Partial<Habit> | null>(null);
   const done = habits.filter((h) => h.done).length;
 
@@ -34,7 +37,7 @@ export function Checklist({ date }: { date: string }) {
           <Icon name="add" size={22} color={colors.accent} />
         </Pressable>
       </View>
-      {habits.length === 0 ? (
+      {!loaded ? <Skeleton height={224} /> : habits.length === 0 ? (
         <Text style={type.caption}>Bu gün için alışkanlık yok. + ile ekleyebilirsin.</Text>
       ) : (
         <View style={styles.list}>
@@ -106,10 +109,11 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
       <PillButton label="Kaydet" variant="primary" disabled={!valid}
         onPress={async () => { await saveHabit(db, { id: habitId, name: name.trim(), icon, weekdays: days }); onClose(); }} />
       {habit?.id ? (
-        <PillButton label="Sil" onPress={() => Alert.alert('Silinsin mi?', `"${habit.name}" listeden kaldırılacak. Geçmiş kayıtlar istatistiklerde kalır.`, [
-          { text: 'Vazgeç', style: 'cancel' },
-          { text: 'Sil', style: 'destructive', onPress: async () => { if (habitId) await archiveHabit(db, habitId); onClose(); } },
-        ])} />
+        <PillButton label="Sil" onPress={async () => {
+          if (!(await confirm({ title: 'Silinsin mi?', message: `"${habit.name}" listeden kaldırılacak. Geçmiş kayıtlar istatistiklerde kalır.`, confirmLabel: 'Sil', destructive: true }))) return;
+          if (habitId) await archiveHabit(db, habitId);
+          onClose();
+        }} />
       ) : null}
     </Sheet>
   );

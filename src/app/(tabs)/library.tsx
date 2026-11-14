@@ -8,6 +8,7 @@ import { EQUIPMENT_TR, ExerciseRow } from '@/components/exercise';
 import { TAB_BAR_HEIGHT } from '@/components/FloatingTabBar';
 import { Icon } from '@/components/Icon';
 import { PillButton, SegmentedControl } from '@/components/ui/PillButton';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { filterGroups } from '@/data/muscleMap';
 import { getExerciseList } from '@/db/repos/exercises';
 import { useDb } from '@/db/useDb';
@@ -78,7 +79,15 @@ export default function LibraryScreen() {
         ListHeaderComponent={header}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.content}
-        initialNumToRender={12}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
+        ListEmptyComponent={list ? (
+          <Text style={[type.caption, styles.empty]}>Bu filtrelere uyan hareket yok. Bir filtreyi kaldırmayı dene.</Text>
+        ) : (
+          <View style={styles.skeletons}>{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} height={64} rounded={radius.md} />)}</View>
+        )}
         renderItem={({ item }) => (
           <ExerciseRow id={item.id} name={item.name_tr} imageKey={item.image_key} photoUri={item.photo_uri} favorite={!!item.is_favorite}
             subtitle={[EQUIPMENT_TR[item.equipment], item.source === 'user' ? 'Kendi hareketin' : item.name_en !== item.name_tr ? item.name_en : null]
@@ -104,4 +113,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary, borderWidth: 1, borderColor: colors.divider,
   },
   chips: { gap: spacing.sm },
+  empty: { textAlign: 'center', paddingVertical: spacing.xl },
+  skeletons: { gap: spacing.sm },
 });

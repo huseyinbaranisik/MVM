@@ -5,6 +5,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, w
 
 import { Icon } from '@/components/Icon';
 import { RingGauge } from '@/components/RingGauge';
+import { PressableScale } from '@/components/ui/PressableScale';
 import { colors, radius, spacing, type } from '@/theme';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
@@ -87,12 +88,12 @@ export function Counter({ onMinus, onPlus, minusLabel, plusLabel }: {
 }) {
   return (
     <View style={styles.counter}>
-      <Pressable onPress={onMinus} style={styles.counterBtn} hitSlop={6} accessibilityRole="button" accessibilityLabel={minusLabel}>
+      <PressableScale onPress={onMinus} style={styles.counterBtn} hitSlop={6} accessibilityRole="button" accessibilityLabel={minusLabel}>
         <Icon name="remove" size={22} color={colors.textPrimary} />
-      </Pressable>
-      <Pressable onPress={onPlus} style={[styles.counterBtn, styles.plus]} hitSlop={6} accessibilityRole="button" accessibilityLabel={plusLabel}>
+      </PressableScale>
+      <PressableScale onPress={onPlus} style={[styles.counterBtn, styles.plus]} hitSlop={6} accessibilityRole="button" accessibilityLabel={plusLabel}>
         <Icon name="add" size={22} color={colors.accent} />
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

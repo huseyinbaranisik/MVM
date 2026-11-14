@@ -2,7 +2,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { pickTime } from '@/components/ui/pickTime';
+import { pickTime } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
 import { Sheet } from '@/components/ui/Sheet';
 import { saveSleep, type SleepLog } from '@/db/repos/sleep';

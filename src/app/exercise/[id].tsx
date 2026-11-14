@@ -6,7 +6,9 @@ import { LineChart } from 'react-native-gifted-charts';
 
 import { BodyMapPair } from '@/components/BodyMap';
 import { AddToProgramSheet, BackHeader, EQUIPMENT_TR, exerciseImageSource, FavoriteButton } from '@/components/exercise';
+import { toast } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
+import { LoadingScreen } from '@/components/ui/Skeleton';
 import { getExercise, getExerciseHistory } from '@/db/repos/exercises';
 import { useDb } from '@/db/useDb';
 import { fmtDec } from '@/services/units';
@@ -19,7 +21,6 @@ export default function ExerciseDetailScreen() {
   const data = useDb(async (db) => ({ e: await getExercise(db, id), history: await getExerciseHistory(db, id) }), [id]);
   const [frame, setFrame] = useState(0);
   const [adding, setAdding] = useState(false);
-  const [toast, setToast] = useState('');
 
   // başlangıç ↔ bitiş pozisyonu otomatik geçiş
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function ExerciseDetailScreen() {
     return () => clearInterval(t);
   }, []);
 
-  if (!data) return <BackHeader title="" />;
+  if (!data) return <LoadingScreen blocks={[260, 60, 300]} />;
   const e = data.e;
   if (!e) return <BackHeader title="Hareket bulunamadı" />;
   const src = exerciseImageSource(e.image_key, e.photo_uri, frame);
@@ -61,7 +62,6 @@ export default function ExerciseDetailScreen() {
           <PillButton label="▶ Videoda izle" onPress={() => Linking.openURL(youtube)} style={styles.flex1} />
           <PillButton label="Programıma ekle" variant="primary" onPress={() => setAdding(true)} style={styles.flex1} />
         </View>
-        {toast ? <Text style={[type.caption, { color: colors.success }]}>{toast}</Text> : null}
 
         {e.description ? <Text style={type.body}>{e.description}</Text> : null}
         <Section title={e.instructionsAreEnglish ? 'Uygulama (İngilizce)' : 'Uygulama'} items={e.instructions} numbered />
@@ -92,7 +92,7 @@ export default function ExerciseDetailScreen() {
           )) : <Text style={type.caption}>Henüz kayıt yok. Antrenmanda bu hareketi yaptığında burada görünecek.</Text>}
         </View>
       </ScrollView>
-      <AddToProgramSheet exerciseId={adding ? e.id : null} onClose={(msg) => { setAdding(false); if (msg) setToast(msg); }} />
+      <AddToProgramSheet exerciseId={adding ? e.id : null} onClose={(msg) => { setAdding(false); if (msg) toast(msg); }} />
     </View>
   );
 }

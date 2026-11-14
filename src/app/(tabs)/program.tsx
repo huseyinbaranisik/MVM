@@ -42,10 +42,10 @@ export default function ProgramScreen() {
               <Text style={[styles.dayText, d.weekday === todayWd && styles.todayText]}>{WEEKDAYS_SHORT_TR[d.weekday]}</Text>
             </View>
             <View style={styles.flex}>
-              <Text style={type.subtitle}>{d.kind === 'workout' ? d.templateName : d.kind === 'walk' ? 'Yürüyüş günü' : 'Dinlenme günü'}</Text>
+              <Text style={type.subtitle} numberOfLines={1}>{d.kind === 'workout' ? d.templateName : d.kind === 'walk' ? 'Yürüyüş günü' : 'Dinlenme günü'}</Text>
               {d.kind === 'workout' ? <Text style={type.caption}>{d.exerciseCount} hareket</Text> : null}
             </View>
-            {d.kind === 'workout' && d.templateId ? <TemplateMiniMap templateId={d.templateId} width={22} />
+            {d.kind === 'workout' && d.templateId ? <TemplateMiniMap templateId={d.templateId} height={44} />
               : <Icon name={d.kind === 'walk' ? 'directions_walk' : 'bedtime'} color={colors.textSecondary} size={20} />}
           </Pressable>
         ))}
@@ -59,7 +59,7 @@ export default function ProgramScreen() {
         {data?.templates.map((t) => (
           <Pressable key={t.id} onPress={() => router.push(`/template/${t.id}`)} style={styles.row} accessibilityRole="button">
             <View style={styles.flex}>
-              <Text style={type.subtitle}>{t.name}</Text>
+              <Text style={type.subtitle} numberOfLines={1}>{t.name}</Text>
               <Text style={type.caption}>{t.exerciseCount} hareket</Text>
             </View>
             <Icon name="chevron_right" color={colors.textSecondary} />

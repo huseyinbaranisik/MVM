@@ -1,13 +1,15 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { DraggableList } from '@/components/DraggableList';
 import { BackHeader, ExerciseRow, ExerciseThumb } from '@/components/exercise';
 import { Icon } from '@/components/Icon';
+import { confirm } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
 import { Sheet } from '@/components/ui/Sheet';
+import { LoadingScreen } from '@/components/ui/Skeleton';
 import { getExerciseList } from '@/db/repos/exercises';
 import {
   addTemplateExercise, deleteTemplate, getTemplateExercises, getTemplateName, removeTemplateExercise,
@@ -32,13 +34,14 @@ export default function TemplateEditor() {
   const [editing, setEditing] = useState<TemplateExercise | null>(null);
   const [picking, setPicking] = useState(false);
 
-  if (!data) return <BackHeader title="" />;
+  if (!data) return <LoadingScreen blocks={[50, 400]} />;
   const groups = [...new Set(data.items.map((x) => x.superset_group).filter((g) => g != null))];
 
-  const confirmDelete = () => Alert.alert('Şablon silinsin mi?', 'Atandığı günler dinlenme gününe döner.', [
-    { text: 'Vazgeç', style: 'cancel' },
-    { text: 'Sil', style: 'destructive', onPress: async () => { await deleteTemplate(db, templateId); router.back(); } },
-  ]);
+  const confirmDelete = async () => {
+    if (!(await confirm({ title: 'Şablon silinsin mi?', message: 'Atandığı günler dinlenme gününe döner.', confirmLabel: 'Sil', destructive: true }))) return;
+    await deleteTemplate(db, templateId);
+    router.back();
+  };
 
   return (
     <View style={styles.flex}>

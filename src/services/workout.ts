@@ -47,3 +47,12 @@ export function findPRs(current: SetLike[], previousBest: Map<string, { maxKg: n
 
 /** sn → "1:05" */
 export const mmss = (sec: number) => `${Math.floor(Math.max(0, sec) / 60)}:${String(Math.floor(Math.max(0, sec) % 60)).padStart(2, '0')}`;
+
+/** Set seçicisindeki değerler: kilo 2,5–50 (2,5 adım), tekrar 5–20. */
+export const KG_VALUES = Array.from({ length: 20 }, (_, i) => (i + 1) * 2.5);
+export const REP_VALUES = Array.from({ length: 16 }, (_, i) => i + 5);
+
+/** Listede olmayan bir değer için en yakın seçenek (ör. 12 kg → 12,5). */
+export function nearest<T extends number>(values: T[], v: number): T {
+  return values.reduce((best, x) => (Math.abs(x - v) < Math.abs(best - v) ? x : best), values[0]);
+}

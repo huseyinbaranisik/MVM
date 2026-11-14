@@ -6,7 +6,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SleepSheet } from '@/components/home/SleepSheet';
 import { TrackerCard } from '@/components/TrackerCard';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
-import { pickTime } from '@/components/ui/pickTime';
+import { pickTime } from '@/components/ui/overlays';
 import { SegmentedControl } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { getSetting, setSetting } from '@/db/repos/settings';
@@ -16,6 +16,7 @@ import { useDb } from '@/db/useDb';
 import { addDays } from '@/services/dates';
 import { cancelReminder, scheduleDaily } from '@/services/notifications';
 import { averageBedtime, formatDuration, QUALITY_EMOJI, type SleepDisplay } from '@/services/sleep';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, radius, spacing, type } from '@/theme';
 
 const BEDTIME_ID = 'bedtime-reminder';
@@ -35,7 +36,7 @@ export function SleepCard({ date }: { date: string }) {
   const [open, setOpen] = useState<'entry' | 'menu' | 'goal' | null>(null);
   const [notice, setNotice] = useState('');
 
-  if (!data?.s) return null;
+  if (!data?.s) return <Skeleton height={300} />;
   const display = data.s.display_unit as SleepDisplay;
   const goal = data.s.goal;
   const log = data.log;

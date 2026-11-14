@@ -1,4 +1,6 @@
-import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+
+import { PressableScale } from '@/components/ui/PressableScale';
 
 import { colors, radius, spacing } from '@/theme';
 
@@ -16,22 +18,16 @@ export function PillButton({ label, onPress, active = false, variant = 'chip', d
 }) {
   const filled = active || variant === 'primary';
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ selected: active, disabled }}
       accessibilityLabel={accessibilityLabel ?? label}
       hitSlop={6}
-      style={({ pressed }) => [
-        styles.base,
-        filled ? styles.filled : styles.outline,
-        variant === 'primary' && styles.primary,
-        (pressed || disabled) && styles.dim,
-        style,
-      ]}>
-      <Text style={[styles.label, { color: filled ? colors.accent : colors.textPrimary }]}>{label}</Text>
-    </Pressable>
+      style={[styles.base, filled ? styles.filled : styles.outline, variant === 'primary' && styles.primary, style]}>
+      <Text style={[styles.label, { color: filled ? colors.accent : colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
+    </PressableScale>
   );
 }
 
@@ -62,7 +58,6 @@ const styles = StyleSheet.create({
   outline: { backgroundColor: colors.surface, borderColor: colors.accentMuted },
   filled: { backgroundColor: colors.primary, borderColor: colors.primary },
   primary: { minHeight: 48, paddingHorizontal: spacing.xl },
-  dim: { opacity: 0.6 },
   label: { fontSize: 14, fontWeight: '600' },
   segment: { flex: 1 },
 });

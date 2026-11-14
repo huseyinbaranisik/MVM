@@ -1,3 +1,4 @@
+import { focusCrop } from '@/data/bodyFocus';
 import { body } from '@/data/bodyPaths';
 import { muscles } from '@/data/muscleMap';
 
@@ -93,5 +94,24 @@ describe('vücut haritası', () => {
         }
       }
     }
+  });
+});
+
+describe('odaklı mini harita', () => {
+  it('bacak kasları için kadraj alt yarıda, üst vücut için üst yarıda', () => {
+    const legs = focusCrop(body.front, ['quad_outer', 'quad_middle', 'quad_inner'])!;
+    const chest = focusCrop(body.front, ['chest_upper', 'chest_middle'])!;
+    const v = body.front.viewBox;
+    expect(legs.y).toBeGreaterThan(v.y + v.h * 0.35);
+    expect(chest.y + chest.h).toBeLessThan(v.y + v.h * 0.6);
+    for (const c of [legs, chest]) {
+      expect(c.x).toBeGreaterThanOrEqual(v.x);
+      expect(c.x + c.w).toBeLessThanOrEqual(v.x + v.w + 0.01);
+      expect(c.w).toBeLessThan(v.w);
+    }
+  });
+
+  it('bu yüzde olmayan kaslar için kadraj yok', () => {
+    expect(focusCrop(body.front, ['glute_max'])).toBeNull();
   });
 });

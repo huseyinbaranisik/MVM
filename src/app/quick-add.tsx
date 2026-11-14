@@ -1,28 +1,45 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useState } from 'react';
 
-import { colors, radius, spacing, type } from '@/theme';
+import { toast } from '@/components/ui/overlays';
+import { Sheet, SheetRow } from '@/components/ui/Sheet';
+import { getDayPlan } from '@/db/repos/schedule';
+import { startSession } from '@/db/repos/sessions';
+import { addTrackerValue, getTrackerSettings } from '@/db/repos/trackers';
+import { useDb } from '@/db/useDb';
+import { today, weekday } from '@/services/dates';
 
-// Aşama 1 yer tutucu: "+" butonunun açtığı hızlı ekleme. Gerçek bottom sheet Aşama 2'de.
+/** Ortadaki "+": en sık yapılan işlere tek dokunuşla ulaşmak için. */
 export default function QuickAdd() {
+  const db = useSQLiteContext();
+  const [open, setOpen] = useState(true);
+  const data = useDb(async (db) => ({
+    plan: await getDayPlan(db, weekday(today())),
+    glass: (await getTrackerSettings(db, 'water'))?.unit_size ?? 250,
+  }), []);
+  const templateId = data?.plan?.kind === 'workout' ? data.plan.templateId : null;
+  const glass = data?.glass ?? 250;
+
+  // önce kapanış animasyonu, sonra rota kapanır
+  const close = (then?: () => void) => {
+    setOpen(false);
+    setTimeout(() => { router.back(); then?.(); }, 210);
+  };
+
   return (
-    <Pressable style={styles.backdrop} onPress={() => router.back()} accessibilityLabel="Kapat">
-      <View style={styles.sheet}>
-        <Text style={type.title}>Hızlı ekle</Text>
-        <Text style={type.caption}>Su, uyku, ölçüm ve antrenman başlatma burada olacak.</Text>
-      </View>
-    </Pressable>
+    <Sheet visible={open} onClose={() => close()} title="Hızlı ekle">
+      {templateId ? (
+        <SheetRow label={`Antrenmana başla · ${data?.plan?.templateName ?? ''}`} onPress={async () => {
+          const id = await startSession(db, templateId, today());
+          close(() => router.push(`/workout/${id}`));
+        }} />
+      ) : null}
+      <SheetRow label="1 bardak su ekle" value={`${glass} ml`} onPress={async () => {
+        await addTrackerValue(db, 'water', today(), glass);
+        close(() => toast('Su eklendi 💧'));
+      }} />
+      <SheetRow label="Kendi hareketini ekle" onPress={() => close(() => router.push('/exercise/new'))} />
+    </Sheet>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: colors.surfaceElevated,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    padding: spacing.xl,
-    paddingBottom: spacing.xxl * 2,
-    gap: spacing.sm,
-  },
-});

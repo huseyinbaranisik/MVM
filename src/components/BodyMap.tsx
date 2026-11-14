@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedProps, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import Svg, { ClipPath, Defs, Path, Rect } from 'react-native-svg';
 
+import type { Crop } from '@/data/bodyFocus';
 import { body } from '@/data/bodyPaths';
 import { muscles, regions, type Side } from '@/data/muscleMap';
 import { colors } from '@/theme';
@@ -29,7 +30,9 @@ export type MapMode = 'region' | 'part';
  * bölge modunda bir bölgenin herhangi bir parçası vurgulanırsa bütün bölge vurgulanır.
  * onPress: bölge modunda bölge id'si, parça modunda kas id'si ile çağrılır.
  */
-export function BodyMap({ side, mode, width, primary = [], secondary = [], onPress }: {
+export function BodyMap({ side, mode, width, primary = [], secondary = [], onPress, crop }: {
+  /** verilirse sadece bu bölge çizilir (odaklı mini harita) */
+  crop?: Crop | null;
   side: Side;
   mode: MapMode;
   width: number;
@@ -38,7 +41,7 @@ export function BodyMap({ side, mode, width, primary = [], secondary = [], onPre
   onPress?: (id: string) => void;
 }) {
   const data = body[side];
-  const vb = data.viewBox;
+  const vb = crop ?? data.viewBox;
   const scale = width / vb.w;
 
   const level = useMemo(() => {
@@ -93,11 +96,26 @@ export function BodyMap({ side, mode, width, primary = [], secondary = [], onPre
   );
 }
 
-/** Tek kas path'i. Sadece rengi/seviyesi değişen path yeniden çizilir. */
-const MusclePath = memo(function MusclePath({ id, unit, d, clipId, tone, level, seamless, strokeWidth, onPress }: {
+type MuscleProps = {
   id: string; unit: string; d: string; clipId?: string; tone: string; level: number; seamless: boolean; strokeWidth: number;
   onPress?: (unit: string) => void;
-}) {
+};
+
+/**
+ * Tek kas path'i. Vurgusuz kaslar animasyonsuz düz Path olarak çizilir (onlarca kasın her birine animasyon
+ * kancası açmak Kütüphane'nin ilk açılışını yavaşlatıyordu); sadece vurgulanan kas animasyonlu bileşene geçer.
+ */
+const MusclePath = memo(function MusclePath(props: MuscleProps) {
+  if (props.level > 0) return <ActiveMuscle {...props} />;
+  const { id, unit, d, clipId, tone, seamless, strokeWidth, onPress } = props;
+  return (
+    <Path d={d} clipPath={clipId ? `url(#${clipId})` : undefined} fill={tone}
+      stroke={seamless ? tone : colors.background} strokeWidth={strokeWidth} strokeLinejoin="round"
+      onPress={onPress ? () => onPress(unit) : undefined} accessibilityLabel={id} />
+  );
+});
+
+function ActiveMuscle({ id, unit, d, clipId, tone, level, seamless, strokeWidth, onPress }: MuscleProps) {
   const flash = useSharedValue(1);
   useEffect(() => {
     if (level > 0) flash.value = withSequence(withTiming(0.35, { duration: 90 }), withTiming(1, { duration: 260 }));
@@ -122,7 +140,7 @@ const MusclePath = memo(function MusclePath({ id, unit, d, clipId, tone, level, 
       />
     </>
   );
-});
+}
 
 /** Ön ↔ arka çevirme (rotateY) animasyonlu sarmalayıcı. */
 export function useFlip(initial: Side = 'front') {

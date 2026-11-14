@@ -3,18 +3,22 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackHeader, ExerciseThumb } from '@/components/exercise';
 import { Icon } from '@/components/Icon';
 import { RingGauge } from '@/components/RingGauge';
+import { SetPicker, type SetPickerTarget } from '@/components/SetPicker';
+import { PressableScale } from '@/components/ui/PressableScale';
+import { LoadingScreen } from '@/components/ui/Skeleton';
+import { confirm } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
 import { getSession, getSessionSets, getPreviousSets, saveSet, deleteSet, endSession, type SessionSet } from '@/db/repos/sessions';
 import { getSetting } from '@/db/repos/settings';
 import { getTemplateExercises, summary, type TemplateExercise } from '@/db/repos/templates';
 import { useDb } from '@/db/useDb';
-import { parseNumber } from '@/services/units';
+import { fmtDec, parseNumber } from '@/services/units';
 import { mmss, overloadSuggestion } from '@/services/workout';
 import { useWorkoutStore } from '@/stores/useWorkoutStore';
 import { colors, radius, spacing, type } from '@/theme';
@@ -46,8 +50,10 @@ export default function ActiveWorkout() {
 
   const [inputs, setInputs] = useState<Inputs>({});
   const [stopwatch, setStopwatch] = useState<{ key: string; startedAt: number } | null>(null);
+  const [picking, setPicking] = useState<(SetPickerTarget & { key: string }) | null>(null);
+  const pickingKey = picking?.key; // closure'da null olabilen state'e dokunmamak için
 
-  if (!data?.session) return <BackHeader title="" />;
+  if (!data?.session) return <LoadingScreen blocks={[60, 320, 320]} />;
   const { session, plan, prev, done, rest } = data;
   const doneMap = new Map(done.map((s) => [keyOf(s.exercise_id, s.set_index), s]));
   const totalSets = plan.reduce((a, x) => a + x.sets, 0);
@@ -57,7 +63,15 @@ export default function ActiveWorkout() {
   const lastKgThisSession = (exId: string) =>
     done.filter((s) => s.exercise_id === exId && s.weight_kg != null).sort((a, b) => b.set_index - a.set_index)[0]?.weight_kg ?? null;
 
-  const setInput = (key: string, field: 'kg' | 'reps', v: string) => setInputs((s) => ({ ...s, [key]: { ...s[key], [field]: v } }));
+  const openPicker = (x: TemplateExercise, setIndex: number, kgHint: number | null, repsHint: number | null) => {
+    const key = keyOf(x.exercise_id, setIndex);
+    setPicking({
+      key,
+      title: `${x.name_tr} · Set ${setIndex + 1}`,
+      kg: parseNumber(inputs[key]?.kg ?? '') ?? kgHint ?? 10,
+      reps: x.duration_sec ? null : parseNumber(inputs[key]?.reps ?? '') ?? repsHint ?? 10,
+    });
+  };
 
   const restFor = (x: TemplateExercise, index: number) => {
     // süpersette grubun son hareketine kadar dinlenme yok
@@ -81,22 +95,18 @@ export default function ActiveWorkout() {
     if (r > 0 && done.length + 1 < totalSets) startRest(r);
   };
 
-  const finish = () => {
+  const finish = async () => {
     if (!done.length) {
-      Alert.alert('Hiç set tamamlanmadı', 'Antrenman iptal edilsin mi?', [
-        { text: 'Devam et', style: 'cancel' },
-        { text: 'İptal et', style: 'destructive', onPress: async () => { await endSession(db, sessionId, 'abandoned'); router.back(); } },
-      ]);
+      if (await confirm({ title: 'Hiç set tamamlanmadı', message: 'Antrenman iptal edilsin mi?', confirmLabel: 'İptal et', cancelLabel: 'Devam et', destructive: true })) {
+        await endSession(db, sessionId, 'abandoned');
+        router.back();
+      }
       return;
     }
-    Alert.alert('Antrenmanı bitir', `${done.length}/${totalSets} set tamamlandı.`, [
-      { text: 'Vazgeç', style: 'cancel' },
-      { text: 'Bitir', onPress: async () => {
-        useWorkoutStore.getState().stopRest();
-        await endSession(db, sessionId, 'done');
-        router.replace(`/workout/summary/${sessionId}`);
-      } },
-    ]);
+    if (!(await confirm({ title: 'Antrenmanı bitir', message: `${done.length}/${totalSets} set tamamlandı.`, confirmLabel: 'Bitir' }))) return;
+    useWorkoutStore.getState().stopRest();
+    await endSession(db, sessionId, 'done');
+    router.replace(`/workout/summary/${sessionId}`);
   };
 
   return (
@@ -139,18 +149,18 @@ export default function ActiveWorkout() {
                 const d = doneMap.get(key);
                 const p = prevSets[i];
                 const kgHint = lastKgThisSession(x.exercise_id) ?? p?.weight_kg ?? null;
+                const repsHint = p?.reps ?? x.rep_max ?? x.rep_min ?? null;
                 const running = stopwatch?.key === key;
                 const prevLabel = p ? (p.duration_sec ? `${p.duration_sec} sn` : `${p.weight_kg ?? 0}×${p.reps ?? 0}`) : '—';
                 return (
                   <View key={key} style={[styles.setRow, d && styles.setDone]}>
                     <Text style={[styles.cell, styles.colSet]}>{i + 1}</Text>
                     <Text style={[styles.cellMuted, styles.colPrev]}>{prevLabel}</Text>
-                    <TextInput
-                      style={[styles.input, styles.colIn]} keyboardType="decimal-pad"
-                      value={d ? String(d.weight_kg ?? '') : inputs[key]?.kg ?? ''}
-                      placeholder={d ? '—' : kgHint != null ? String(kgHint) : 'kg'}
-                      placeholderTextColor={colors.textSecondary} editable={!d}
-                      onChangeText={(v) => setInput(key, 'kg', v)} accessibilityLabel={`Set ${i + 1} ağırlık`} />
+                    <Cell
+                      value={d ? (d.weight_kg != null ? fmtDec(d.weight_kg) : '—') : inputs[key]?.kg ?? null}
+                      hint={kgHint != null ? fmtDec(kgHint) : 'kg'}
+                      disabled={!!d} label={`Set ${i + 1} ağırlık`}
+                      onPress={() => openPicker(x, i, kgHint, repsHint)} />
                     {x.duration_sec ? (
                       <Pressable style={[styles.input, styles.colIn, styles.timerBtn]} disabled={!!d}
                         accessibilityRole="button" accessibilityLabel={running ? 'Kronometreyi durdur' : 'Kronometreyi başlat'}
@@ -164,12 +174,11 @@ export default function ActiveWorkout() {
                         </Text>
                       </Pressable>
                     ) : (
-                      <TextInput
-                        style={[styles.input, styles.colIn]} keyboardType="number-pad"
-                        value={d ? String(d.reps ?? '') : inputs[key]?.reps ?? ''}
-                        placeholder={p?.reps != null ? String(p.reps) : `${x.rep_min ?? ''}${x.rep_max && x.rep_max !== x.rep_min ? `-${x.rep_max}` : ''}`}
-                        placeholderTextColor={colors.textSecondary} editable={!d}
-                        onChangeText={(v) => setInput(key, 'reps', v)} accessibilityLabel={`Set ${i + 1} tekrar`} />
+                      <Cell
+                        value={d ? String(d.reps ?? '—') : inputs[key]?.reps ?? null}
+                        hint={p?.reps != null ? String(p.reps) : `${x.rep_min ?? ''}${x.rep_max && x.rep_max !== x.rep_min ? `-${x.rep_max}` : ''}`}
+                        disabled={!!d} label={`Set ${i + 1} tekrar`}
+                        onPress={() => openPicker(x, i, kgHint, repsHint)} />
                     )}
                     <Pressable onPress={() => complete(x, xi, i)} style={[styles.check, styles.colCheck, d && styles.checkOn]}
                       accessibilityRole="checkbox" accessibilityState={{ checked: !!d }} accessibilityLabel={`Set ${i + 1} tamamlandı`}>
@@ -183,7 +192,24 @@ export default function ActiveWorkout() {
         })}
       </ScrollView>
       <RestTimer now={now} />
+      <SetPicker target={picking} onClose={() => setPicking(null)}
+        onSave={(kg, reps) => {
+          if (!pickingKey) return;
+          setInputs((s) => ({ ...s, [pickingKey]: { kg: String(kg).replace('.', ','), reps: reps == null ? undefined : String(reps) } }));
+        }} />
     </View>
+  );
+}
+
+/** Kilo/tekrar hücresi: dokununca seçici açılır. Girilmemişse öneri soluk görünür. */
+function Cell({ value, hint, disabled, label, onPress }: {
+  value: string | null; hint: string; disabled: boolean; label: string; onPress: () => void;
+}) {
+  return (
+    <PressableScale onPress={onPress} disabled={disabled} style={[styles.input, styles.colIn, styles.cellBox]}
+      accessibilityRole="button" accessibilityLabel={`${label}: ${value ?? hint}`}>
+      <Text style={value ? styles.cell : styles.cellMuted} numberOfLines={1} adjustsFontSizeToFit>{value ?? hint}</Text>
+    </PressableScale>
   );
 }
 
@@ -244,6 +270,7 @@ const styles = StyleSheet.create({
     minHeight: 40, backgroundColor: colors.background, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.divider,
     color: colors.textPrimary, fontSize: 16, fontWeight: '700', textAlign: 'center',
   },
+  cellBox: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xs },
   timerBtn: { alignItems: 'center', justifyContent: 'center' },
   check: { height: 40, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.divider, alignItems: 'center', justifyContent: 'center' },
   checkOn: { backgroundColor: colors.primary, borderColor: colors.primary },

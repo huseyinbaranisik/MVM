@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
 import { SegmentedControl } from '@/components/ui/PillButton';
+import { LoadingScreen } from '@/components/ui/Skeleton';
 import { getSleepRange } from '@/db/repos/sleep';
 import { getLatestMeasurement, getTrackerHistory, getTrackerSettings, type TrackerType } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
@@ -33,7 +34,7 @@ export default function TrackerHistory() {
     return { s, raw, height: await getLatestMeasurement(db, 'height') };
   }, [kind, from, to]);
 
-  if (!data?.s) return <SafeAreaView style={styles.safe} />;
+  if (!data?.s) return <LoadingScreen blocks={[44, 260, 90]} />;
   const s = data.s;
   // saklanan değeri gösterim birimine çevir
   const conv = (v: number) => {
@@ -116,7 +117,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.stat}>
       <Text style={type.caption}>{label}</Text>
-      <Text style={type.title}>{value}</Text>
+      <Text style={type.title} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
     </View>
   );
 }

@@ -5,6 +5,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BodyMap } from '@/components/BodyMap';
 import { AddToProgramSheet, BackHeader, EQUIPMENT_TR, ExerciseRow } from '@/components/exercise';
 import { Icon } from '@/components/Icon';
+import { toast } from '@/components/ui/overlays';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { muscles, regions } from '@/data/muscleMap';
 import { getExercisesByMuscle, getExercisesByRegion } from '@/db/repos/exercises';
 import { useDb } from '@/db/useDb';
@@ -21,7 +23,6 @@ export default function MuscleDetail() {
 
   const exercises = useDb((db) => (region ? getExercisesByRegion(db, id) : getExercisesByMuscle(db, id)), [id]);
   const [adding, setAdding] = useState<string | null>(null);
-  const [toast, setToast] = useState('');
 
   if (!parentRegion) return <BackHeader title="Bulunamadı" />;
 
@@ -60,9 +61,9 @@ export default function MuscleDetail() {
         ) : null}
 
         <Text style={type.title}>Bu kası çalıştıran hareketler</Text>
-        {toast ? <Text style={[type.caption, { color: colors.success }]}>{toast}</Text> : null}
         <View style={styles.card}>
-          {exercises?.length === 0 ? <Text style={type.caption}>Henüz hareket yok.</Text> : null}
+          {!exercises ? [0, 1, 2].map((i) => <Skeleton key={i} height={64} rounded={radius.md} style={styles.sk} />) : null}
+          {exercises?.length === 0 ? <Text style={type.caption}>Bu kas için henüz hareket yok.</Text> : null}
           {exercises?.map((e) => (
             <ExerciseRow key={e.id} id={e.id} name={e.name_tr} imageKey={e.image_key} photoUri={null}
               subtitle={EQUIPMENT_TR[e.equipment]} tag={e.role === 'primary' ? 'Birincil' : 'İkincil'}
@@ -75,7 +76,7 @@ export default function MuscleDetail() {
           ))}
         </View>
       </ScrollView>
-      <AddToProgramSheet exerciseId={adding} onClose={(msg) => { setAdding(null); if (msg) setToast(msg); }} />
+      <AddToProgramSheet exerciseId={adding} onClose={(msg) => { setAdding(null); if (msg) toast(msg); }} />
     </View>
   );
 }
@@ -93,5 +94,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', minHeight: 56,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider,
   },
+  sk: { marginVertical: spacing.xs },
   add: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
 });

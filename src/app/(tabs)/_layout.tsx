@@ -7,7 +7,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       tabBar={(props) => <FloatingTabBar {...props} />}
-      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.background } }}>
+      screenOptions={{ headerShown: false, animation: 'fade', sceneStyle: { backgroundColor: colors.background } }}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="program" />
       <Tabs.Screen name="library" />

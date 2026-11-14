@@ -1,3 +1,4 @@
+import { Redirect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -11,6 +12,7 @@ import { WaterCard } from '@/components/home/WaterCard';
 import { WorkoutCard } from '@/components/home/WorkoutCard';
 import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
+import { Appear } from '@/components/ui/Skeleton';
 import { getSetting, setSetting } from '@/db/repos/settings';
 import { getSleep } from '@/db/repos/sleep';
 import { addTrackerValue } from '@/db/repos/trackers';
@@ -27,6 +29,7 @@ export default function TodayScreen() {
   const setStepSensor = useAppStore((s) => s.setStepSensor);
   const header = useDb(async (db) => ({
     name: (await getSetting(db, 'profile')).name,
+    onboarded: await getSetting(db, 'onboarded'),
     streak: (await db.getFirstAsync<{ current: number }>('SELECT current FROM streak_state WHERE id = 1'))?.current ?? 0,
   }), []);
   const [morningPrompt, setMorningPrompt] = useState(false);
@@ -56,9 +59,11 @@ export default function TodayScreen() {
     })();
   }, [db]);
 
+  if (header && !header.onboarded) return <Redirect href="/onboarding" />;
   const name = header?.name ?? '';
   return (
     <Screen>
+      <Appear index={0}>
       <View style={styles.header}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text></View>
         <View style={styles.flex}>
@@ -72,17 +77,20 @@ export default function TodayScreen() {
         </View>
       </View>
 
-      <DaySelector value={date} onChange={setDate} />
-      <WorkoutCard date={date} />
+      </Appear>
+      <Appear index={1}><DaySelector value={date} onChange={setDate} /></Appear>
+      <Appear index={2}><WorkoutCard date={date} /></Appear>
 
+      <Appear index={3} style={styles.section}>
       <Text style={type.title}>Günlük check-in</Text>
       <View style={styles.grid}>
         <WaterCard date={date} />
         <StepsCard date={date} />
       </View>
-      <SleepCard date={date} />
+      </Appear>
+      <Appear index={4}><SleepCard date={date} /></Appear>
 
-      <Checklist date={date} />
+      <Appear index={5}><Checklist date={date} /></Appear>
 
       <SleepSheet
         visible={morningPrompt}
@@ -109,5 +117,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill, backgroundColor: colors.surface,
   },
   flameText: { fontSize: 16, fontWeight: '800', color: colors.textSecondary },
+  section: { gap: spacing.lg },
   grid: { flexDirection: 'row', gap: spacing.md },
 });

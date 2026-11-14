@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
 import { PillButton } from '@/components/ui/PillButton';
+import { LoadingScreen } from '@/components/ui/Skeleton';
 import { getPreviousBests, getSession, getSessionSets } from '@/db/repos/sessions';
 import { useDb } from '@/db/useDb';
 import { fmtDec, fmtInt } from '@/services/units';
@@ -23,7 +24,7 @@ export default function WorkoutSummary() {
       prs: findPRs(sets, await getPreviousBests(db, sessionId)),
     };
   }, [sessionId]);
-  if (!data?.session) return <SafeAreaView style={styles.safe} />;
+  if (!data?.session) return <LoadingScreen blocks={[120, 90, 160]} />;
 
   const { session, sets, names, prs } = data;
   const duration = session.ended_at ? (new Date(session.ended_at).getTime() - new Date(session.started_at).getTime()) / 1000 : 0;
@@ -75,7 +76,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.stat}>
       <Text style={type.caption}>{label}</Text>
-      <Text style={type.title}>{value}</Text>
+      <Text style={type.title} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
     </View>
   );
 }

@@ -10,6 +10,7 @@ import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { addTrackerValue, getTrackerSettings, getTrackerValue, updateTrackerSettings } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
 import { formatWater, waterFromDisplay, waterToDisplay, waterUnitLabel, type WaterUnit } from '@/services/units';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing } from '@/theme';
 
 export function WaterCard({ date }: { date: string }) {
@@ -19,7 +20,7 @@ export function WaterCard({ date }: { date: string }) {
   }), [date]);
   const [open, setOpen] = useState<'menu' | 'goal' | 'glass' | null>(null);
 
-  if (!data?.s) return <View style={styles.placeholder} />;
+  if (!data?.s) return <Skeleton height={300} style={styles.placeholder} />;
   const unit = data.s.display_unit as WaterUnit;
   const glass = data.s.unit_size ?? 250;
   const fmt = (ml: number) => formatWater(ml, unit, glass);

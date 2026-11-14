@@ -10,6 +10,7 @@ export interface Settings {
   morningSleepPrompt: boolean;
   lastSleepPrompt: string | null;
   startDate: string;
+  onboarded: boolean;
 }
 
 export async function getSetting<K extends keyof Settings>(db: SQLiteDatabase, key: K): Promise<Settings[K]> {

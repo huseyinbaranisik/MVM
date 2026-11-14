@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: Record<string, unknown> = {
   streakRule: DEFAULT_RULE,
   morningSleepPrompt: true,
   startDate: today(), // streak bu günden itibaren değerlendirilir
+  onboarded: false,
 };
 
 export async function up(db: SQLiteDatabase) {

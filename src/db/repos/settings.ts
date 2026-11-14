@@ -1,12 +1,14 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { DEFAULT_SETTINGS } from '@/db/migrations/002_seed';
+import type { StreakRule } from '@/services/streakService';
 
 export interface Settings {
   profile: { name: string; age: number | null; sex: 'male' | 'female' | null; targetWeightKg: number | null };
   weightUnit: 'kg' | 'lb';
   restSec: { heavy: number; normal: number };
   notifications: { streakReminder: string | null; bedtimeReminder: string | null };
+  streakRule: StreakRule;
   morningSleepPrompt: boolean;
   lastSleepPrompt: string | null;
   startDate: string;

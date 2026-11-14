@@ -38,3 +38,8 @@ export function parseNumber(text: string): number | null {
   const n = Number(text.trim().replace(',', '.'));
   return text.trim() !== '' && Number.isFinite(n) ? n : null;
 }
+
+/** Vücut kitle indeksi: kg / m² */
+export const bmi = (kg: number, cm: number) => kg / (cm / 100) ** 2;
+/** Dünya Sağlık Örgütü yetişkin sınıfları */
+export const bmiLabel = (v: number) => (v < 18.5 ? 'Zayıf' : v < 25 ? 'Normal' : v < 30 ? 'Fazla kilolu' : 'Obez');

@@ -6,6 +6,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Icon } from '@/components/Icon';
+import { StreakSync } from '@/components/StreakSync';
 import { OverlayHost } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
 import { DB_NAME, migrate } from '@/db/migrate';
@@ -45,6 +46,7 @@ export default function RootLayout() {
       <ThemeProvider value={navTheme}>
         <Suspense fallback={<Loading />}>
           <SQLiteProvider databaseName={DB_NAME} onInit={migrate} useSuspense options={{ enableChangeListener: true }}>
+            <StreakSync />
             <Stack screenOptions={{ headerShown: false, animation: 'ios_from_right', contentStyle: { backgroundColor: colors.background } }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="quick-add" options={{ presentation: 'transparentModal', animation: 'none' }} />

@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -13,6 +13,7 @@ import { WaterCard } from '@/components/home/WaterCard';
 import { WorkoutCard } from '@/components/home/WorkoutCard';
 import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
+import { PressableScale } from '@/components/ui/PressableScale';
 import { Appear } from '@/components/ui/Skeleton';
 import { getSetting, setSetting } from '@/db/repos/settings';
 import { getSleep } from '@/db/repos/sleep';
@@ -62,20 +63,23 @@ export default function TodayScreen() {
 
   if (header && !header.onboarded) return <Redirect href="/onboarding" />;
   const name = header?.name ?? '';
+  const streak = header?.streak ?? 0;
   return (
     <Screen>
       <Appear index={0}>
       <View style={styles.header}>
-        <View style={styles.avatar}><Text style={styles.avatarText}>{name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text></View>
+        <PressableScale style={styles.avatar} onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel="Profil">
+          <Text style={styles.avatarText}>{name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text>
+        </PressableScale>
         <View style={styles.flex}>
           <Text style={type.caption}>{formatLongTR(date)}</Text>
           <Text style={type.hero} numberOfLines={1} adjustsFontSizeToFit>Selam{name ? `, ${name}` : ''}!</Text>
         </View>
-        {/* Streak alevi: hesaplama ve animasyon Aşama 5'te */}
-        <View style={styles.flame} accessibilityLabel={`${header?.streak ?? 0} günlük seri`}>
-          <Icon name="local_fire_department" size={24} color={colors.textSecondary} />
-          <Text style={styles.flameText}>{header?.streak ?? 0}</Text>
-        </View>
+        <PressableScale style={styles.flame} onPress={() => router.push('/streak')} accessibilityRole="button"
+          accessibilityLabel={`${streak} günlük seri, ayrıntılar`}>
+          <Icon name="local_fire_department" size={24} color={streak ? colors.primaryLight : colors.textSecondary} />
+          <Text style={[styles.flameText, streak > 0 && styles.flameOn]}>{streak}</Text>
+        </PressableScale>
       </View>
 
       </Appear>
@@ -119,6 +123,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill, backgroundColor: colors.surface,
   },
   flameText: { fontSize: 16, fontWeight: '800', color: colors.textSecondary },
+  flameOn: { color: colors.textPrimary },
   section: { gap: spacing.lg },
   grid: { flexDirection: 'row', gap: spacing.md },
 });

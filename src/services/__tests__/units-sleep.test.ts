@@ -1,5 +1,5 @@
 import { averageBedtime, formatDuration, sleepDuration } from '../sleep';
-import { formatSteps, formatWater, kmToSteps, parseNumber, stepsToKm, strideCm, waterFromDisplay } from '../units';
+import { bmi, bmiLabel, formatSteps, formatWater, kmToSteps, parseNumber, stepsToKm, strideCm, waterFromDisplay } from '../units';
 
 describe('uyku', () => {
   it('gece yarısını geçen uyku', () => {
@@ -41,5 +41,12 @@ describe('birimler', () => {
     expect(parseNumber(' 10 ')).toBe(10);
     expect(parseNumber('')).toBeNull();
     expect(parseNumber('abc')).toBeNull();
+  });
+});
+
+describe('BMI', () => {
+  it('kg/m² hesaplar ve DSÖ sınıfını verir', () => {
+    expect(bmi(80, 180)).toBeCloseTo(24.69, 2);
+    expect([17, 18.5, 24.9, 25, 30].map(bmiLabel)).toEqual(['Zayıf', 'Normal', 'Normal', 'Fazla kilolu', 'Obez']);
   });
 });

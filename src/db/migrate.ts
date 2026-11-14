@@ -3,9 +3,10 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import * as m001 from './migrations/001_schema';
 import * as m002 from './migrations/002_seed';
 import * as m003 from './migrations/003_favorites';
+import * as m004 from './migrations/004_calories';
 
 // Sıra önemli: index + 1 = şema sürümü (PRAGMA user_version). Yeni migration'ı sadece sona ekle.
-const migrations = [m001, m002, m003];
+const migrations = [m001, m002, m003, m004];
 
 export const DB_NAME = 'mvm.db';
 export const SCHEMA_VERSION = migrations.length;

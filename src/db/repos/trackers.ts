@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-export type TrackerType = 'water' | 'steps' | 'sleep';
+export type TrackerType = 'water' | 'steps' | 'sleep' | 'calories';
 
 export interface TrackerSettings {
   type: TrackerType;

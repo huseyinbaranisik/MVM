@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { SegmentedControl } from '@/components/ui/PillButton';
 import { LoadingScreen } from '@/components/ui/Skeleton';
+import { getCalorieHistory } from '@/db/repos/foods';
 import { getSleepRange } from '@/db/repos/sleep';
 import { getLatestMeasurement, getTrackerHistory, getTrackerSettings, type TrackerType } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
@@ -15,12 +16,12 @@ import { formatDuration, type SleepDisplay } from '@/services/sleep';
 import { fmtDec, stepsToKm, strideCm, waterToDisplay, type StepUnit, type WaterUnit } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
 
-const TITLES: Record<TrackerType, string> = { water: 'Su geçmişi', steps: 'Adım geçmişi', sleep: 'Uyku geçmişi' };
-const BAR_COLOR: Record<TrackerType, string> = { water: colors.accent, steps: colors.primaryLight, sleep: colors.primary };
+const TITLES: Record<TrackerType, string> = { water: 'Su geçmişi', steps: 'Adım geçmişi', sleep: 'Uyku geçmişi', calories: 'Kalori geçmişi' };
+const BAR_COLOR: Record<TrackerType, string> = { water: colors.accent, steps: colors.primaryLight, sleep: colors.primary, calories: colors.warning };
 
 export default function TrackerHistory() {
   const { type: t } = useLocalSearchParams<{ type: TrackerType }>();
-  const kind: TrackerType = t === 'steps' || t === 'sleep' ? t : 'water';
+  const kind: TrackerType = t === 'steps' || t === 'sleep' || t === 'calories' ? t : 'water';
   const [days, setDays] = useState<'14' | '30'>('14');
   const { width } = useWindowDimensions();
   const to = today();
@@ -30,6 +31,7 @@ export default function TrackerHistory() {
     const s = await getTrackerSettings(db, kind);
     const raw = kind === 'sleep'
       ? (await getSleepRange(db, from, to)).map((l) => ({ date: l.date, value: l.duration_min }))
+      : kind === 'calories' ? await getCalorieHistory(db, from, to)
       : await getTrackerHistory(db, kind, from, to);
     return { s, raw, height: await getLatestMeasurement(db, 'height') };
   }, [kind, from, to]);
@@ -40,10 +42,13 @@ export default function TrackerHistory() {
   const conv = (v: number) => {
     if (kind === 'water') return waterToDisplay(v, s.display_unit as WaterUnit, s.unit_size ?? 250);
     if (kind === 'steps') return (s.display_unit as StepUnit) === 'km' ? stepsToKm(v, strideCm(s.unit_size, data.height)) : v;
+    if (kind === 'calories') return v;
     return v / 60; // uyku: saat
   };
   const unitLabel = kind === 'water' ? (s.display_unit === 'glass' ? 'bardak' : 'L')
-    : kind === 'steps' ? (s.display_unit === 'km' ? 'km' : 'adım') : 'saat';
+    : kind === 'steps' ? (s.display_unit === 'km' ? 'km' : 'adım') : kind === 'calories' ? 'kcal' : 'saat';
+  // kaloride hedef bir üst sınır: kayıtlı ve hedefi aşmayan gün başarılı
+  const met = (v: number) => (kind === 'calories' ? v > 0 && v <= s.goal : v >= s.goal);
 
   const n = Number(days);
   const byDate = new Map(data.raw.map((r) => [r.date, r.value]));
@@ -53,13 +58,13 @@ export default function TrackerHistory() {
     return {
       value: v,
       label: i % (n > 14 ? 5 : 2) === 0 ? String(Number(d.slice(8))) : '',
-      frontColor: (byDate.get(d) ?? 0) >= s.goal ? BAR_COLOR[kind] : colors.accentMuted,
+      frontColor: met(byDate.get(d) ?? 0) ? BAR_COLOR[kind] : colors.accentMuted,
     };
   });
   const goal = conv(s.goal);
   const logged = data.raw.filter((r) => r.value > 0);
   const avg = logged.length ? logged.reduce((a, r) => a + r.value, 0) / logged.length : 0;
-  const hit = logged.filter((r) => r.value >= s.goal).length;
+  const hit = logged.filter((r) => met(r.value)).length;
 
   const chartW = width - spacing.lg * 2 - spacing.lg * 2 - 40;
   const spacingPx = 4;

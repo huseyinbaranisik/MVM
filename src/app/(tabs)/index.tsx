@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { DaySelector } from '@/components/DaySelector';
+import { CalorieCard } from '@/components/home/CalorieCard';
 import { Checklist } from '@/components/home/Checklist';
 import { SleepCard } from '@/components/home/SleepCard';
 import { SleepSheet } from '@/components/home/SleepSheet';
@@ -88,9 +89,10 @@ export default function TodayScreen() {
         <StepsCard date={date} />
       </View>
       </Appear>
-      <Appear index={4}><SleepCard date={date} /></Appear>
+      <Appear index={4}><CalorieCard date={date} /></Appear>
+      <Appear index={5}><SleepCard date={date} /></Appear>
 
-      <Appear index={5}><Checklist date={date} /></Appear>
+      <Appear index={6}><Checklist date={date} /></Appear>
 
       <SleepSheet
         visible={morningPrompt}

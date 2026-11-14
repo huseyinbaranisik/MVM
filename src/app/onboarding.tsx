@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
+import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { PillButton } from '@/components/ui/PillButton';
 import { Appear } from '@/components/ui/Skeleton';
 import { getSetting, setSetting } from '@/db/repos/settings';
@@ -12,8 +13,9 @@ import { getTrackerSettings, updateTrackerSettings } from '@/db/repos/trackers';
 import { fmtInt } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
 
-const GLASSES = [6, 8, 10, 12];
-const STEPS = [6000, 8000, 10000, 12000];
+// 3 hazır seçenek + "Özel" (klavyeden giriş)
+const GLASSES = [6, 8, 10];
+const STEPS = [6000, 8000, 10000];
 type IconName = Parameters<typeof Icon>[0]['name'];
 const TIPS: { icon: IconName; text: string }[] = [
   { icon: 'calendar_month', text: 'Haftalık programın hazır; Program sekmesinden değiştirebilirsin.' },
@@ -28,6 +30,9 @@ export default function Onboarding() {
   const [name, setName] = useState('');
   const [glasses, setGlasses] = useState(10);
   const [steps, setSteps] = useState(10000);
+  const [custom, setCustom] = useState<'water' | 'steps' | null>(null);
+  const customGlasses = !GLASSES.includes(glasses);
+  const customSteps = !STEPS.includes(steps);
 
   const finish = async (save: boolean) => {
     if (save) {
@@ -63,10 +68,14 @@ export default function Onboarding() {
             <Text style={type.subtitle}>Su</Text>
             <View style={styles.choices}>
               {GLASSES.map((g) => <PillButton key={g} label={`${g} bardak`} active={glasses === g} onPress={() => setGlasses(g)} style={styles.choice} />)}
+              <PillButton label={customGlasses ? `${glasses} bardak` : 'Özel'} active={customGlasses} onPress={() => setCustom('water')} style={styles.choice}
+                accessibilityLabel="Özel su hedefi gir" />
             </View>
             <Text style={type.subtitle}>Adım</Text>
             <View style={styles.choices}>
               {STEPS.map((s) => <PillButton key={s} label={fmtInt(s)} active={steps === s} onPress={() => setSteps(s)} style={styles.choice} />)}
+              <PillButton label={customSteps ? fmtInt(steps) : 'Özel'} active={customSteps} onPress={() => setCustom('steps')} style={styles.choice}
+                accessibilityLabel="Özel adım hedefi gir" />
             </View>
           </>
         ) : (
@@ -84,6 +93,11 @@ export default function Onboarding() {
 
       <PillButton label={step < 2 ? 'Devam' : 'Başla'} variant="primary" style={styles.cta}
         onPress={() => (step < 2 ? setStep(step + 1) : finish(true))} />
+
+      <NumberPrompt visible={custom === 'water'} onClose={() => setCustom(null)} title="Günlük su hedefi" suffix="bardak"
+        initial={glasses} onSubmit={(v) => setGlasses(Math.max(1, Math.round(v)))} />
+      <NumberPrompt visible={custom === 'steps'} onClose={() => setCustom(null)} title="Günlük adım hedefi" suffix="adım"
+        initial={steps} min={99} onSubmit={(v) => setSteps(Math.round(v))} />
     </SafeAreaView>
   );
 }

@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
@@ -15,6 +14,7 @@ import { LoadingScreen } from '@/components/ui/Skeleton';
 import { deleteMeasurement, getMeasurements, saveMeasurement } from '@/db/repos/measurements';
 import { getSetting, setSetting, type Settings } from '@/db/repos/settings';
 import { getBadges, getStreakState } from '@/db/repos/streak';
+import { supabase } from '@/db/supabase';
 import { useDb } from '@/db/useDb';
 import { today } from '@/services/dates';
 import { MILESTONES } from '@/services/streakService';
@@ -24,20 +24,21 @@ import { colors, radius, spacing, type } from '@/theme';
 type Prompt = 'weight' | 'height' | 'age' | 'target' | null;
 
 export default function ProfileScreen() {
-  const db = useSQLiteContext();
   const { width } = useWindowDimensions();
-  const data = useDb(async (db) => ({
-    profile: await getSetting(db, 'profile'),
-    weights: await getMeasurements(db, 'weight'),
-    heights: await getMeasurements(db, 'height'),
-    streak: await getStreakState(db),
-    badges: await getBadges(db),
+  const data = useDb(async () => ({
+    profile: await getSetting('profile'),
+    weights: await getMeasurements('weight'),
+    heights: await getMeasurements('height'),
+    streak: await getStreakState(),
+    badges: await getBadges(),
+    email: (await supabase.auth.getSession()).data.session?.user.email ?? '',
   }), [], ['settings', 'body_measurements', 'streak_state', 'badges']);
   const [prompt, setPrompt] = useState<Prompt>(null);
   const [name, setName] = useState<string | null>(null); // null = düzenlenmiyor, kayıtlı adı göster
 
   if (!data) return <LoadingScreen blocks={[80, 120, 220, 120]} />;
   const p = data.profile;
+  const email = data.email;
   const weight = data.weights.at(-1)?.value ?? null;
   const height = data.heights.at(-1)?.value ?? null;
   const firstWeight = data.weights[0]?.value ?? null;
@@ -47,13 +48,18 @@ export default function ProfileScreen() {
   const offset = recent.length ? Math.floor(Math.min(...recent.map((w) => w.value), p.targetWeightKg ?? Infinity) - 2) : 0;
   const earned = new Set(data.badges.map((b) => b.milestone));
   const close = () => setPrompt(null);
-  const saveProfile = (patch: Partial<Settings['profile']>) => setSetting(db, 'profile', { ...p, ...patch });
+  const signOut = async () => {
+    if (await confirm({ title: 'Çıkış yapılsın mı?', message: 'Verilerin hesabında kalır; tekrar giriş yapınca geri gelir.', confirmLabel: 'Çıkış yap' })) {
+      await supabase.auth.signOut();
+    }
+  };
+  const saveProfile = (patch: Partial<Settings['profile']>) => setSetting('profile', { ...p, ...patch });
   const saveName = () => {
     if (name != null && name.trim()) saveProfile({ name: name.trim() });
     setName(null);
   };
   const removeWeight = async (id: number, label: string) => {
-    if (await confirm({ title: 'Kayıt silinsin mi?', message: label, confirmLabel: 'Sil', destructive: true })) await deleteMeasurement(db, id);
+    if (await confirm({ title: 'Kayıt silinsin mi?', message: label, confirmLabel: 'Sil', destructive: true })) await deleteMeasurement(id);
   };
 
   return (
@@ -143,12 +149,14 @@ export default function ProfileScreen() {
             ))}
           </View>
         </View>
+
+        <SheetRow label="Çıkış yap" value={email} onPress={signOut} />
       </ScrollView>
 
       <NumberPrompt visible={prompt === 'weight'} onClose={close} title="Bugünkü kilo" suffix="kg" initial={weight ?? undefined} min={20}
-        onSubmit={(v) => saveMeasurement(db, 'weight', Math.round(v * 10) / 10, today())} />
+        onSubmit={(v) => saveMeasurement('weight', Math.round(v * 10) / 10, today())} />
       <NumberPrompt visible={prompt === 'height'} onClose={close} title="Boy" suffix="cm" initial={height ?? undefined} min={80}
-        onSubmit={(v) => saveMeasurement(db, 'height', Math.round(v), today())} />
+        onSubmit={(v) => saveMeasurement('height', Math.round(v), today())} />
       <NumberPrompt visible={prompt === 'age'} onClose={close} title="Yaş" initial={p.age ?? undefined} min={5}
         onSubmit={(v) => saveProfile({ age: Math.round(v) })} />
       <NumberPrompt visible={prompt === 'target'} onClose={close} title="Hedef kilo" suffix="kg" initial={p.targetWeightKg ?? undefined} min={20}

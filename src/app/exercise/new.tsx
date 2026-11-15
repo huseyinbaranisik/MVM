@@ -2,7 +2,6 @@ import { File, Paths } from 'expo-file-system';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -16,7 +15,6 @@ import { colors, radius, spacing, type } from '@/theme';
 type Role = 'primary' | 'secondary';
 
 export default function NewExercise() {
-  const db = useSQLiteContext();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [equipment, setEquipment] = useState('dumbbell');
@@ -47,7 +45,7 @@ export default function NewExercise() {
     const primary = Object.keys(roles).filter((k) => roles[k] === 'primary');
     if (!name.trim()) return setError('Hareket adı gerekli.');
     if (!primary.length) return setError('En az bir birincil kas seç.');
-    const id = await createUserExercise(db, {
+    const id = await createUserExercise({
       name: name.trim(), description: description.trim(), equipment, mode, photoUri: photo,
       primary, secondary: Object.keys(roles).filter((k) => roles[k] === 'secondary'),
     });

@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -14,9 +13,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing } from '@/theme';
 
 export function WaterCard({ date }: { date: string }) {
-  const db = useSQLiteContext();
-  const data = useDb(async (db) => ({
-    date, ml: await getTrackerValue(db, 'water', date), s: await getTrackerSettings(db, 'water'),
+  const data = useDb(async () => ({
+    date, ml: await getTrackerValue('water', date), s: await getTrackerSettings('water'),
   }), [date], ['daily_trackers', 'tracker_settings']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'glass' | null>(null);
 
@@ -38,8 +36,8 @@ export function WaterCard({ date }: { date: string }) {
         footer={
           <Counter
             minusLabel="Bir bardak çıkar" plusLabel="Bir bardak ekle"
-            onMinus={() => addTrackerValue(db, 'water', date, -glass)}
-            onPlus={() => addTrackerValue(db, 'water', date, glass)}
+            onMinus={() => addTrackerValue('water', date, -glass)}
+            onPlus={() => addTrackerValue('water', date, glass)}
           />
         }
       />
@@ -49,7 +47,7 @@ export function WaterCard({ date }: { date: string }) {
           <SegmentedControl<WaterUnit>
             options={[{ value: 'glass', label: 'Bardak' }, { value: 'liter', label: 'Litre' }]}
             value={unit}
-            onChange={(v) => updateTrackerSettings(db, 'water', { display_unit: v })}
+            onChange={(v) => updateTrackerSettings('water', { display_unit: v })}
           />
         </View>
         <SheetRow label="Bardak hacmi" value={`${glass} ml`} onPress={() => setOpen('glass')} />
@@ -58,11 +56,11 @@ export function WaterCard({ date }: { date: string }) {
       <NumberPrompt
         visible={open === 'goal'} onClose={close} title="Günlük su hedefi" suffix={waterUnitLabel(unit)}
         initial={Number(waterToDisplay(data.s.goal, unit, glass).toFixed(2))}
-        onSubmit={(v) => updateTrackerSettings(db, 'water', { goal: Math.round(waterFromDisplay(v, unit, glass)) })}
+        onSubmit={(v) => updateTrackerSettings('water', { goal: Math.round(waterFromDisplay(v, unit, glass)) })}
       />
       <NumberPrompt
         visible={open === 'glass'} onClose={close} title="Bardak hacmi" suffix="ml" initial={glass} min={49}
-        onSubmit={(v) => updateTrackerSettings(db, 'water', { unit_size: Math.round(v) })}
+        onSubmit={(v) => updateTrackerSettings('water', { unit_size: Math.round(v) })}
       />
     </>
   );

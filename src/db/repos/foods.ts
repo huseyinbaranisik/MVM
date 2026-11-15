@@ -1,39 +1,53 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
+import { seedFoods } from '@/data/foods';
+import { notify } from '@/db/bus';
+import { must, supabase } from '@/db/supabase';
 
-export interface Food { id: number; name: string; kcal: number; protein: number; fat: number; carbs: number; source: 'seed' | 'user' }
+/** id: hazır yiyecekler "s<sıra>", kullanıcının eklediği "u<id>" */
+export interface Food { id: string; name: string; kcal: number; protein: number; fat: number; carbs: number; source: 'seed' | 'user' }
 /** Öğün kaydı; kalori ve makrolar gram üzerinden hesaplanmış halde. */
 export interface FoodLog { id: number; name: string; grams: number; kcal: number; protein: number; fat: number; carbs: number }
 
-/** Kullanıcının eklediği yiyecekler önce. Arama JS'te yapılır (SQLite LIKE Türkçe harflerde büyük/küçük ayırt eder). */
-export function getFoods(db: SQLiteDatabase) {
-  return db.getAllAsync<Food>("SELECT * FROM foods ORDER BY source = 'user' DESC, name");
+const BUILT_IN: Food[] = seedFoods.map(([name, kcal, protein, fat, carbs], i) => ({ id: `s${i}`, name, kcal, protein, fat, carbs, source: 'seed' }));
+
+/** Kullanıcının eklediği yiyecekler önce. Arama ekranda yapılır (Türkçe harf duyarlı). */
+export async function getFoods(): Promise<Food[]> {
+  const own = must(await supabase.from('user_foods').select('id, name, kcal, protein, fat, carbs').order('name'));
+  return [...own.map((f) => ({ ...f, id: `u${f.id}`, source: 'user' as const })), ...[...BUILT_IN].sort((a, b) => a.name.localeCompare(b.name, 'tr'))];
 }
 
-export async function addFood(db: SQLiteDatabase, f: Omit<Food, 'id' | 'source'>) {
-  const r = await db.runAsync("INSERT INTO foods (name, kcal, protein, fat, carbs, source) VALUES (?, ?, ?, ?, ?, 'user')",
-    f.name, f.kcal, f.protein, f.fat, f.carbs);
-  return r.lastInsertRowId;
+export async function addFood(f: Omit<Food, 'id' | 'source'>): Promise<Food> {
+  const r = must(await supabase.from('user_foods').insert(f).select('id').single());
+  notify('user_foods');
+  return { ...f, id: `u${r.id}`, source: 'user' };
 }
 
-export async function logFood(db: SQLiteDatabase, date: string, foodId: number, grams: number) {
-  await db.runAsync('INSERT INTO food_logs (date, food_id, grams, logged_at) VALUES (?, ?, ?, ?)',
-    date, foodId, grams, new Date().toISOString());
+/** Değerler kayda kopyalanır; yiyecek sonradan değişse de geçmiş doğru kalır. */
+export async function logFood(date: string, food: Pick<Food, 'name' | 'kcal' | 'protein' | 'fat' | 'carbs'>, grams: number) {
+  must(await supabase.from('food_logs').insert({
+    date, name: food.name, grams, kcal_100: food.kcal, protein_100: food.protein, fat_100: food.fat, carbs_100: food.carbs,
+  }));
+  notify('food_logs');
 }
 
-export async function deleteFoodLog(db: SQLiteDatabase, id: number) {
-  await db.runAsync('DELETE FROM food_logs WHERE id = ?', id);
+export async function deleteFoodLog(id: number) {
+  must(await supabase.from('food_logs').delete().eq('id', id));
+  notify('food_logs');
 }
 
-export function getFoodLogs(db: SQLiteDatabase, date: string) {
-  return db.getAllAsync<FoodLog>(
-    `SELECT l.id, f.name, l.grams, l.grams * f.kcal / 100 AS kcal, l.grams * f.protein / 100 AS protein,
-            l.grams * f.fat / 100 AS fat, l.grams * f.carbs / 100 AS carbs
-     FROM food_logs l JOIN foods f ON f.id = l.food_id WHERE l.date = ? ORDER BY l.id`, date);
+type LogRow = { id: number; date: string; name: string; grams: number; kcal_100: number; protein_100: number; fat_100: number; carbs_100: number };
+const toLog = (l: LogRow): FoodLog => ({
+  id: l.id, name: l.name, grams: l.grams, kcal: (l.grams * l.kcal_100) / 100, protein: (l.grams * l.protein_100) / 100,
+  fat: (l.grams * l.fat_100) / 100, carbs: (l.grams * l.carbs_100) / 100,
+});
+
+export async function getFoodLogs(date: string): Promise<FoodLog[]> {
+  return must(await supabase.from('food_logs').select('*').eq('date', date).order('id')).map((l) => toLog(l as LogRow));
 }
 
 /** Günlük toplam kalori; getTrackerHistory ile aynı biçim. */
-export function getCalorieHistory(db: SQLiteDatabase, from: string, to: string) {
-  return db.getAllAsync<{ date: string; value: number }>(
-    `SELECT l.date, SUM(l.grams * f.kcal / 100) AS value FROM food_logs l JOIN foods f ON f.id = l.food_id
-     WHERE l.date BETWEEN ? AND ? GROUP BY l.date ORDER BY l.date`, from, to);
+export async function getCalorieHistory(from: string, to: string) {
+  const rows = must(await supabase.from('food_logs').select('*').gte('date', from).lte('date', to)) as LogRow[];
+  const byDate = new Map<string, number>();
+  for (const l of rows) byDate.set(l.date, (byDate.get(l.date) ?? 0) + toLog(l).kcal);
+  return [...byDate].sort(([a], [b]) => a.localeCompare(b)).map(([date, value]) => ({ date, value }));
 }

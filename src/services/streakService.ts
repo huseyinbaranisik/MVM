@@ -1,4 +1,4 @@
-import { addDays, diffDays, type DateStr } from './dates';
+import { addDays, diffDays, weekday, type DateStr } from './dates';
 
 // Streak hesabının tek kaynağı. Saf fonksiyon: DB'ye dokunmaz, her seferinde tüm geçmişten yeniden hesaplar
 // (yılda 365 gün, ucuz) — böylece kural değişince geçmiş tutarlı şekilde yeniden değerlendirilir.
@@ -98,4 +98,36 @@ export function computeStreak(
     todayCompleted,
     milestones: MILESTONES.filter((m) => longest >= m),
   };
+}
+
+/** Veritabanından okunan ham veriden günlük girdiler (evaluateStreak için). */
+export function buildDayInputs(from: DateStr, to: DateStr, d: {
+  workoutWeekdays: ReadonlySet<number>;
+  doneDates: ReadonlySet<string>;
+  steps: ReadonlyMap<string, number>;
+  stepGoal: number;
+  habits: { id: number; weekdays: number; archived_at: string | null }[];
+  /** `${habit_id}|${date}` */
+  logs: ReadonlySet<string>;
+}): DayInput[] {
+  const out: DayInput[] = [];
+  for (let date = from; diffDays(to, date) >= 0; date = addDays(date, 1)) {
+    const wd = weekday(date);
+    const visible = d.habits.filter((h) => (h.weekdays & (1 << wd)) !== 0 && (h.archived_at == null || date < h.archived_at.slice(0, 10)));
+    const checked = visible.filter((h) => d.logs.has(`${h.id}|${date}`)).length;
+    out.push({
+      date,
+      kind: d.workoutWeekdays.has(wd) ? 'workout' : 'rest',
+      workoutDone: d.doneDates.has(date),
+      stepGoalMet: (d.steps.get(date) ?? 0) >= d.stepGoal,
+      checklistRatio: visible.length ? checked / visible.length : 0,
+    });
+  }
+  return out;
+}
+
+/** Önceki ve yeni gün durumları arasındaki fark: sadece değişenler yazılır. */
+export function diffStreakDays(prev: ReadonlyMap<string, StreakStatus>, next: { date: string; status: StreakStatus }[]) {
+  const nextDates = new Set(next.map((d) => d.date));
+  return { changed: next.filter((d) => prev.get(d.date) !== d.status), removed: [...prev.keys()].filter((d) => !nextDates.has(d)) };
 }

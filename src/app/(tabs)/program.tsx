@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -15,8 +14,7 @@ import { today, weekday, WEEKDAYS_SHORT_TR, WEEKDAYS_TR } from '@/services/dates
 import { colors, radius, spacing, type } from '@/theme';
 
 export default function ProgramScreen() {
-  const db = useSQLiteContext();
-  const data = useDb(async (db) => ({ week: await getWeekPlan(db), templates: await getTemplates(db) }), [], ['day_schedule', 'workout_templates', 'template_exercises']);
+  const data = useDb(async () => ({ week: await getWeekPlan(), templates: await getTemplates() }), [], ['day_schedule', 'workout_templates', 'template_exercises']);
   const [assigning, setAssigning] = useState<DayPlan | null>(null);
   const todayWd = weekday(today());
   // React Compiler closure bağımlılıklarını render sırasında okur: null olabilen state'ten alanları burada güvenle çıkar
@@ -24,8 +22,8 @@ export default function ProgramScreen() {
   const dayTemplateId = assigning?.kind === 'workout' ? assigning.templateId : null;
 
   const newTemplate = async (assignTo?: number) => {
-    const id = await createTemplate(db, 'Yeni antrenman');
-    if (assignTo != null) await setDaySchedule(db, assignTo, 'workout', id);
+    const id = await createTemplate('Yeni antrenman');
+    if (assignTo != null) await setDaySchedule(assignTo, 'workout', id);
     setAssigning(null);
     router.push(`/template/${id}`);
   };
@@ -70,12 +68,12 @@ export default function ProgramScreen() {
       <Sheet visible={!!assigning} onClose={() => setAssigning(null)} title={assigning ? WEEKDAYS_TR[assigning.weekday] : ''}>
         {data?.templates.map((t) => (
           <SheetRow key={t.id} label={t.name} value={assigning?.templateId === t.id ? '✓' : `${t.exerciseCount} hareket`}
-            onPress={async () => { await setDaySchedule(db, day, 'workout', t.id); setAssigning(null); }} />
+            onPress={async () => { await setDaySchedule(day, 'workout', t.id); setAssigning(null); }} />
         ))}
         <SheetRow label="Yürüyüş günü" value={assigning?.kind === 'walk' ? '✓' : ''}
-          onPress={async () => { await setDaySchedule(db, day, 'walk', null); setAssigning(null); }} />
+          onPress={async () => { await setDaySchedule(day, 'walk', null); setAssigning(null); }} />
         <SheetRow label="Dinlenme günü" value={assigning?.kind === 'rest' ? '✓' : ''}
-          onPress={async () => { await setDaySchedule(db, day, 'rest', null); setAssigning(null); }} />
+          onPress={async () => { await setDaySchedule(day, 'rest', null); setAssigning(null); }} />
         <SheetRow label="+ Yeni şablon oluştur ve ata" onPress={() => newTemplate(day)} />
         {dayTemplateId ? (
           <SheetRow label="Bu günün şablonunu düzenle" onPress={() => { setAssigning(null); router.push(`/template/${dayTemplateId}`); }} />

@@ -1,4 +1,5 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
+import { notify } from '@/db/bus';
+import { maybe, must, supabase } from '@/db/supabase';
 
 export type TrackerType = 'water' | 'steps' | 'sleep' | 'calories';
 
@@ -10,40 +11,33 @@ export interface TrackerSettings {
   unit_size: number | null;
 }
 
-export async function getTrackerValue(db: SQLiteDatabase, type: TrackerType, date: string) {
-  const r = await db.getFirstAsync<{ value: number }>('SELECT value FROM daily_trackers WHERE type = ? AND date = ?', type, date);
+export async function getTrackerValue(type: TrackerType, date: string) {
+  const r = maybe(await supabase.from('daily_trackers').select('value').eq('type', type).eq('date', date).maybeSingle());
   return r?.value ?? 0;
 }
 
-/** Değere delta ekler; sonuç 0'ın altına inmez. */
-export async function addTrackerValue(db: SQLiteDatabase, type: TrackerType, date: string, delta: number) {
-  await db.runAsync(
-    `INSERT INTO daily_trackers (type, date, value) VALUES (?, ?, max(0, ?))
-     ON CONFLICT(type, date) DO UPDATE SET value = max(0, value + ?)`,
-    type, date, delta, delta);
+/** Değere delta ekler; sonuç 0'ın altına inmez (sunucuda atomik). */
+export async function addTrackerValue(type: TrackerType, date: string, delta: number) {
+  must(await supabase.rpc('add_tracker_value', { p_type: type, p_date: date, p_delta: delta }));
+  notify('daily_trackers');
 }
 
-export function getTrackerSettings(db: SQLiteDatabase, type: TrackerType) {
-  return db.getFirstAsync<TrackerSettings>('SELECT * FROM tracker_settings WHERE type = ?', type);
+export async function getTrackerSettings(type: TrackerType): Promise<TrackerSettings | null> {
+  return maybe(await supabase.from('tracker_settings').select('type, goal, display_unit, unit_size').eq('type', type).maybeSingle());
 }
 
-export async function updateTrackerSettings(
-  db: SQLiteDatabase, type: TrackerType, patch: Partial<Omit<TrackerSettings, 'type'>>,
-) {
-  const keys = Object.keys(patch) as (keyof typeof patch)[];
-  if (!keys.length) return;
-  await db.runAsync(
-    `UPDATE tracker_settings SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE type = ?`,
-    ...keys.map((k) => patch[k] ?? null), type);
+export async function updateTrackerSettings(type: TrackerType, patch: Partial<Omit<TrackerSettings, 'type'>>) {
+  if (!Object.keys(patch).length) return;
+  must(await supabase.from('tracker_settings').update(patch).eq('type', type));
+  notify('tracker_settings');
 }
 
-export function getTrackerHistory(db: SQLiteDatabase, type: TrackerType, from: string, to: string) {
-  return db.getAllAsync<{ date: string; value: number }>(
-    'SELECT date, value FROM daily_trackers WHERE type = ? AND date BETWEEN ? AND ? ORDER BY date', type, from, to);
+export async function getTrackerHistory(type: TrackerType, from: string, to: string): Promise<{ date: string; value: number }[]> {
+  return must(await supabase.from('daily_trackers').select('date, value').eq('type', type).gte('date', from).lte('date', to).order('date'));
 }
 
-export async function getLatestMeasurement(db: SQLiteDatabase, type: string) {
-  const r = await db.getFirstAsync<{ value: number }>(
-    'SELECT value FROM body_measurements WHERE type = ? ORDER BY date DESC, id DESC LIMIT 1', type);
+export async function getLatestMeasurement(type: string): Promise<number | null> {
+  const r = maybe(await supabase.from('body_measurements').select('value').eq('type', type)
+    .order('date', { ascending: false }).order('id', { ascending: false }).limit(1).maybeSingle());
   return r?.value ?? null;
 }

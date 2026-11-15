@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -22,15 +21,14 @@ import { colors, radius, spacing, type } from '@/theme';
 const BEDTIME_ID = 'bedtime-reminder';
 
 export function SleepCard({ date }: { date: string }) {
-  const db = useSQLiteContext();
-  const data = useDb(async (db) => {
-    const week = await getSleepRange(db, addDays(date, -6), date);
+  const data = useDb(async () => {
+    const week = await getSleepRange(addDays(date, -6), date);
     return {
       date,
       week,
       log: week.find((l) => l.date === date) ?? null,
-      s: await getTrackerSettings(db, 'sleep'),
-      notif: await getSetting(db, 'notifications'),
+      s: await getTrackerSettings('sleep'),
+      notif: await getSetting('notifications'),
     };
   }, [date], ['sleep_logs', 'tracker_settings', 'settings']);
   const [open, setOpen] = useState<'entry' | 'menu' | 'goal' | null>(null);
@@ -59,7 +57,7 @@ export function SleepCard({ date }: { date: string }) {
       return;
     }
     if (!ok) { setNotice('Bildirim izni verilmedi.'); return; }
-    await setSetting(db, 'notifications', { ...data.notif, bedtimeReminder: t });
+    await setSetting('notifications', { ...data.notif, bedtimeReminder: t });
     setNotice('');
   };
 
@@ -106,14 +104,14 @@ export function SleepCard({ date }: { date: string }) {
           <SegmentedControl<SleepDisplay>
             options={[{ value: 'hm', label: 'Saat:dakika' }, { value: 'decimal', label: 'Ondalık saat' }]}
             value={display}
-            onChange={(v) => updateTrackerSettings(db, 'sleep', { display_unit: v })}
+            onChange={(v) => updateTrackerSettings('sleep', { display_unit: v })}
           />
         </View>
         <SheetRow label="Yatma saati hatırlatıcısı" value={data.notif.bedtimeReminder ?? 'Kapalı'} onPress={setReminder} />
         {data.notif.bedtimeReminder ? (
           <SheetRow label="Hatırlatıcıyı kapat" onPress={async () => {
             await cancelReminder(BEDTIME_ID);
-            await setSetting(db, 'notifications', { ...data.notif, bedtimeReminder: null });
+            await setSetting('notifications', { ...data.notif, bedtimeReminder: null });
           }} />
         ) : null}
         {notice ? <Text style={[type.caption, { color: colors.warning }]}>{notice}</Text> : null}
@@ -121,7 +119,7 @@ export function SleepCard({ date }: { date: string }) {
       </Sheet>
       <NumberPrompt
         visible={open === 'goal'} onClose={close} title="Uyku hedefi" suffix="saat" initial={goal / 60} min={1}
-        onSubmit={(v) => updateTrackerSettings(db, 'sleep', { goal: Math.round(v * 60) })}
+        onSubmit={(v) => updateTrackerSettings('sleep', { goal: Math.round(v * 60) })}
       />
     </>
   );

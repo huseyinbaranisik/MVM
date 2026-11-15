@@ -18,7 +18,7 @@ export default function ExerciseDetailScreen() {
   const { id: raw } = useLocalSearchParams<{ id: string }>();
   const id = decodeURIComponent(raw);
   const { width } = useWindowDimensions();
-  const data = useDb(async (db) => ({ e: await getExercise(db, id), history: await getExerciseHistory(db, id) }), [id], ['exercises', 'exercise_muscles', 'session_sets', 'workout_sessions']);
+  const data = useDb(async () => ({ e: await getExercise(id), history: await getExerciseHistory(id) }), [id], ['user_exercises', 'exercise_favorites', 'session_sets', 'workout_sessions']);
   const [frame, setFrame] = useState(0);
   const [adding, setAdding] = useState(false);
 

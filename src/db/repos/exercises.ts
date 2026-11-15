@@ -1,4 +1,9 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
+import { notify, subscribe } from '@/db/bus';
+import { must, supabase } from '@/db/supabase';
+import {
+  builtInExercises, exercisesForMuscles, fromUserRow, musclesOfRegion, regionsOf, sortForLibrary,
+  type CatalogExercise, type UserExerciseRow,
+} from '@/services/catalog';
 
 export interface ExerciseRow {
   id: string;
@@ -8,23 +13,38 @@ export interface ExerciseRow {
   role: 'primary' | 'secondary';
 }
 
-const MUSCLE_QUERY = (where: string) => `
-  SELECT e.id, e.name_tr, e.equipment, e.image_key,
-         CASE MIN(CASE em.role WHEN 'primary' THEN 0 ELSE 1 END) WHEN 0 THEN 'primary' ELSE 'secondary' END AS role
-  FROM exercises e
-  JOIN exercise_muscles em ON em.exercise_id = e.id
-  JOIN muscles m ON m.id = em.muscle_id
-  WHERE ${where}
-  GROUP BY e.id
-  ORDER BY role, e.is_favorite DESC, e.name_tr`;
+type Catalog = Awaited<ReturnType<typeof loadCatalog>>;
+let cached: Promise<Catalog> | null = null;
+// her ekran ve mini harita kataloğu okur: kullanıcı hareketi/favori değişene kadar tek istek yeter
+subscribe((t) => { if (t.has('*') || t.has('user_exercises') || t.has('exercise_favorites')) cached = null; });
 
-/** Bölgedeki tüm parçaların hareketleri, tekrarsız; herhangi bir parçada birincilse birincil sayılır. */
-export function getExercisesByRegion(db: SQLiteDatabase, regionId: string) {
-  return db.getAllAsync<ExerciseRow>(MUSCLE_QUERY('m.region_id = ?'), regionId);
+/** Hazır katalog + kullanıcının hareketleri + favoriler. */
+export function getCatalog(): Promise<Catalog> {
+  cached ??= loadCatalog().catch((e) => { cached = null; throw e; });
+  return cached;
 }
 
-export function getExercisesByMuscle(db: SQLiteDatabase, muscleId: string) {
-  return db.getAllAsync<ExerciseRow>(MUSCLE_QUERY('m.id = ?'), muscleId);
+async function loadCatalog() {
+  const [users, favs] = await Promise.all([
+    supabase.from('user_exercises').select('id, name_tr, equipment, mode, description, photo_uri, primary_muscles, secondary_muscles'),
+    supabase.from('exercise_favorites').select('exercise_id'),
+  ]);
+  const list = [...builtInExercises(), ...must(users).map((u) => fromUserRow(u as UserExerciseRow))];
+  return { list, byId: new Map(list.map((e) => [e.id, e])), favorites: new Set(must(favs).map((f) => f.exercise_id as string)) };
+}
+
+const toRows = (r: ReturnType<typeof exercisesForMuscles>): ExerciseRow[] =>
+  r.map(({ e, role }) => ({ id: e.id, name_tr: e.name_tr, equipment: e.equipment, image_key: e.image_key, role }));
+
+/** Bölgedeki tüm parçaların hareketleri, tekrarsız; herhangi bir parçada birincilse birincil sayılır. */
+export async function getExercisesByRegion(regionId: string) {
+  const c = await getCatalog();
+  return toRows(exercisesForMuscles(c.list, musclesOfRegion(regionId), c.favorites));
+}
+
+export async function getExercisesByMuscle(muscleId: string) {
+  const c = await getCatalog();
+  return toRows(exercisesForMuscles(c.list, new Set([muscleId]), c.favorites));
 }
 
 export interface ExerciseListItem {
@@ -40,14 +60,13 @@ export interface ExerciseListItem {
   regions: string;
 }
 
-/** Kütüphanedeki tüm hareketler (filtreleme ekranda yapılır; ~260 kayıt). Favoriler en üstte, sonra seed ve kullanıcı hareketleri. */
-export function getExerciseList(db: SQLiteDatabase) {
-  return db.getAllAsync<ExerciseListItem>(`
-    SELECT e.id, e.name_tr, e.name_en, e.equipment, e.image_key, e.photo_uri, e.source, e.is_favorite,
-           COALESCE((SELECT GROUP_CONCAT(DISTINCT m.region_id) FROM exercise_muscles em JOIN muscles m ON m.id = em.muscle_id
-                     WHERE em.exercise_id = e.id), '') AS regions
-    FROM exercises e
-    ORDER BY e.is_favorite DESC, CASE e.source WHEN 'fedb' THEN 1 ELSE 0 END, e.name_tr`);
+/** Kütüphanedeki tüm hareketler (filtreleme ekranda yapılır). Favoriler en üstte, sonra seed ve kullanıcı hareketleri. */
+export async function getExerciseList(): Promise<ExerciseListItem[]> {
+  const c = await getCatalog();
+  return sortForLibrary(c.list, c.favorites).map((e) => ({
+    id: e.id, name_tr: e.name_tr, name_en: e.name_en, equipment: e.equipment, image_key: e.image_key, photo_uri: e.photo_uri,
+    source: e.source, is_favorite: c.favorites.has(e.id) ? 1 : 0, regions: regionsOf(e).join(','),
+  }));
 }
 
 export interface ExerciseDetail {
@@ -69,50 +88,54 @@ export interface ExerciseDetail {
   secondary: string[];
 }
 
-export async function getExercise(db: SQLiteDatabase, id: string): Promise<ExerciseDetail | null> {
-  const e = await db.getFirstAsync<Record<string, string | null>>('SELECT * FROM exercises WHERE id = ?', id);
+export async function getExercise(id: string): Promise<ExerciseDetail | null> {
+  const c = await getCatalog();
+  const e: CatalogExercise | undefined = c.byId.get(id);
   if (!e) return null;
-  const ms = await db.getAllAsync<{ muscle_id: string; role: string }>('SELECT muscle_id, role FROM exercise_muscles WHERE exercise_id = ?', id);
-  const list = (s: string | null): string[] => (s ? JSON.parse(s) : []);
-  const tr = list(e.instructions_tr);
+  const tr = e.instructions_tr;
   return {
-    id: e.id!, name_tr: e.name_tr!, name_en: e.name_en, equipment: e.equipment!, mode: e.mode as 'reps' | 'time',
-    description: e.description,
-    instructions: tr.length ? tr : list(e.instructions_en),
-    instructionsAreEnglish: !tr.length && list(e.instructions_en).length > 0,
-    mistakes: list(e.mistakes_tr), tips: list(e.tips_tr),
-    image_key: e.image_key, photo_uri: e.photo_uri, source: e.source as ExerciseDetail['source'],
-    is_favorite: Number(e.is_favorite) === 1,
-    primary: ms.filter((m) => m.role === 'primary').map((m) => m.muscle_id),
-    secondary: ms.filter((m) => m.role === 'secondary').map((m) => m.muscle_id),
+    id: e.id, name_tr: e.name_tr, name_en: e.name_en, equipment: e.equipment, mode: e.mode, description: e.description,
+    instructions: tr.length ? tr : e.instructions_en,
+    instructionsAreEnglish: !tr.length && e.instructions_en.length > 0,
+    mistakes: e.mistakes_tr, tips: e.tips_tr,
+    image_key: e.image_key, photo_uri: e.photo_uri, source: e.source, is_favorite: c.favorites.has(e.id),
+    primary: e.primary, secondary: e.secondary,
   };
 }
 
 /** Kullanıcının kendi hareketi. */
-export async function createUserExercise(db: SQLiteDatabase, x: {
+export async function createUserExercise(x: {
   name: string; description: string; equipment: string; mode: 'reps' | 'time'; photoUri: string | null;
   primary: string[]; secondary: string[];
 }) {
   const id = `user_${Date.now()}`;
-  await db.withTransactionAsync(async () => {
-    await db.runAsync(
-      `INSERT INTO exercises (id, name_tr, equipment, mode, description, photo_uri, source) VALUES (?, ?, ?, ?, ?, ?, 'user')`,
-      id, x.name, x.equipment, x.mode, x.description || null, x.photoUri);
-    for (const m of x.primary) await db.runAsync("INSERT INTO exercise_muscles VALUES (?, ?, 'primary')", id, m);
-    for (const m of x.secondary) await db.runAsync("INSERT INTO exercise_muscles VALUES (?, ?, 'secondary')", id, m);
-  });
+  must(await supabase.from('user_exercises').insert({
+    id, name_tr: x.name, equipment: x.equipment, mode: x.mode, description: x.description || null, photo_uri: x.photoUri,
+    primary_muscles: x.primary, secondary_muscles: x.secondary,
+  }));
+  notify('user_exercises');
   return id;
 }
 
 /** Hareketin geçmişi: her bitmiş oturum için en ağır set ve toplam hacim. */
-export function getExerciseHistory(db: SQLiteDatabase, exerciseId: string) {
-  return db.getAllAsync<{ date: string; maxKg: number; volume: number; sets: number }>(`
-    SELECT s.date, MAX(x.weight_kg) AS maxKg, SUM(COALESCE(x.weight_kg, 0) * COALESCE(x.reps, 0)) AS volume, COUNT(*) AS sets
-    FROM session_sets x JOIN workout_sessions s ON s.id = x.session_id
-    WHERE x.exercise_id = ? AND x.completed_at IS NOT NULL AND s.status = 'done'
-    GROUP BY s.id ORDER BY s.date`, exerciseId);
+export async function getExerciseHistory(exerciseId: string) {
+  const rows = must(await supabase.from('session_sets')
+    .select('weight_kg, reps, session_id, workout_sessions!inner(date, status)')
+    .eq('exercise_id', exerciseId).eq('workout_sessions.status', 'done'));
+  const bySession = new Map<number, { date: string; maxKg: number; volume: number; sets: number }>();
+  for (const r of rows) {
+    const s = r.workout_sessions as unknown as { date: string };
+    const h = bySession.get(r.session_id) ?? { date: s.date, maxKg: 0, volume: 0, sets: 0 };
+    h.maxKg = Math.max(h.maxKg, r.weight_kg ?? 0);
+    h.volume += (r.weight_kg ?? 0) * (r.reps ?? 0);
+    h.sets++;
+    bySession.set(r.session_id, h);
+  }
+  return [...bySession.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export async function setFavorite(db: SQLiteDatabase, id: string, favorite: boolean) {
-  await db.runAsync('UPDATE exercises SET is_favorite = ? WHERE id = ?', favorite ? 1 : 0, id);
+export async function setFavorite(id: string, favorite: boolean) {
+  if (favorite) must(await supabase.from('exercise_favorites').upsert({ exercise_id: id }));
+  else must(await supabase.from('exercise_favorites').delete().eq('exercise_id', id));
+  notify('exercise_favorites');
 }

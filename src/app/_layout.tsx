@@ -1,15 +1,18 @@
 import { DarkTheme, Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
-import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { Suspense } from 'react';
+import type { Session } from '@supabase/supabase-js';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Icon } from '@/components/Icon';
+import { SignIn } from '@/components/SignIn';
 import { StreakSync } from '@/components/StreakSync';
 import { OverlayHost } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
-import { DB_NAME, migrate } from '@/db/migrate';
+import { notify } from '@/db/bus';
+import { ensureUserData } from '@/db/repos/bootstrap';
+import { supabase } from '@/db/supabase';
 import '@/services/notifications'; // bildirim gösterim davranışını kaydeder
 import { colors, spacing, type } from '@/theme';
 
@@ -40,12 +43,50 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   );
 }
 
+/** Oturum yoksa giriş ekranı; varsa hesabı ilk kez kurar, sonra uygulamayı gösterir. */
+function AuthGate({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [ready, setReady] = useState<string | null>(null); // kurulumu tamamlanan kullanıcı id'si
+  const [failed, setFailed] = useState(false);
+  const userId = session?.user.id ?? null;
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => { setSession(s); notify('*'); });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    ensureUserData().then(() => { if (alive) { setFailed(false); setReady(userId); } }, (e) => {
+      console.warn('Hesap kurulamadı', e);
+      if (alive) setFailed(true);
+    });
+    return () => { alive = false; };
+  }, [userId, failed]);
+
+  if (session === undefined) return <Loading />;
+  if (!session) return <SignIn />;
+  if (failed) {
+    return (
+      <View style={styles.error}>
+        <Icon name="cloud_off" size={48} color={colors.primaryLight} />
+        <Text style={[type.title, styles.center]}>Sunucuya ulaşılamadı</Text>
+        <Text style={[type.caption, styles.center]}>İnternet bağlantını kontrol edip tekrar dene.</Text>
+        <PillButton label="Tekrar dene" variant="primary" onPress={() => setFailed(false)} />
+      </View>
+    );
+  }
+  if (ready !== userId) return <Loading />;
+  return <>{children}</>;
+}
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <ThemeProvider value={navTheme}>
-        <Suspense fallback={<Loading />}>
-          <SQLiteProvider databaseName={DB_NAME} onInit={migrate} useSuspense options={{ enableChangeListener: true }}>
+        <AuthGate>
             <StreakSync />
             <Stack screenOptions={{ headerShown: false, animation: 'ios_from_right', contentStyle: { backgroundColor: colors.background } }}>
               <Stack.Screen name="(tabs)" />
@@ -53,8 +94,7 @@ export default function RootLayout() {
               <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
               <Stack.Screen name="workout/summary/[sessionId]" options={{ animation: 'fade_from_bottom' }} />
             </Stack>
-          </SQLiteProvider>
-        </Suspense>
+        </AuthGate>
         <OverlayHost />
       </ThemeProvider>
       <StatusBar style="light" />

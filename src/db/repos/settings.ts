@@ -1,7 +1,7 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
-
-import { DEFAULT_SETTINGS } from '@/db/migrations/002_seed';
-import type { StreakRule } from '@/services/streakService';
+import { notify } from '@/db/bus';
+import { maybe, must, supabase } from '@/db/supabase';
+import { today } from '@/services/dates';
+import { DEFAULT_RULE, type StreakRule } from '@/services/streakService';
 
 export interface Settings {
   profile: { name: string; age: number | null; sex: 'male' | 'female' | null; targetWeightKg: number | null };
@@ -15,13 +15,25 @@ export interface Settings {
   onboarded: boolean;
 }
 
-export async function getSetting<K extends keyof Settings>(db: SQLiteDatabase, key: K): Promise<Settings[K]> {
-  const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key = ?', key);
-  return row ? JSON.parse(row.value) : ((DEFAULT_SETTINGS[key] ?? null) as Settings[K]);
+/** Kayıt yoksa kullanılan değerler. startDate ilk girişte (bootstrap) kalıcı yazılır. */
+export const DEFAULT_SETTINGS: Settings = {
+  profile: { name: '', age: null, sex: null, targetWeightKg: null },
+  weightUnit: 'kg',
+  restSec: { heavy: 120, normal: 75 },
+  notifications: { streakReminder: '20:00', bedtimeReminder: null },
+  streakRule: DEFAULT_RULE,
+  morningSleepPrompt: true,
+  lastSleepPrompt: null,
+  startDate: today(),
+  onboarded: false,
+};
+
+export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K]> {
+  const row = maybe(await supabase.from('settings').select('value').eq('key', key).maybeSingle());
+  return row ? (row.value as Settings[K]) : DEFAULT_SETTINGS[key];
 }
 
-export async function setSetting<K extends keyof Settings>(db: SQLiteDatabase, key: K, value: Settings[K]) {
-  await db.runAsync(
-    'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-    key, JSON.stringify(value));
+export async function setSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
+  must(await supabase.from('settings').upsert({ key, value }, { onConflict: 'user_id,key' }));
+  notify('settings');
 }

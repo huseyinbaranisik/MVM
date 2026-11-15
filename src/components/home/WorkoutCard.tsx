@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -16,13 +15,12 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, radius, spacing, type } from '@/theme';
 
 export function WorkoutCard({ date }: { date: string }) {
-  const db = useSQLiteContext();
-  const data = useDb(async (db) => {
-    const plan = await getDayPlan(db, weekday(date));
+  const data = useDb(async () => {
+    const plan = await getDayPlan(weekday(date));
     return {
       plan,
-      progress: await getDayWorkoutProgress(db, date, plan?.templateId ?? null),
-      stepGoal: (await getTrackerSettings(db, 'steps'))?.goal ?? 0,
+      progress: await getDayWorkoutProgress(date, plan?.templateId ?? null),
+      stepGoal: (await getTrackerSettings('steps'))?.goal ?? 0,
     };
   }, [date], ['day_schedule', 'workout_templates', 'template_exercises', 'workout_sessions', 'session_sets', 'tracker_settings']);
   if (!data?.plan) return <Skeleton height={data ? 0 : 220} />;
@@ -63,7 +61,7 @@ export function WorkoutCard({ date }: { date: string }) {
         label={progress.finished ? 'Tamamlandı ✓' : progress.doneSets ? 'Devam et' : 'Başla'}
         variant="primary"
         disabled={progress.finished || date > today()}
-        onPress={async () => { if (templateId) router.push(`/workout/${await startSession(db, templateId, date)}`); }}
+        onPress={async () => { if (templateId) router.push(`/workout/${await startSession(templateId, date)}`); }}
       />
     </View>
   );

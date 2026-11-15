@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 
 import { toast } from '@/components/ui/overlays';
@@ -12,11 +11,10 @@ import { today, weekday } from '@/services/dates';
 
 /** Ortadaki "+": en sık yapılan işlere tek dokunuşla ulaşmak için. */
 export default function QuickAdd() {
-  const db = useSQLiteContext();
   const [open, setOpen] = useState(true);
-  const data = useDb(async (db) => ({
-    plan: await getDayPlan(db, weekday(today())),
-    glass: (await getTrackerSettings(db, 'water'))?.unit_size ?? 250,
+  const data = useDb(async () => ({
+    plan: await getDayPlan(weekday(today())),
+    glass: (await getTrackerSettings('water'))?.unit_size ?? 250,
   }), [], ['day_schedule', 'workout_templates', 'template_exercises', 'tracker_settings']);
   const templateId = data?.plan?.kind === 'workout' ? data.plan.templateId : null;
   const glass = data?.glass ?? 250;
@@ -31,12 +29,12 @@ export default function QuickAdd() {
     <Sheet visible={open} onClose={() => close()} title="Hızlı ekle">
       {templateId ? (
         <SheetRow label={`Antrenmana başla · ${data?.plan?.templateName ?? ''}`} onPress={async () => {
-          const id = await startSession(db, templateId, today());
+          const id = await startSession(templateId, today());
           close(() => router.push(`/workout/${id}`));
         }} />
       ) : null}
       <SheetRow label="1 bardak su ekle" value={`${glass} ml`} onPress={async () => {
-        await addTrackerValue(db, 'water', today(), glass);
+        await addTrackerValue('water', today(), glass);
         close(() => toast('Su eklendi 💧'));
       }} />
       <SheetRow label="Kendi hareketini ekle" onPress={() => close(() => router.push('/exercise/new'))} />

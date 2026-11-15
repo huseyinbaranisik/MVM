@@ -1,29 +1,34 @@
-import { addDatabaseChangeListener, useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 
+import { toast } from '@/components/ui/overlays';
+import { subscribe } from '@/db/bus';
+
 /**
- * Sorguyu çalıştırır ve `tables` içindeki bir tabloya yazıldığında yeniden çalıştırır
- * (SQLiteProvider'da enableChangeListener açık). Aynı anda gelen birçok yazma tek yenilemede birleşir.
+ * Sorguyu çalıştırır ve `tables` içindeki bir tabloya yazıldığında (bus.notify) yeniden çalıştırır.
+ * Aynı anda gelen birçok yazma tek yenilemede birleşir. Yüklenirken undefined.
  * `tables` sorgunun okuduğu tüm tabloları içermeli; eksik tablo = ekran eski veriyi gösterir.
  */
-export function useDb<T>(query: (db: SQLiteDatabase) => Promise<T>, deps: unknown[], tables: readonly string[]): T | undefined {
-  const db = useSQLiteContext();
+export function useDb<T>(query: () => Promise<T>, deps: unknown[], tables: readonly string[]): T | undefined {
   const [data, setData] = useState<T>();
   const key = tables.join(',');
   useEffect(() => {
     let alive = true;
     let queued = false;
     const watched = new Set(key.split(','));
-    const run = () => { query(db).then((r) => { if (alive) setData(r); }); };
+    const run = () => {
+      query().then((r) => { if (alive) setData(r); }, (e) => {
+        console.warn('Sorgu başarısız', e);
+        if (alive) toast('Bağlantı hatası, veriler yüklenemedi.');
+      });
+    };
     run();
-    const sub = addDatabaseChangeListener((e) => {
-      if (queued || !watched.has(e.tableName)) return;
+    const unsub = subscribe((changed) => {
+      if (queued || !(changed.has('*') || [...changed].some((t) => watched.has(t)))) return;
       queued = true;
-      // bir transaction onlarca satır yazabilir: hepsini tek sorguda topla
       setTimeout(() => { queued = false; if (alive) run(); }, 0);
     });
-    return () => { alive = false; sub.remove(); };
+    return () => { alive = false; unsub(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [db, key, ...deps]);
+  }, [key, ...deps]);
   return data;
 }

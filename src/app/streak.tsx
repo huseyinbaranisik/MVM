@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +17,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const DAY_COLOR = { completed: colors.primaryLight, frozen: colors.ice, missed: colors.surface } as const;
 
 export default function StreakScreen() {
-  const db = useSQLiteContext();
   const now = today();
   const [month, setMonth] = useState(now.slice(0, 7)); // 'YYYY-MM'
   const first = `${month}-01`;
@@ -26,10 +24,10 @@ export default function StreakScreen() {
   const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
   const last = `${month}-${pad(daysInMonth)}`;
 
-  const data = useDb(async (db) => ({
-    state: await getStreakState(db),
-    days: await getStreakDays(db, first, last),
-    rule: await getSetting(db, 'streakRule'),
+  const data = useDb(async () => ({
+    state: await getStreakState(),
+    days: await getStreakDays(first, last),
+    rule: await getSetting('streakRule'),
   }), [first, last], ['streak_state', 'streak_days', 'settings']);
 
   if (!data?.state) return <LoadingScreen blocks={[120, 320, 90]} />;
@@ -99,7 +97,7 @@ export default function StreakScreen() {
             <SegmentedControl<StreakRule['restDayMode']>
               options={[{ value: 'stepsOrChecklist', label: 'Adım veya liste' }, { value: 'steps', label: 'Adım' }, { value: 'checklist', label: 'Liste' }]}
               value={rule.restDayMode}
-              onChange={(v) => setSetting(db, 'streakRule', { ...rule, restDayMode: v })}
+              onChange={(v) => setSetting('streakRule', { ...rule, restDayMode: v })}
             />
           </View>
           <Text style={type.caption}>{`Liste: günlük alışkanlıkların en az %${Math.round(rule.checklistThreshold * 100)}'i.`}</Text>

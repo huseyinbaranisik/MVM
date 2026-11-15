@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -19,25 +18,23 @@ import { colors, radius, spacing, type } from '@/theme';
 const MAX_RESULTS = 40;
 
 export function CalorieCard({ date }: { date: string }) {
-  const db = useSQLiteContext();
-  const data = useDb(async (db) => ({
-    date, logs: await getFoodLogs(db, date), foods: await getFoods(db), s: await getTrackerSettings(db, 'calories'),
-  }), [date], ['food_logs', 'foods', 'tracker_settings']);
+  const data = useDb(async () => ({
+    date, logs: await getFoodLogs(date), foods: await getFoods(), s: await getTrackerSettings('calories'),
+  }), [date], ['food_logs', 'user_foods', 'tracker_settings']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'search' | 'grams' | 'new' | 'logs' | null>(null);
   const [query, setQuery] = useState('');
-  const [picked, setPicked] = useState<Pick<Food, 'id' | 'name'> | null>(null);
+  const [picked, setPicked] = useState<Food | null>(null);
 
   if (!data?.s) return <Skeleton height={240} />;
-  const pickedId = picked?.id;
   const total = sumMacros(data.logs);
   const goal = data.s.goal;
   const results = filterFoods(data.foods, query).slice(0, MAX_RESULTS);
   const close = () => setOpen(null);
-  const choose = (f: Pick<Food, 'id' | 'name'>) => { setPicked(f); setOpen('grams'); };
+  const choose = (f: Food) => { setPicked(f); setOpen('grams'); };
 
   const remove = async (id: number, label: string) => {
     if (await confirm({ title: 'Kayıt silinsin mi?', message: label, confirmLabel: 'Sil', destructive: true })) {
-      await deleteFoodLog(db, id);
+      await deleteFoodLog(id);
     }
   };
 
@@ -75,11 +72,11 @@ export function CalorieCard({ date }: { date: string }) {
 
       <NumberPrompt
         visible={open === 'grams'} onClose={close} title={picked?.name ?? ''} suffix="g" initial={100}
-        onSubmit={(v) => { if (pickedId != null) logFood(db, date, pickedId, v); }}
+        onSubmit={(v) => { if (picked) logFood(date, picked, v); }}
       />
 
       <NewFoodSheet visible={open === 'new'} onClose={close} initialName={query.trim()}
-        onSaved={(f) => choose(f)} save={(f) => addFood(db, f)} />
+        onSaved={(f) => choose(f)} save={(f) => addFood(f)} />
 
       <Sheet visible={open === 'menu'} onClose={close} title="Kalori">
         <SheetRow label="Hedefi değiştir" value={`${fmtInt(goal)} kcal`} onPress={() => setOpen('goal')} />
@@ -98,7 +95,7 @@ export function CalorieCard({ date }: { date: string }) {
 
       <NumberPrompt
         visible={open === 'goal'} onClose={close} title="Günlük kalori hedefi" suffix="kcal" initial={goal} min={499}
-        onSubmit={(v) => updateTrackerSettings(db, 'calories', { goal: Math.round(v) })}
+        onSubmit={(v) => updateTrackerSettings('calories', { goal: Math.round(v) })}
       />
     </>
   );
@@ -117,8 +114,8 @@ function NewFoodSheet({ visible, onClose, initialName, save, onSaved }: {
   visible: boolean;
   onClose: () => void;
   initialName: string;
-  save: (f: Omit<Food, 'id' | 'source'>) => Promise<number>;
-  onSaved: (f: Pick<Food, 'id' | 'name'>) => void;
+  save: (f: Omit<Food, 'id' | 'source'>) => Promise<Food>;
+  onSaved: (f: Food) => void;
 }) {
   const [name, setName] = useState('');
   const [vals, setVals] = useState<Record<Macro, string>>({ kcal: '', protein: '', fat: '', carbs: '' });
@@ -136,8 +133,7 @@ function NewFoodSheet({ visible, onClose, initialName, save, onSaved }: {
     if (!valid) return;
     const [k, protein, fat, carbs] = nums as number[];
     const n = name.trim();
-    const id = await save({ name: n, kcal: k, protein, fat, carbs });
-    onSaved({ id, name: n });
+    onSaved(await save({ name: n, kcal: k, protein, fat, carbs }));
   };
 
   return (

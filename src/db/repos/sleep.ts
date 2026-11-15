@@ -1,5 +1,5 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
-
+import { notify } from '@/db/bus';
+import { maybe, must, supabase } from '@/db/supabase';
 import { sleepDuration } from '@/services/sleep';
 
 export interface SleepLog {
@@ -10,19 +10,19 @@ export interface SleepLog {
   quality: number | null;
 }
 
-export function getSleep(db: SQLiteDatabase, date: string) {
-  return db.getFirstAsync<SleepLog>('SELECT * FROM sleep_logs WHERE date = ?', date);
+const COLS = 'date, bedtime, wake_time, duration_min, quality';
+
+export async function getSleep(date: string): Promise<SleepLog | null> {
+  return maybe(await supabase.from('sleep_logs').select(COLS).eq('date', date).maybeSingle());
 }
 
-export function getSleepRange(db: SQLiteDatabase, from: string, to: string) {
-  return db.getAllAsync<SleepLog>('SELECT * FROM sleep_logs WHERE date BETWEEN ? AND ? ORDER BY date', from, to);
+export async function getSleepRange(from: string, to: string): Promise<SleepLog[]> {
+  return must(await supabase.from('sleep_logs').select(COLS).gte('date', from).lte('date', to).order('date'));
 }
 
-/** date = uyanılan gün. Süre her zaman saatlerden hesaplanır. */
-export async function saveSleep(db: SQLiteDatabase, date: string, bedtime: string, wake: string, quality: number | null) {
-  await db.runAsync(
-    `INSERT INTO sleep_logs (date, bedtime, wake_time, duration_min, quality) VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(date) DO UPDATE SET bedtime = excluded.bedtime, wake_time = excluded.wake_time,
-       duration_min = excluded.duration_min, quality = excluded.quality`,
-    date, bedtime, wake, sleepDuration(bedtime, wake), quality);
+/** date = uyanılan gün. Süre her zaman saatlerden hesaplanır; aynı güne ikinci kayıt üzerine yazar. */
+export async function saveSleep(date: string, bedtime: string, wake: string, quality: number | null) {
+  must(await supabase.from('sleep_logs').upsert(
+    { date, bedtime, wake_time: wake, duration_min: sleepDuration(bedtime, wake), quality }, { onConflict: 'user_id,date' }));
+  notify('sleep_logs');
 }

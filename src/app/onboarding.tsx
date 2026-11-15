@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,7 +24,6 @@ const TIPS: { icon: IconName; text: string }[] = [
 
 /** İlk açılışta kısa tanıtım: isim, hedefler, kısa özet. Her adım atlanabilir. */
 export default function Onboarding() {
-  const db = useSQLiteContext();
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [glasses, setGlasses] = useState(10);
@@ -36,13 +34,13 @@ export default function Onboarding() {
 
   const finish = async (save: boolean) => {
     if (save) {
-      const profile = await getSetting(db, 'profile');
-      if (name.trim()) await setSetting(db, 'profile', { ...profile, name: name.trim() });
-      const water = await getTrackerSettings(db, 'water');
-      await updateTrackerSettings(db, 'water', { goal: glasses * (water?.unit_size ?? 250) });
-      await updateTrackerSettings(db, 'steps', { goal: steps });
+      const profile = await getSetting('profile');
+      if (name.trim()) await setSetting('profile', { ...profile, name: name.trim() });
+      const water = await getTrackerSettings('water');
+      await updateTrackerSettings('water', { goal: glasses * (water?.unit_size ?? 250) });
+      await updateTrackerSettings('steps', { goal: steps });
     }
-    await setSetting(db, 'onboarded', true);
+    await setSetting('onboarded', true);
     router.replace('/');
   };
 

@@ -1,4 +1,3 @@
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -19,7 +18,6 @@ export function SleepSheet({ visible, date, log, title = 'Uyku', onClose, onNeve
   /** verilirse "Bir daha sorma" bağlantısı görünür (sabah sorusu) */
   onNeverAsk?: () => void;
 }) {
-  const db = useSQLiteContext();
   const [bed, setBed] = useState('23:30');
   const [wake, setWake] = useState('07:00');
   const [quality, setQuality] = useState<number | null>(null);
@@ -59,7 +57,7 @@ export function SleepSheet({ visible, date, log, title = 'Uyku', onClose, onNeve
         ))}
       </View>
       <PillButton label="Kaydet" variant="primary"
-        onPress={async () => { await saveSleep(db, date, bed, wake, quality); onClose(); }} />
+        onPress={async () => { await saveSleep(date, bed, wake, quality); onClose(); }} />
       {onNeverAsk ? (
         <Pressable onPress={onNeverAsk} style={styles.never} accessibilityRole="button">
           <Text style={type.caption}>Sabahları bir daha sorma</Text>

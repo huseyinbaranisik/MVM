@@ -1,7 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,19 +33,18 @@ type Inputs = Record<string, { kg?: string; reps?: string }>;
 const keyOf = (exId: string, i: number) => `${exId}:${i}`;
 
 export default function ActiveWorkout() {
-  const db = useSQLiteContext();
   const sessionId = Number(useLocalSearchParams<{ sessionId: string }>().sessionId);
   useKeepAwake(); // antrenman boyunca ekran kararmasın
   const now = useNow();
   const startRest = useWorkoutStore((s) => s.startRest);
 
-  const data = useDb(async (db) => {
-    const session = await getSession(db, sessionId);
-    const plan = session?.template_id ? await getTemplateExercises(db, session.template_id) : [];
+  const data = useDb(async () => {
+    const session = await getSession(sessionId);
+    const plan = session?.template_id ? await getTemplateExercises(session.template_id) : [];
     const prev: Record<string, SessionSet[]> = {};
-    for (const x of plan) prev[x.exercise_id] = await getPreviousSets(db, x.exercise_id, sessionId);
-    return { session, plan, prev, done: await getSessionSets(db, sessionId), rest: await getSetting(db, 'restSec') };
-  }, [sessionId], ['workout_sessions', 'session_sets', 'template_exercises', 'exercises', 'settings']);
+    for (const x of plan) prev[x.exercise_id] = await getPreviousSets(x.exercise_id, sessionId);
+    return { session, plan, prev, done: await getSessionSets(sessionId), rest: await getSetting('restSec') };
+  }, [sessionId], ['workout_sessions', 'session_sets', 'template_exercises', 'user_exercises', 'exercise_favorites', 'settings']);
 
   const [inputs, setInputs] = useState<Inputs>({});
   const [stopwatch, setStopwatch] = useState<{ key: string; startedAt: number } | null>(null);
@@ -82,11 +80,11 @@ export default function ActiveWorkout() {
 
   const complete = async (x: TemplateExercise, xi: number, setIndex: number, durationSec?: number) => {
     const key = keyOf(x.exercise_id, setIndex);
-    if (doneMap.has(key)) { await deleteSet(db, sessionId, x.exercise_id, setIndex); return; }
+    if (doneMap.has(key)) { await deleteSet(sessionId, x.exercise_id, setIndex); return; }
     const p = prev[x.exercise_id]?.[setIndex] ?? prev[x.exercise_id]?.at(-1);
     const kg = parseNumber(inputs[key]?.kg ?? '') ?? lastKgThisSession(x.exercise_id) ?? p?.weight_kg ?? null;
     const reps = parseNumber(inputs[key]?.reps ?? '') ?? p?.reps ?? x.rep_max ?? x.rep_min ?? null;
-    await saveSet(db, sessionId, x.exercise_id, setIndex, {
+    await saveSet(sessionId, x.exercise_id, setIndex, {
       weight_kg: kg, reps: x.duration_sec ? null : reps && Math.round(reps),
       duration_sec: x.duration_sec ? durationSec ?? x.duration_sec : null,
     });
@@ -98,14 +96,14 @@ export default function ActiveWorkout() {
   const finish = async () => {
     if (!done.length) {
       if (await confirm({ title: 'Hiç set tamamlanmadı', message: 'Antrenman iptal edilsin mi?', confirmLabel: 'İptal et', cancelLabel: 'Devam et', destructive: true })) {
-        await endSession(db, sessionId, 'abandoned');
+        await endSession(sessionId, 'abandoned');
         router.back();
       }
       return;
     }
     if (!(await confirm({ title: 'Antrenmanı bitir', message: `${done.length}/${totalSets} set tamamlandı.`, confirmLabel: 'Bitir' }))) return;
     useWorkoutStore.getState().stopRest();
-    await endSession(db, sessionId, 'done');
+    await endSession(sessionId, 'done');
     router.replace(`/workout/summary/${sessionId}`);
   };
 

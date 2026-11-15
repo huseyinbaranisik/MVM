@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { PillButton } from '@/components/ui/PillButton';
 import { LoadingScreen } from '@/components/ui/Skeleton';
+import { getCatalog } from '@/db/repos/exercises';
 import { getPreviousBests, getSession, getSessionSets } from '@/db/repos/sessions';
 import { useDb } from '@/db/useDb';
 import { fmtDec, fmtInt } from '@/services/units';
@@ -13,17 +14,16 @@ import { colors, radius, spacing, type } from '@/theme';
 
 export default function WorkoutSummary() {
   const sessionId = Number(useLocalSearchParams<{ sessionId: string }>().sessionId);
-  const data = useDb(async (db) => {
-    const sets = await getSessionSets(db, sessionId);
-    const names = await db.getAllAsync<{ id: string; name_tr: string }>(
-      'SELECT id, name_tr FROM exercises WHERE id IN (SELECT exercise_id FROM session_sets WHERE session_id = ?)', sessionId);
+  const data = useDb(async () => {
+    const sets = await getSessionSets(sessionId);
+    const catalog = await getCatalog();
     return {
-      session: await getSession(db, sessionId),
+      session: await getSession(sessionId),
       sets,
-      names: new Map(names.map((n) => [n.id, n.name_tr])),
-      prs: findPRs(sets, await getPreviousBests(db, sessionId)),
+      names: new Map(sets.map((s) => [s.exercise_id, catalog.byId.get(s.exercise_id)?.name_tr ?? s.exercise_id])),
+      prs: findPRs(sets, await getPreviousBests(sessionId)),
     };
-  }, [sessionId], ['workout_sessions', 'session_sets', 'exercises']);
+  }, [sessionId], ['workout_sessions', 'session_sets', 'user_exercises', 'exercise_favorites']);
   if (!data?.session) return <LoadingScreen blocks={[120, 90, 160]} />;
 
   const { session, sets, names, prs } = data;

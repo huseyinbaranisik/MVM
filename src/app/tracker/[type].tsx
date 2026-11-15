@@ -27,14 +27,14 @@ export default function TrackerHistory() {
   const to = today();
   const from = addDays(to, -(Number(days) - 1));
 
-  const data = useDb(async (db) => {
-    const s = await getTrackerSettings(db, kind);
+  const data = useDb(async () => {
+    const s = await getTrackerSettings(kind);
     const raw = kind === 'sleep'
-      ? (await getSleepRange(db, from, to)).map((l) => ({ date: l.date, value: l.duration_min }))
-      : kind === 'calories' ? await getCalorieHistory(db, from, to)
-      : await getTrackerHistory(db, kind, from, to);
-    return { s, raw, height: await getLatestMeasurement(db, 'height') };
-  }, [kind, from, to], ['tracker_settings', 'daily_trackers', 'sleep_logs', 'food_logs', 'foods', 'body_measurements']);
+      ? (await getSleepRange(from, to)).map((l) => ({ date: l.date, value: l.duration_min }))
+      : kind === 'calories' ? await getCalorieHistory(from, to)
+      : await getTrackerHistory(kind, from, to);
+    return { s, raw, height: await getLatestMeasurement('height') };
+  }, [kind, from, to], ['tracker_settings', 'daily_trackers', 'sleep_logs', 'food_logs', 'user_foods', 'body_measurements']);
 
   if (!data?.s) return <LoadingScreen blocks={[44, 260, 90]} />;
   const s = data.s;

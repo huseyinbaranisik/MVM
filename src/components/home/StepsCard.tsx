@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -17,13 +16,12 @@ import { colors, spacing } from '@/theme';
 const STEP_DECREMENT = 500;
 
 export function StepsCard({ date }: { date: string }) {
-  const db = useSQLiteContext();
   const sensor = useAppStore((s) => s.stepSensor);
-  const data = useDb(async (db) => ({
+  const data = useDb(async () => ({
     date,
-    steps: await getTrackerValue(db, 'steps', date),
-    s: await getTrackerSettings(db, 'steps'),
-    heightCm: await getLatestMeasurement(db, 'height'),
+    steps: await getTrackerValue('steps', date),
+    s: await getTrackerSettings('steps'),
+    heightCm: await getLatestMeasurement('height'),
   }), [date], ['daily_trackers', 'tracker_settings', 'body_measurements']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'stride' | 'add' | null>(null);
 
@@ -47,7 +45,7 @@ export function StepsCard({ date }: { date: string }) {
         footer={
           <Counter
             minusLabel={`${STEP_DECREMENT} adım çıkar`} plusLabel="Adım ekle"
-            onMinus={() => addTrackerValue(db, 'steps', date, -STEP_DECREMENT)}
+            onMinus={() => addTrackerValue('steps', date, -STEP_DECREMENT)}
             onPlus={() => setOpen('add')}
           />
         }
@@ -58,12 +56,12 @@ export function StepsCard({ date }: { date: string }) {
           <SegmentedControl<StepUnit>
             options={[{ value: 'steps', label: 'Adım' }, { value: 'km', label: 'Km' }]}
             value={unit}
-            onChange={(v) => updateTrackerSettings(db, 'steps', { display_unit: v })}
+            onChange={(v) => updateTrackerSettings('steps', { display_unit: v })}
           />
         </View>
         <SheetRow label="Adım uzunluğu" value={strideLabel} onPress={() => setOpen('stride')} />
         {data.s.unit_size != null ? (
-          <SheetRow label="Boydan otomatik hesapla (boy × 0,415)" onPress={() => updateTrackerSettings(db, 'steps', { unit_size: null })} />
+          <SheetRow label="Boydan otomatik hesapla (boy × 0,415)" onPress={() => updateTrackerSettings('steps', { unit_size: null })} />
         ) : null}
         <SheetRow label="Telefon sensörü"
           value={sensor === 'on' ? 'Açık (uygulama açıkken sayar)' : sensor === 'off' ? 'Yok · manuel giriş' : '…'} />
@@ -72,16 +70,16 @@ export function StepsCard({ date }: { date: string }) {
       <NumberPrompt
         visible={open === 'goal'} onClose={close} title="Günlük adım hedefi" suffix={stepUnitLabel(unit)}
         initial={unit === 'km' ? Number(stepsToKm(data.s.goal, stride).toFixed(2)) : data.s.goal}
-        onSubmit={(v) => updateTrackerSettings(db, 'steps', { goal: unit === 'km' ? kmToSteps(v, stride) : Math.round(v) })}
+        onSubmit={(v) => updateTrackerSettings('steps', { goal: unit === 'km' ? kmToSteps(v, stride) : Math.round(v) })}
       />
       <NumberPrompt
         visible={open === 'stride'} onClose={close} title="Adım uzunluğu" suffix="cm" initial={stride} min={20}
-        onSubmit={(v) => updateTrackerSettings(db, 'steps', { unit_size: Math.round(v) })}
+        onSubmit={(v) => updateTrackerSettings('steps', { unit_size: Math.round(v) })}
       />
       <NumberPrompt
         visible={open === 'add'} onClose={close} title="Adım ekle"
         suffix="adım" quick={[500, 1000, 2000]}
-        onSubmit={(v) => addTrackerValue(db, 'steps', date, Math.round(v))}
+        onSubmit={(v) => addTrackerValue('steps', date, Math.round(v))}
       />
     </>
   );

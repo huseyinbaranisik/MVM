@@ -1,5 +1,4 @@
 import { Redirect, router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -17,6 +16,7 @@ import { PressableScale } from '@/components/ui/PressableScale';
 import { Appear } from '@/components/ui/Skeleton';
 import { getSetting, setSetting } from '@/db/repos/settings';
 import { getSleep } from '@/db/repos/sleep';
+import { getStreakState } from '@/db/repos/streak';
 import { addTrackerValue } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
 import { formatLongTR, today } from '@/services/dates';
@@ -25,14 +25,13 @@ import { useAppStore } from '@/stores/useAppStore';
 import { colors, radius, spacing, type } from '@/theme';
 
 export default function TodayScreen() {
-  const db = useSQLiteContext();
   const date = useAppStore((s) => s.selectedDate);
   const setDate = useAppStore((s) => s.setSelectedDate);
   const setStepSensor = useAppStore((s) => s.setStepSensor);
-  const header = useDb(async (db) => ({
-    name: (await getSetting(db, 'profile')).name,
-    onboarded: await getSetting(db, 'onboarded'),
-    streak: (await db.getFirstAsync<{ current: number }>('SELECT current FROM streak_state WHERE id = 1'))?.current ?? 0,
+  const header = useDb(async () => ({
+    name: (await getSetting('profile')).name,
+    onboarded: await getSetting('onboarded'),
+    streak: (await getStreakState())?.current ?? 0,
   }), [], ['settings', 'streak_state']);
   const [morningPrompt, setMorningPrompt] = useState(false);
 
@@ -40,26 +39,26 @@ export default function TodayScreen() {
   useEffect(() => {
     let stop: (() => void) | null = null;
     let cancelled = false;
-    startStepTracking((delta) => addTrackerValue(db, 'steps', today(), delta)).then((s) => {
+    startStepTracking((delta) => addTrackerValue('steps', today(), delta)).then((s) => {
       if (cancelled) { s?.(); return; }
       stop = s;
       setStepSensor(s ? 'on' : 'off');
     });
     return () => { cancelled = true; stop?.(); };
-  }, [db, setStepSensor]);
+  }, [setStepSensor]);
 
   // Sabah ilk açılışta "Dün gece nasıl uyudun?" (04:00–12:00, bugün kayıt yoksa, günde bir kez)
   useEffect(() => {
     (async () => {
       const hour = new Date().getHours();
       if (hour < 4 || hour >= 12) return;
-      if (!(await getSetting(db, 'morningSleepPrompt'))) return;
-      if ((await getSetting(db, 'lastSleepPrompt')) === today()) return;
-      if (await getSleep(db, today())) return;
-      await setSetting(db, 'lastSleepPrompt', today());
+      if (!(await getSetting('morningSleepPrompt'))) return;
+      if ((await getSetting('lastSleepPrompt')) === today()) return;
+      if (await getSleep(today())) return;
+      await setSetting('lastSleepPrompt', today());
       setMorningPrompt(true);
     })();
-  }, [db]);
+  }, []);
 
   if (header && !header.onboarded) return <Redirect href="/onboarding" />;
   const name = header?.name ?? '';
@@ -104,7 +103,7 @@ export default function TodayScreen() {
         log={null}
         title="Dün gece nasıl uyudun?"
         onClose={() => setMorningPrompt(false)}
-        onNeverAsk={async () => { await setSetting(db, 'morningSleepPrompt', false); setMorningPrompt(false); }}
+        onNeverAsk={async () => { await setSetting('morningSleepPrompt', false); setMorningPrompt(false); }}
       />
     </Screen>
   );

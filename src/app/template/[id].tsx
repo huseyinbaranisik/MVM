@@ -1,5 +1,4 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -24,12 +23,11 @@ const SUPERSET_LETTERS = 'ABCDEFGH';
 
 
 export default function TemplateEditor() {
-  const db = useSQLiteContext();
   const templateId = Number(useLocalSearchParams<{ id: string }>().id);
-  const data = useDb(async (db) => ({
-    name: (await getTemplateName(db, templateId))?.name ?? '',
-    items: await getTemplateExercises(db, templateId),
-  }), [templateId], ['workout_templates', 'template_exercises', 'exercises']);
+  const data = useDb(async () => ({
+    name: (await getTemplateName(templateId))?.name ?? '',
+    items: await getTemplateExercises(templateId),
+  }), [templateId], ['workout_templates', 'template_exercises', 'user_exercises', 'exercise_favorites']);
   const [name, setName] = useState<string | null>(null);
   const [editing, setEditing] = useState<TemplateExercise | null>(null);
   const [picking, setPicking] = useState(false);
@@ -39,7 +37,7 @@ export default function TemplateEditor() {
 
   const confirmDelete = async () => {
     if (!(await confirm({ title: 'Şablon silinsin mi?', message: 'Atandığı günler dinlenme gününe döner.', confirmLabel: 'Sil', destructive: true }))) return;
-    await deleteTemplate(db, templateId);
+    await deleteTemplate(templateId);
     router.back();
   };
 
@@ -54,7 +52,7 @@ export default function TemplateEditor() {
         <TextInput
           value={name ?? data.name}
           onChangeText={setName}
-          onEndEditing={() => { if (name?.trim()) renameTemplate(db, templateId, name.trim()); }}
+          onEndEditing={() => { if (name?.trim()) renameTemplate(templateId, name.trim()); }}
           style={styles.nameInput} accessibilityLabel="Şablon adı" maxLength={40} />
         <Text style={type.caption}>{data.items.length} hareket · sıralamak için sağdaki tutamaçtan sürükle</Text>
 
@@ -63,7 +61,7 @@ export default function TemplateEditor() {
             items={data.items}
             keyOf={(x) => x.id}
             rowHeight={ROW_H}
-            onReorder={(keys) => reorderTemplateExercises(db, keys as number[])}
+            onReorder={(keys) => reorderTemplateExercises(keys as number[])}
             renderRow={(x) => (
               <Pressable onPress={() => setEditing(x)} style={styles.row} accessibilityRole="button" accessibilityLabel={`${x.name_tr} düzenle`}>
                 <ExerciseThumb imageKey={x.image_key} photoUri={x.photo_uri} size={48} />
@@ -83,13 +81,12 @@ export default function TemplateEditor() {
 
       <EditSheet item={editing} items={data.items} onClose={() => setEditing(null)} />
       <PickerSheet visible={picking} onClose={() => setPicking(false)}
-        onPick={async (exerciseId) => { await addTemplateExercise(db, templateId, exerciseId); setPicking(false); }} />
+        onPick={async (exerciseId) => { await addTemplateExercise(templateId, exerciseId); setPicking(false); }} />
     </View>
   );
 }
 
 function EditSheet({ item, items, onClose }: { item: TemplateExercise | null; items: TemplateExercise[]; onClose: () => void }) {
-  const db = useSQLiteContext();
   const [sets, setSets] = useState(3);
   const [timed, setTimed] = useState(false);
   const [repMin, setRepMin] = useState('');
@@ -124,9 +121,9 @@ function EditSheet({ item, items, onClose }: { item: TemplateExercise | null; it
     let group: number | null = null;
     if (superset && before) {
       group = before.superset_group ?? Math.max(0, ...items.map((x) => x.superset_group ?? 0)) + 1;
-      if (before.superset_group == null) await updateTemplateExercise(db, before.id, { superset_group: group });
+      if (before.superset_group == null) await updateTemplateExercise(before.id, { superset_group: group });
     }
-    await updateTemplateExercise(db, item.id, {
+    await updateTemplateExercise(item.id, {
       sets,
       rep_min: timed ? null : min != null ? Math.round(min) : null,
       rep_max: timed ? null : max != null ? Math.round(Math.max(max, min ?? 0)) : null,
@@ -164,7 +161,7 @@ function EditSheet({ item, items, onClose }: { item: TemplateExercise | null; it
         {before ? <PillButton label="Öncekiyle süperset" active={superset} onPress={() => setSuperset(!superset)} style={styles.flex1} /> : null}
       </View>
       <PillButton label="Kaydet" variant="primary" onPress={save} />
-      <PillButton label="Şablondan çıkar" onPress={async () => { await removeTemplateExercise(db, item.id); onClose(); }} />
+      <PillButton label="Şablondan çıkar" onPress={async () => { await removeTemplateExercise(item.id); onClose(); }} />
     </Sheet>
   );
 }
@@ -179,7 +176,7 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 }
 
 function PickerSheet({ visible, onClose, onPick }: { visible: boolean; onClose: () => void; onPick: (id: string) => void }) {
-  const list = useDb((db) => getExerciseList(db), [], ['exercises', 'exercise_muscles']);
+  const list = useDb(() => getExerciseList(), [], ['user_exercises', 'exercise_favorites']);
   const [q, setQ] = useState('');
   const filtered = useMemo(() => {
     const s = q.trim().toLocaleLowerCase('tr-TR');

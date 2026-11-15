@@ -21,7 +21,7 @@ export default function MuscleDetail() {
   const parts = region ? muscles.filter((m) => m.regionId === region.id) : [];
   const highlight = region ? parts.map((p) => p.id) : muscle ? [muscle.id] : [];
 
-  const exercises = useDb((db) => (region ? getExercisesByRegion(db, id) : getExercisesByMuscle(db, id)), [id], ['exercises', 'exercise_muscles']);
+  const exercises = useDb(() => (region ? getExercisesByRegion(id) : getExercisesByMuscle(id)), [id], ['user_exercises', 'exercise_favorites']);
   const [adding, setAdding] = useState<string | null>(null);
 
   if (!parentRegion) return <BackHeader title="Bulunamadı" />;

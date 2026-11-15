@@ -24,6 +24,19 @@ export function overloadSuggestion(prev: SetLike[], plannedSets: number, repMax:
   return maxKg > 0 ? maxKg + DUMBBELL_STEP_KG : null;
 }
 
+/** Hareket bazında en ağır set ve en yüksek tahmini 1RM (getPreviousBests için). */
+export function bestsByExercise(sets: SetLike[]) {
+  const out = new Map<string, { maxKg: number; maxE1rm: number }>();
+  for (const s of sets) {
+    if (s.weight_kg == null) continue;
+    const b = out.get(s.exercise_id) ?? { maxKg: 0, maxE1rm: 0 };
+    b.maxKg = Math.max(b.maxKg, s.weight_kg);
+    b.maxE1rm = Math.max(b.maxE1rm, e1rm(s.weight_kg, s.reps ?? 0));
+    out.set(s.exercise_id, b);
+  }
+  return out;
+}
+
 export interface PR { exercise_id: string; kind: 'weight' | 'e1rm'; value: number }
 
 /**

@@ -14,7 +14,7 @@ const MAX_W_RATIO = 1.1; // çok yayvan kadrajlar kartı taşırmasın
  * (bacak günü → bacaklar). Sadece birincil kasın bulunduğu yüzler (ön/arka) çizilir.
  */
 export function TemplateMiniMap({ templateId, height = 84 }: { templateId: number; height?: number }) {
-  const m = useDb((db) => getTemplateMuscles(db, templateId), [templateId], ['template_exercises', 'exercise_muscles']);
+  const m = useDb(() => getTemplateMuscles(templateId), [templateId], ['template_exercises']);
   if (!m) return <View style={{ height, width: height * 0.6 }} />;
   const sides = (['front', 'back'] as const)
     .map((side) => ({ side, crop: focusCrop(body[side], m.primary) }))

@@ -1,4 +1,4 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
+import { maybe, must, supabase } from '@/db/supabase';
 
 export interface DayPlan {
   weekday: number;
@@ -8,15 +8,19 @@ export interface DayPlan {
   exerciseCount: number;
 }
 
-const SELECT = `
-  SELECT d.weekday, d.kind, d.template_id AS templateId, t.name AS templateName,
-         (SELECT COUNT(*) FROM template_exercises te WHERE te.template_id = d.template_id) AS exerciseCount
-  FROM day_schedule d LEFT JOIN workout_templates t ON t.id = d.template_id`;
+const SELECT = 'weekday, kind, template_id, workout_templates(name, template_exercises(count))';
+type Row = { weekday: number; kind: DayPlan['kind']; template_id: number | null;
+  workout_templates: { name: string; template_exercises: { count: number }[] } | null };
+const toPlan = (r: Row): DayPlan => ({
+  weekday: r.weekday, kind: r.kind, templateId: r.template_id, templateName: r.workout_templates?.name ?? null,
+  exerciseCount: r.workout_templates?.template_exercises[0]?.count ?? 0,
+});
 
-export function getWeekPlan(db: SQLiteDatabase) {
-  return db.getAllAsync<DayPlan>(`${SELECT} ORDER BY d.weekday`);
+export async function getWeekPlan(): Promise<DayPlan[]> {
+  return (must(await supabase.from('day_schedule').select(SELECT).order('weekday')) as unknown as Row[]).map(toPlan);
 }
 
-export function getDayPlan(db: SQLiteDatabase, weekday: number) {
-  return db.getFirstAsync<DayPlan>(`${SELECT} WHERE d.weekday = ?`, weekday);
+export async function getDayPlan(weekday: number): Promise<DayPlan | null> {
+  const r = maybe(await supabase.from('day_schedule').select(SELECT).eq('weekday', weekday).maybeSingle()) as unknown as Row | null;
+  return r ? toPlan(r) : null;
 }

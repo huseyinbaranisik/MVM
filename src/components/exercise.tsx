@@ -1,6 +1,5 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,9 +56,8 @@ export function ExerciseRow({ id, name, imageKey, photoUri, subtitle, tag, right
 
 /** Favori yıldızı; favoriler listelerde en üstte durur. */
 export function FavoriteButton({ id, name, favorite }: { id: string; name: string; favorite: boolean }) {
-  const db = useSQLiteContext();
   return (
-    <Pressable onPress={() => setFavorite(db, id, !favorite)} hitSlop={8} style={styles.star}
+    <Pressable onPress={() => setFavorite(id, !favorite)} hitSlop={8} style={styles.star}
       accessibilityRole="button" accessibilityState={{ selected: favorite }}
       accessibilityLabel={favorite ? `${name} favorilerden çıkar` : `${name} favorilere ekle`}>
       <Icon name="star" color={favorite ? colors.warning : colors.divider} />
@@ -84,8 +82,7 @@ export function BackHeader({ title, right }: { title: string; right?: ReactNode 
 
 /** "Programıma ekle": gün seç → o günün antrenmanına eklenir. */
 export function AddToProgramSheet({ exerciseId, onClose }: { exerciseId: string | null; onClose: (msg?: string) => void }) {
-  const db = useSQLiteContext();
-  const week = useDb((db) => getWeekPlan(db), [], ['day_schedule', 'workout_templates', 'template_exercises']) ?? [];
+  const week = useDb(() => getWeekPlan(), [], ['day_schedule', 'workout_templates', 'template_exercises']) ?? [];
   return (
     <Sheet visible={!!exerciseId} onClose={() => onClose()} title="Hangi güne eklensin?">
       {week.map((d) => (
@@ -93,7 +90,7 @@ export function AddToProgramSheet({ exerciseId, onClose }: { exerciseId: string 
           value={d.kind === 'workout' ? d.templateName ?? '' : 'Yeni antrenman açılır'}
           onPress={async () => {
             if (!exerciseId) return;
-            await addExerciseToDay(db, d.weekday, WEEKDAYS_TR[d.weekday], exerciseId);
+            await addExerciseToDay(d.weekday, WEEKDAYS_TR[d.weekday], exerciseId);
             onClose(`${WEEKDAYS_TR[d.weekday]} antrenmanına eklendi`);
           }} />
       ))}

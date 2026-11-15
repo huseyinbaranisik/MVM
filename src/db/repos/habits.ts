@@ -1,5 +1,5 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
-
+import { notify } from '@/db/bus';
+import { must, supabase } from '@/db/supabase';
 import { weekday } from '@/services/dates';
 
 export interface Habit {
@@ -14,31 +14,34 @@ export interface Habit {
 export const ALL_DAYS = 0b1111111;
 
 /** O gün görünen (arşivlenmemiş, o haftanın gününe atanmış) alışkanlıklar ve tamamlanma durumu. */
-export function getHabitsForDate(db: SQLiteDatabase, date: string) {
-  return db.getAllAsync<Habit>(
-    `SELECT h.id, h.name, h.icon, h.weekdays, (l.habit_id IS NOT NULL) AS done
-     FROM habits h LEFT JOIN habit_logs l ON l.habit_id = h.id AND l.date = ?
-     WHERE h.archived_at IS NULL AND (h.weekdays & ?) != 0
-     ORDER BY h.position, h.id`,
-    date, 1 << weekday(date));
+export async function getHabitsForDate(date: string): Promise<Habit[]> {
+  const [habits, logs] = await Promise.all([
+    supabase.from('habits').select('id, name, icon, weekdays').is('archived_at', null).order('position').order('id'),
+    supabase.from('habit_logs').select('habit_id').eq('date', date),
+  ]);
+  const done = new Set(must(logs).map((l) => l.habit_id as number));
+  const bit = 1 << weekday(date);
+  return must(habits).filter((h) => (h.weekdays & bit) !== 0).map((h) => ({ ...h, done: done.has(h.id) ? 1 : 0 }));
 }
 
-export async function setHabitDone(db: SQLiteDatabase, habitId: number, date: string, done: boolean) {
-  if (done) await db.runAsync('INSERT OR IGNORE INTO habit_logs (habit_id, date) VALUES (?, ?)', habitId, date);
-  else await db.runAsync('DELETE FROM habit_logs WHERE habit_id = ? AND date = ?', habitId, date);
+export async function setHabitDone(habitId: number, date: string, done: boolean) {
+  if (done) must(await supabase.from('habit_logs').upsert({ habit_id: habitId, date }, { ignoreDuplicates: true }));
+  else must(await supabase.from('habit_logs').delete().eq('habit_id', habitId).eq('date', date));
+  notify('habit_logs');
 }
 
-export async function saveHabit(db: SQLiteDatabase, h: { id?: number; name: string; icon: string; weekdays: number }) {
+export async function saveHabit(h: { id?: number; name: string; icon: string; weekdays: number }) {
   if (h.id) {
-    await db.runAsync('UPDATE habits SET name = ?, icon = ?, weekdays = ? WHERE id = ?', h.name, h.icon, h.weekdays, h.id);
+    must(await supabase.from('habits').update({ name: h.name, icon: h.icon, weekdays: h.weekdays }).eq('id', h.id));
   } else {
-    await db.runAsync(
-      'INSERT INTO habits (name, icon, weekdays, position) VALUES (?, ?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM habits))',
-      h.name, h.icon, h.weekdays);
+    const last = must(await supabase.from('habits').select('position').order('position', { ascending: false }).limit(1));
+    must(await supabase.from('habits').insert({ name: h.name, icon: h.icon, weekdays: h.weekdays, position: (last[0]?.position ?? -1) + 1 }));
   }
+  notify('habits');
 }
 
 /** Silme = arşivleme; geçmiş istatistikler bozulmaz. */
-export async function archiveHabit(db: SQLiteDatabase, id: number) {
-  await db.runAsync("UPDATE habits SET archived_at = datetime('now') WHERE id = ?", id);
+export async function archiveHabit(id: number) {
+  must(await supabase.from('habits').update({ archived_at: new Date().toISOString() }).eq('id', id));
+  notify('habits');
 }

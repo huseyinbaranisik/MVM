@@ -36,7 +36,7 @@ export function DaySelector({ value, onChange }: { value: DateStr; onChange: (d:
   }
   const t = today();
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(monday, i)), [monday]);
-  const trained = useDb((db) => getWorkoutDates(db, days[0], days[6]), [days], ['workout_sessions']) ?? new Set<string>();
+  const trained = useDb(() => getWorkoutDates(days[0], days[6]), [days], ['workout_sessions']) ?? new Set<string>();
 
   const shift = (weeks: number) => {
     const next = addDays(monday, weeks * 7);

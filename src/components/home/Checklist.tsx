@@ -1,4 +1,3 @@
-import { useSQLiteContext } from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -21,8 +20,7 @@ const HABIT_ICONS: IconName[] = [
 ];
 
 export function Checklist({ date }: { date: string }) {
-  const db = useSQLiteContext();
-  const loaded = useDb((db) => getHabitsForDate(db, date), [date], ['habits', 'habit_logs']);
+  const loaded = useDb(() => getHabitsForDate(date), [date], ['habits', 'habit_logs']);
   const habits = loaded ?? [];
   const [editing, setEditing] = useState<Partial<Habit> | null>(null);
   const done = habits.filter((h) => h.done).length;
@@ -46,7 +44,7 @@ export function Checklist({ date }: { date: string }) {
               key={h.id}
               onPress={() => {
                 Haptics.selectionAsync().catch(() => {});
-                setHabitDone(db, h.id, date, !h.done);
+                setHabitDone(h.id, date, !h.done);
               }}
               onLongPress={() => setEditing(h)}
               style={styles.row}
@@ -69,7 +67,6 @@ export function Checklist({ date }: { date: string }) {
 }
 
 function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose: () => void }) {
-  const db = useSQLiteContext();
   const [name, setName] = useState('');
   const [icon, setIcon] = useState<string>(HABIT_ICONS[0]);
   const [days, setDays] = useState(ALL_DAYS);
@@ -107,11 +104,11 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
         ))}
       </View>
       <PillButton label="Kaydet" variant="primary" disabled={!valid}
-        onPress={async () => { await saveHabit(db, { id: habitId, name: name.trim(), icon, weekdays: days }); onClose(); }} />
+        onPress={async () => { await saveHabit({ id: habitId, name: name.trim(), icon, weekdays: days }); onClose(); }} />
       {habit?.id ? (
         <PillButton label="Sil" onPress={async () => {
           if (!(await confirm({ title: 'Silinsin mi?', message: `"${habit.name}" listeden kaldırılacak. Geçmiş kayıtlar istatistiklerde kalır.`, confirmLabel: 'Sil', destructive: true }))) return;
-          if (habitId) await archiveHabit(db, habitId);
+          if (habitId) await archiveHabit(habitId);
           onClose();
         }} />
       ) : null}

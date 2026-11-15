@@ -1,4 +1,6 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
+import { notify } from '@/db/bus';
+import { getCatalog } from '@/db/repos/exercises';
+import { maybe, must, supabase } from '@/db/supabase';
 
 export interface TemplateSummary { id: number; name: string; exerciseCount: number }
 
@@ -20,82 +22,98 @@ export interface TemplateExercise {
   superset_group: number | null;
 }
 
-export function getTemplates(db: SQLiteDatabase) {
-  return db.getAllAsync<TemplateSummary>(`
-    SELECT t.id, t.name, (SELECT COUNT(*) FROM template_exercises te WHERE te.template_id = t.id) AS exerciseCount
-    FROM workout_templates t ORDER BY t.id`);
+export async function getTemplates(): Promise<TemplateSummary[]> {
+  const rows = must(await supabase.from('workout_templates').select('id, name, template_exercises(count)').order('id'));
+  return rows.map((t) => ({ id: t.id, name: t.name, exerciseCount: (t.template_exercises as unknown as { count: number }[])[0]?.count ?? 0 }));
 }
 
-export function getTemplateName(db: SQLiteDatabase, id: number) {
-  return db.getFirstAsync<{ name: string }>('SELECT name FROM workout_templates WHERE id = ?', id);
+export async function getTemplateName(id: number) {
+  return maybe(await supabase.from('workout_templates').select('name').eq('id', id).maybeSingle());
 }
 
-export function getTemplateExercises(db: SQLiteDatabase, templateId: number) {
-  return db.getAllAsync<TemplateExercise>(`
-    SELECT te.*, e.name_tr, e.image_key, e.photo_uri, e.mode, e.is_heavy
-    FROM template_exercises te JOIN exercises e ON e.id = te.exercise_id
-    WHERE te.template_id = ? ORDER BY te.position`, templateId);
-}
-
-export async function createTemplate(db: SQLiteDatabase, name: string) {
-  return (await db.runAsync('INSERT INTO workout_templates (name) VALUES (?)', name)).lastInsertRowId;
-}
-
-export async function renameTemplate(db: SQLiteDatabase, id: number, name: string) {
-  await db.runAsync('UPDATE workout_templates SET name = ? WHERE id = ?', name, id);
-}
-
-/** Şablonu siler; atandığı günler dinlenme gününe döner (FK: ON DELETE SET NULL). */
-export async function deleteTemplate(db: SQLiteDatabase, id: number) {
-  await db.runAsync("UPDATE day_schedule SET kind = 'rest' WHERE template_id = ?", id);
-  await db.runAsync('DELETE FROM workout_templates WHERE id = ?', id);
-}
-
-/** Şablonun sonuna varsayılan değerlerle hareket ekler (tekrarlı: 3×8-12, süreli: 3×30 sn). */
-export async function addTemplateExercise(db: SQLiteDatabase, templateId: number, exerciseId: string) {
-  const e = await db.getFirstAsync<{ mode: string }>('SELECT mode FROM exercises WHERE id = ?', exerciseId);
-  const timed = e?.mode === 'time';
-  await db.runAsync(
-    `INSERT INTO template_exercises (template_id, exercise_id, position, sets, rep_min, rep_max, duration_sec)
-     VALUES (?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM template_exercises WHERE template_id = ?), 3, ?, ?, ?)`,
-    templateId, exerciseId, templateId, timed ? null : 8, timed ? null : 12, timed ? 30 : null);
-}
-
-export async function updateTemplateExercise(
-  db: SQLiteDatabase, id: number,
-  patch: Partial<Pick<TemplateExercise, 'sets' | 'rep_min' | 'rep_max' | 'duration_sec' | 'rest_sec' | 'per_side' | 'superset_group'>>,
-) {
-  const keys = Object.keys(patch) as (keyof typeof patch)[];
-  if (!keys.length) return;
-  await db.runAsync(`UPDATE template_exercises SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`,
-    ...keys.map((k) => patch[k] ?? null), id);
-}
-
-export async function removeTemplateExercise(db: SQLiteDatabase, id: number) {
-  await db.runAsync('DELETE FROM template_exercises WHERE id = ?', id);
-}
-
-/** Sıralamayı verilen id dizisine göre yazar. */
-export async function reorderTemplateExercises(db: SQLiteDatabase, orderedIds: number[]) {
-  await db.withTransactionAsync(async () => {
-    for (const [pos, id] of orderedIds.entries()) await db.runAsync('UPDATE template_exercises SET position = ? WHERE id = ?', pos, id);
+export async function getTemplateExercises(templateId: number): Promise<TemplateExercise[]> {
+  const [rows, c] = await Promise.all([
+    supabase.from('template_exercises').select('*').eq('template_id', templateId).order('position'),
+    getCatalog(),
+  ]);
+  return must(rows).map((te) => {
+    const e = c.byId.get(te.exercise_id);
+    return {
+      id: te.id, exercise_id: te.exercise_id, position: te.position, sets: te.sets, rep_min: te.rep_min, rep_max: te.rep_max,
+      duration_sec: te.duration_sec, rest_sec: te.rest_sec, per_side: te.per_side ? 1 : 0, superset_group: te.superset_group,
+      name_tr: e?.name_tr ?? 'Silinmiş hareket', image_key: e?.image_key ?? null, photo_uri: e?.photo_uri ?? null,
+      mode: e?.mode ?? 'reps', is_heavy: e?.is_heavy ? 1 : 0,
+    };
   });
 }
 
-export async function setDaySchedule(db: SQLiteDatabase, weekday: number, kind: 'workout' | 'rest' | 'walk', templateId: number | null) {
-  await db.runAsync('UPDATE day_schedule SET kind = ?, template_id = ? WHERE weekday = ?',
-    kind, kind === 'workout' ? templateId : null, weekday);
+export async function createTemplate(name: string): Promise<number> {
+  const r = must(await supabase.from('workout_templates').insert({ name }).select('id').single());
+  notify('workout_templates');
+  return r.id;
+}
+
+export async function renameTemplate(id: number, name: string) {
+  must(await supabase.from('workout_templates').update({ name }).eq('id', id));
+  notify('workout_templates');
+}
+
+/** Şablonu siler; atandığı günler dinlenme gününe döner. */
+export async function deleteTemplate(id: number) {
+  must(await supabase.from('day_schedule').update({ kind: 'rest', template_id: null }).eq('template_id', id));
+  must(await supabase.from('workout_templates').delete().eq('id', id));
+  notify('workout_templates', 'template_exercises', 'day_schedule');
+}
+
+/** Şablonun sonuna varsayılan değerlerle hareket ekler (tekrarlı: 3×8-12, süreli: 3×30 sn). */
+export async function addTemplateExercise(templateId: number, exerciseId: string) {
+  const [c, last] = await Promise.all([
+    getCatalog(),
+    supabase.from('template_exercises').select('position').eq('template_id', templateId).order('position', { ascending: false }).limit(1),
+  ]);
+  const timed = c.byId.get(exerciseId)?.mode === 'time';
+  must(await supabase.from('template_exercises').insert({
+    template_id: templateId, exercise_id: exerciseId, position: (must(last)[0]?.position ?? -1) + 1, sets: 3,
+    rep_min: timed ? null : 8, rep_max: timed ? null : 12, duration_sec: timed ? 30 : null,
+  }));
+  notify('template_exercises');
+}
+
+export async function updateTemplateExercise(
+  id: number,
+  patch: Partial<Pick<TemplateExercise, 'sets' | 'rep_min' | 'rep_max' | 'duration_sec' | 'rest_sec' | 'per_side' | 'superset_group'>>,
+) {
+  if (!Object.keys(patch).length) return;
+  const { per_side, ...rest } = patch;
+  must(await supabase.from('template_exercises').update(per_side == null ? rest : { ...rest, per_side: per_side === 1 }).eq('id', id));
+  notify('template_exercises');
+}
+
+export async function removeTemplateExercise(id: number) {
+  must(await supabase.from('template_exercises').delete().eq('id', id));
+  notify('template_exercises');
+}
+
+/** Sıralamayı verilen id dizisine göre yazar. */
+export async function reorderTemplateExercises(orderedIds: number[]) {
+  await Promise.all(orderedIds.map(async (id, position) => must(await supabase.from('template_exercises').update({ position }).eq('id', id))));
+  notify('template_exercises');
+}
+
+export async function setDaySchedule(weekday: number, kind: 'workout' | 'rest' | 'walk', templateId: number | null) {
+  must(await supabase.from('day_schedule').update({ kind, template_id: kind === 'workout' ? templateId : null }).eq('weekday', weekday));
+  notify('day_schedule');
 }
 
 /** "Programıma ekle": günün şablonuna ekler; günün şablonu yoksa yeni şablon açıp güne atar. */
-export async function addExerciseToDay(db: SQLiteDatabase, weekday: number, dayName: string, exerciseId: string) {
-  const day = await db.getFirstAsync<{ template_id: number | null }>('SELECT template_id FROM day_schedule WHERE weekday = ?', weekday);
+export async function addExerciseToDay(weekday: number, dayName: string, exerciseId: string) {
+  const day = maybe(await supabase.from('day_schedule').select('template_id').eq('weekday', weekday).maybeSingle());
   let templateId = day?.template_id ?? null;
   if (!templateId) {
-    templateId = await createTemplate(db, `${dayName} antrenmanı`);
-    await setDaySchedule(db, weekday, 'workout', templateId);
+    templateId = await createTemplate(`${dayName} antrenmanı`);
+    await setDaySchedule(weekday, 'workout', templateId);
   }
-  await addTemplateExercise(db, templateId, exerciseId);
+  await addTemplateExercise(templateId, exerciseId);
   return templateId;
 }
 
@@ -106,13 +124,14 @@ export function summary(x: TemplateExercise) {
 }
 
 /** Şablonun çalıştırdığı kaslar (mini vücut haritası için); bir harekette birincilse birincil sayılır. */
-export async function getTemplateMuscles(db: SQLiteDatabase, templateId: number) {
-  const rows = await db.getAllAsync<{ muscle_id: string; isPrimary: number }>(
-    `SELECT em.muscle_id, MAX(em.role = 'primary') AS isPrimary
-     FROM template_exercises te JOIN exercise_muscles em ON em.exercise_id = te.exercise_id
-     WHERE te.template_id = ? GROUP BY em.muscle_id`, templateId);
-  return {
-    primary: rows.filter((r) => r.isPrimary).map((r) => r.muscle_id),
-    secondary: rows.filter((r) => !r.isPrimary).map((r) => r.muscle_id),
-  };
+export async function getTemplateMuscles(templateId: number) {
+  const [rows, c] = await Promise.all([supabase.from('template_exercises').select('exercise_id').eq('template_id', templateId), getCatalog()]);
+  const primary = new Set<string>();
+  const secondary = new Set<string>();
+  for (const { exercise_id } of must(rows)) {
+    const e = c.byId.get(exercise_id);
+    e?.primary.forEach((m) => primary.add(m));
+    e?.secondary.forEach((m) => secondary.add(m));
+  }
+  return { primary: [...primary], secondary: [...secondary].filter((m) => !primary.has(m)) };
 }

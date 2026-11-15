@@ -41,7 +41,8 @@ export function DaySelector({ value, onChange }: { value: DateStr; onChange: (d:
   const shift = (weeks: number) => {
     const next = addDays(monday, weeks * 7);
     setMonday(next);
-    onChange(addDays(next, weekday(value))); // haftanın aynı günü seçili kalsın
+    const t0 = today();
+    onChange(mondayOf(t0) === next ? t0 : next); // bugünün haftasında bugün, diğer haftalarda haftanın ilk günü
   };
   const swipe = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
@@ -71,10 +72,11 @@ export function DaySelector({ value, onChange }: { value: DateStr; onChange: (d:
               accessibilityRole="button" accessibilityState={{ selected }}
               accessibilityLabel={`${d}${trained.has(d) ? ', antrenman yapıldı' : ''}`}>
               <Text style={[styles.wd, isToday && styles.todayText]}>{WEEKDAYS_SHORT_TR[i]}</Text>
-              <View style={[styles.num, selected && styles.selected, !selected && isToday && styles.todayRing]}>
+              {/* key: Android (Fabric) sonradan eklenen arka plana borderRadius uygulamıyor, kare çiziyordu; yeniden oluşturmak düzeltir */}
+              <View key={selected ? 'num-on' : 'num'} style={[styles.num, selected && styles.selected, !selected && isToday && styles.todayRing]}>
                 <Text style={[styles.numText, selected && styles.selText]}>{Number(d.slice(8))}</Text>
               </View>
-              <View style={[styles.dot, trained.has(d) && styles.dotOn]} />
+              <View key={trained.has(d) ? 'dot-on' : 'dot'} style={[styles.dot, trained.has(d) && styles.dotOn]} />
             </Pressable>
           );
         })}

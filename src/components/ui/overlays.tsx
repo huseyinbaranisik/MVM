@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeInUp, FadeOutUp, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
@@ -59,7 +59,7 @@ export function OverlayHost() {
         {dialog ? (
           <Animated.View entering={FadeIn.duration(160)} style={styles.dialogBackdrop}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => answer(false)} accessibilityLabel="Vazgeç" />
-            <Animated.View entering={ZoomIn.springify().damping(18)} style={styles.dialog} accessibilityRole="alert">
+            <Animated.View entering={FadeIn.duration(140)} style={styles.dialog} accessibilityRole="alert">
               <Text style={type.title}>{dialog.title}</Text>
               {dialog.message ? <Text style={[type.body, styles.message]}>{dialog.message}</Text> : null}
               <View style={styles.actions}>

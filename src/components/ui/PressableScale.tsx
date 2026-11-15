@@ -8,15 +8,16 @@ export function PressableScale({ style, onPressIn, onPressOut, disabled, ...rest
   style?: StyleProp<ViewStyle>;
 }) {
   const pressed = useSharedValue(0);
+  const base = disabled ? 0.4 : 1; // animasyonlu opaklık statik stili ezdiği için devre dışı hali burada
   const anim = useAnimatedStyle(() => ({
     transform: [{ scale: 1 - pressed.value * 0.03 }],
-    opacity: 1 - pressed.value * 0.15,
+    opacity: base * (1 - pressed.value * 0.15),
   }));
   return (
     <AnimatedPressable
       {...rest}
       disabled={disabled}
-      style={[style, anim, disabled ? { opacity: 0.5 } : null]}
+      style={[style, anim]}
       onPressIn={(e) => { pressed.value = withTiming(1, { duration: 90 }); onPressIn?.(e); }}
       onPressOut={(e) => { pressed.value = withSpring(0, { damping: 15, stiffness: 300 }); onPressOut?.(e); }}
     />

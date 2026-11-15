@@ -17,6 +17,7 @@ import { getSession, getSessionSets, getPreviousSets, saveSet, deleteSet, endSes
 import { getSetting } from '@/db/repos/settings';
 import { getTemplateExercises, summary, type TemplateExercise } from '@/db/repos/templates';
 import { useDb } from '@/db/useDb';
+import { today } from '@/services/dates';
 import { fmtDec, parseNumber } from '@/services/units';
 import { mmss, overloadSuggestion } from '@/services/workout';
 import { useWorkoutStore } from '@/stores/useWorkoutStore';
@@ -56,12 +57,15 @@ export default function ActiveWorkout() {
   const doneMap = new Map(done.map((s) => [keyOf(s.exercise_id, s.set_index), s]));
   const totalSets = plan.reduce((a, x) => a + x.sets, 0);
   const elapsed = (now - new Date(session.started_at).getTime()) / 1000;
+  // günü geçmiş oturuma set eklenip değiştirilemez (sadece bitirilebilir)
+  const locked = session.date !== today();
 
   // Bu antrenmanda o hareket için en son girilen ağırlık: kg boş bırakılırsa varsayılan bu olur
   const lastKgThisSession = (exId: string) =>
     done.filter((s) => s.exercise_id === exId && s.weight_kg != null).sort((a, b) => b.set_index - a.set_index)[0]?.weight_kg ?? null;
 
   const openPicker = (x: TemplateExercise, setIndex: number, kgHint: number | null, repsHint: number | null) => {
+    if (locked) return;
     const key = keyOf(x.exercise_id, setIndex);
     setPicking({
       key,
@@ -79,6 +83,7 @@ export default function ActiveWorkout() {
   };
 
   const complete = async (x: TemplateExercise, xi: number, setIndex: number, durationSec?: number) => {
+    if (locked) return;
     const key = keyOf(x.exercise_id, setIndex);
     if (doneMap.has(key)) { await deleteSet(sessionId, x.exercise_id, setIndex); return; }
     const p = prev[x.exercise_id]?.[setIndex] ?? prev[x.exercise_id]?.at(-1);
@@ -113,8 +118,8 @@ export default function ActiveWorkout() {
         <PillButton label="Bitir" variant="primary" onPress={finish} style={styles.finish} />
       } />
       <View style={styles.statusRow}>
-        <Text style={type.caption}>Süre {mmss(elapsed)}</Text>
-        <Text style={type.caption}>{done.length}/{totalSets} set</Text>
+        <View style={styles.pill}><Text style={styles.pillText}>Süre {mmss(elapsed)}</Text></View>
+        <View style={styles.pill}><Text style={styles.pillText}>{done.length}/{totalSets} set</Text></View>
       </View>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {plan.map((x, xi) => {
@@ -157,10 +162,10 @@ export default function ActiveWorkout() {
                     <Cell
                       value={d ? (d.weight_kg != null ? fmtDec(d.weight_kg) : '—') : inputs[key]?.kg ?? null}
                       hint={kgHint != null ? fmtDec(kgHint) : 'kg'}
-                      disabled={!!d} label={`Set ${i + 1} ağırlık`}
+                      disabled={!!d || locked} label={`Set ${i + 1} ağırlık`}
                       onPress={() => openPicker(x, i, kgHint, repsHint)} />
                     {x.duration_sec ? (
-                      <Pressable style={[styles.input, styles.colIn, styles.timerBtn]} disabled={!!d}
+                      <Pressable style={[styles.input, styles.colIn, styles.timerBtn]} disabled={!!d || locked}
                         accessibilityRole="button" accessibilityLabel={running ? 'Kronometreyi durdur' : 'Kronometreyi başlat'}
                         onPress={() => {
                           if (!running) { setStopwatch({ key, startedAt: Date.now() }); return; }
@@ -175,10 +180,10 @@ export default function ActiveWorkout() {
                       <Cell
                         value={d ? String(d.reps ?? '—') : inputs[key]?.reps ?? null}
                         hint={p?.reps != null ? String(p.reps) : `${x.rep_min ?? ''}${x.rep_max && x.rep_max !== x.rep_min ? `-${x.rep_max}` : ''}`}
-                        disabled={!!d} label={`Set ${i + 1} tekrar`}
+                        disabled={!!d || locked} label={`Set ${i + 1} tekrar`}
                         onPress={() => openPicker(x, i, kgHint, repsHint)} />
                     )}
-                    <Pressable onPress={() => complete(x, xi, i)} style={[styles.check, styles.colCheck, d && styles.checkOn]}
+                    <Pressable onPress={() => complete(x, xi, i)} disabled={locked} style={[styles.check, styles.colCheck, d && styles.checkOn]}
                       accessibilityRole="checkbox" accessibilityState={{ checked: !!d }} accessibilityLabel={`Set ${i + 1} tamamlandı`}>
                       <Icon name="check" size={20} color={d ? colors.accent : colors.textSecondary} />
                     </Pressable>
@@ -246,6 +251,8 @@ const styles = StyleSheet.create({
   flex1: { flex: 1 },
   finish: { minHeight: 40 },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg },
+  pill: { backgroundColor: colors.primary, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  pillText: { color: colors.accent, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: 180 },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
   exHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

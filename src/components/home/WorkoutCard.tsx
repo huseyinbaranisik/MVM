@@ -58,9 +58,10 @@ export function WorkoutCard({ date }: { date: string }) {
         <View style={styles.maps}><TemplateMiniMap templateId={plan.templateId} height={120} /></View>
       ) : null}
       <PillButton
-        label={progress.finished ? 'Tamamlandı ✓' : progress.doneSets ? 'Devam et' : 'Başla'}
+        label={progress.finished ? 'Tamamlandı ✓' : date < today() ? 'Yapılmadı' : progress.doneSets ? 'Devam et' : 'Başla'}
         variant="primary"
-        disabled={progress.finished || date > today()}
+        // geçmiş günlere sonradan kayıt girilmez, gelecek günler de bugünden başlatılamaz
+        disabled={progress.finished || date !== today()}
         onPress={async () => { if (templateId) router.push(`/workout/${await startSession(templateId, date)}`); }}
       />
     </View>

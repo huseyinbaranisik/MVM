@@ -61,7 +61,7 @@ export function StepsCard({ date }: { date: string }) {
         </View>
         <SheetRow label="Adım uzunluğu" value={strideLabel} onPress={() => setOpen('stride')} />
         {data.s.unit_size != null ? (
-          <SheetRow label="Boydan otomatik hesapla (boy × 0,415)" onPress={() => updateTrackerSettings('steps', { unit_size: null })} />
+          <SheetRow label="Boydan hesapla" onPress={() => updateTrackerSettings('steps', { unit_size: null })} />
         ) : null}
         <SheetRow label="Telefon sensörü"
           value={sensor === 'on' ? 'Açık (uygulama açıkken sayar)' : sensor === 'off' ? 'Yok · manuel giriş' : '…'} />

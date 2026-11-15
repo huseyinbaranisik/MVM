@@ -36,7 +36,7 @@ export default function MuscleDetail() {
             <Text style={type.title}>{region ? region.nameTr : muscle!.nameTr}</Text>
             {muscle ? <Text style={styles.latin}>{muscle.nameLatin}</Text> : null}
             <Text style={type.body}>
-              {muscle ? muscle.description : `${region!.nameTr} bölgesi ${parts.length} parçadan oluşur. Bir parçaya dokunarak ayrıntısını görebilirsin.`}
+              {muscle ? muscle.description : `${region!.nameTr} · ${parts.length} parça`}
             </Text>
             {muscle && !region ? (
               <Pressable onPress={() => router.replace(`/muscle/${parentRegion.id}`)} accessibilityRole="button" style={styles.link}>

@@ -51,7 +51,7 @@ export default function WorkoutSummary() {
               <Text style={[type.body, styles.flex]}>{names.get(p.exercise_id)}</Text>
               <Text style={styles.prValue}>{p.kind === 'weight' ? `${fmtDec(p.value)} kg` : `1RM ≈ ${fmtDec(p.value)} kg`}</Text>
             </View>
-          )) : <Text style={type.caption}>Bu sefer rekor yok — tutarlılık da kazançtır.</Text>}
+          )) : <Text style={type.caption}>Rekor yok.</Text>}
         </View>
 
         <Text style={type.title}>Hareketler</Text>

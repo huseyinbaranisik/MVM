@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -56,7 +56,8 @@ export function Sheet({ visible, onClose, title, children }: {
       <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdrop]}>
         <Pressable style={styles.flex} onPress={onClose} accessibilityLabel="Kapat" />
       </Animated.View>
-      <KeyboardAvoidingView style={styles.end} behavior={Platform.OS === 'ios' ? 'padding' : undefined} pointerEvents="box-none">
+      {/* Android'de (edge-to-edge) pencere klavyeyle küçülmez: padding olmadan kısa paneller klavyenin arkasında kalıyordu */}
+      <KeyboardAvoidingView style={styles.end} behavior="padding" pointerEvents="box-none">
         <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.xl }, sheet]}>
           <View {...drag.panHandlers} style={styles.grab} accessibilityLabel="Kapatmak için aşağı sürükle">
             <View style={styles.handle} />

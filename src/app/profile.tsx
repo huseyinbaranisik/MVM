@@ -90,7 +90,7 @@ export default function ProfileScreen() {
         <View style={styles.tiles}>
           <Tile label="Kilo" value={weight ? `${fmtDec(weight)} kg` : 'Ekle'} onPress={() => setPrompt('weight')} />
           <Tile label="Boy" value={height ? `${Math.round(height)} cm` : 'Ekle'} onPress={() => setPrompt('height')} />
-          <Tile label="BMI" value={index ? fmtDec(index) : '—'} hint={index ? bmiLabel(index) : 'Kilo + boy gerekir'} />
+          <Tile label="BMI" value={index ? fmtDec(index) : '—'} hint={index ? bmiLabel(index) : undefined} />
         </View>
 
         <View style={styles.card}>
@@ -121,13 +121,12 @@ export default function ProfileScreen() {
               referenceLine1Config={{ color: colors.accent, dashWidth: 6, dashGap: 4, thickness: 1 }}
               curved
             />
-          ) : <Text style={type.caption}>Grafik için en az 2 kilo kaydı gir.</Text>}
+          ) : null}
           <SheetRow label="Hedef kilo" value={p.targetWeightKg ? `${fmtDec(p.targetWeightKg)} kg` : 'Belirle'} onPress={() => setPrompt('target')} />
           {data.weights.slice(-5).reverse().map((w) => {
             const label = `${w.date} · ${fmtDec(w.value)} kg`;
             return <SheetRow key={w.id} label={label} onPress={() => removeWeight(w.id, label)} />;
           })}
-          {data.weights.length ? <Text style={type.caption}>Silmek için kayda dokun. Aynı gün yeni kayıt öncekinin yerine geçer.</Text> : null}
         </View>
 
         <PressableScale style={styles.card} onPress={() => router.push('/streak')} accessibilityRole="button">

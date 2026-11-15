@@ -36,7 +36,7 @@ export function Checklist({ date }: { date: string }) {
         </Pressable>
       </View>
       {!loaded ? <Skeleton height={224} /> : habits.length === 0 ? (
-        <Text style={type.caption}>Bu gün için alışkanlık yok. + ile ekleyebilirsin.</Text>
+        <Text style={type.caption}>Alışkanlık yok.</Text>
       ) : (
         <View style={styles.list}>
           {habits.map((h) => (

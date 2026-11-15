@@ -68,13 +68,13 @@ export function CalorieCard({ date }: { date: string }) {
         }
         footer={
           <Text style={type.caption}>
-            {data.logs.length ? `${data.logs.length} kayıt · kalan ${fmtInt(Math.max(0, goal - total.kcal))} kcal` : 'Yiyecek eklemek için karta dokun'}
+            {data.logs.length ? `${data.logs.length} kayıt · kalan ${fmtInt(Math.max(0, goal - total.kcal))} kcal` : ''}
           </Text>
         }
       />
 
       <Sheet visible={open === 'search'} onClose={close} title="Yiyecek ekle">
-        <TextInput value={query} onChangeText={setQuery} placeholder="Ara: tavuk, pirinç, yoğurt…" placeholderTextColor={colors.textSecondary}
+        <TextInput value={query} onChangeText={setQuery} placeholder="Ara" placeholderTextColor={colors.textSecondary}
           style={styles.input} accessibilityLabel="Yiyecek ara" autoCorrect={false} />
         <SheetRow label="+ Kendi yiyeceğini ekle" onPress={() => setOpen('new')} />
         {!searching && data.recent.length ? (
@@ -85,7 +85,7 @@ export function CalorieCard({ date }: { date: string }) {
           </>
         ) : null}
         {results.map((f) => <SheetRow key={f.id} label={f.name} value={`${fmtInt(f.kcal)} kcal/100 g`} onPress={() => choose(f)} />)}
-        {!results.length ? <Text style={type.caption}>Bulunamadı. Kendi yiyeceğini ekleyebilirsin.</Text> : null}
+        {!results.length ? <Text style={type.caption}>Bulunamadı.</Text> : null}
       </Sheet>
 
       <NumberPrompt
@@ -99,10 +99,10 @@ export function CalorieCard({ date }: { date: string }) {
       <Sheet visible={open === 'menu'} onClose={close} title="Kalori">
         <SheetRow label="Hedefi değiştir" value={`${fmtInt(goal)} kcal`} onPress={() => setOpen('goal')} />
         {suggested ? (
-          <SheetRow label="Profiline göre öneri (orta aktif)" value={`${fmtInt(suggested)} kcal`}
+          <SheetRow label="Önerilen hedef" value={`${fmtInt(suggested)} kcal`}
             onPress={() => { updateTrackerSettings('calories', { goal: suggested }); close(); }} />
         ) : (
-          <SheetRow label="Hedef önerisi için profilde kilo, boy ve yaşını gir" onPress={() => { close(); router.push('/profile'); }} />
+          <SheetRow label="Önerilen hedef" value="Profili doldur" onPress={() => { close(); router.push('/profile'); }} />
         )}
         <SheetRow label="Bugünkü kayıtlar" value={String(data.logs.length)} onPress={() => setOpen('logs')} />
         <SheetRow label="Geçmişi gör" onPress={() => { close(); router.push('/tracker/calories'); }} />
@@ -113,8 +113,7 @@ export function CalorieCard({ date }: { date: string }) {
           const label = `${l.name} · ${fmtInt(l.grams)} g`;
           return <SheetRow key={l.id} label={label} value={`${fmtInt(l.kcal)} kcal`} onPress={() => remove(l.id, label)} />;
         })}
-        {!data.logs.length ? <Text style={type.caption}>Bu gün için kayıt yok.</Text> : null}
-        {data.logs.length ? <Text style={type.caption}>Silmek için kayda dokun.</Text> : null}
+        {!data.logs.length ? <Text style={type.caption}>Kayıt yok.</Text> : null}
       </Sheet>
 
       <NumberPrompt

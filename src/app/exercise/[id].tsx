@@ -89,7 +89,7 @@ export default function ExerciseDetailScreen() {
           ) : null}
           {history.length ? history.slice(-5).reverse().map((h) => (
             <Text key={h.date} style={type.body}>{h.date} · en ağır {fmtDec(h.maxKg)} kg · {h.sets} set</Text>
-          )) : <Text style={type.caption}>Henüz kayıt yok. Antrenmanda bu hareketi yaptığında burada görünecek.</Text>}
+          )) : <Text style={type.caption}>Henüz kayıt yok.</Text>}
         </View>
       </ScrollView>
       <AddToProgramSheet exerciseId={adding ? e.id : null} onClose={(msg) => { setAdding(false); if (msg) toast(msg); }} />

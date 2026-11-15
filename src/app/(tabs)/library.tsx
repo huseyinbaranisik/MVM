@@ -49,7 +49,7 @@ export default function LibraryScreen() {
           <SegmentedControl<MapMode> options={[{ value: 'region', label: 'Bölge' }, { value: 'part', label: 'Parça' }]} value={mode} onChange={setMode} />
         </View>
       </View>
-      <Text style={[type.caption, styles.center]}>{side === 'front' ? 'Ön' : 'Arka'} · bir {mode === 'region' ? 'bölgeye' : 'kasa'} dokun</Text>
+      <Text style={[type.caption, styles.center]}>{side === 'front' ? 'Ön' : 'Arka'}</Text>
       <FlipView style={style}>
         <BodyMap side={side} mode={mode} width={Math.min(width * 0.62, 280)}
           onPress={(id) => router.push(`/muscle/${id}`)} />

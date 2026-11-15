@@ -25,7 +25,7 @@ export function PillButton({ label, onPress, active = false, variant = 'chip', d
       accessibilityState={{ selected: active, disabled }}
       accessibilityLabel={accessibilityLabel ?? label}
       hitSlop={6}
-      style={[styles.base, filled ? styles.filled : styles.outline, variant === 'primary' && styles.primary, style]}>
+      style={[styles.base, filled ? styles.filled : styles.outline, variant === 'primary' && styles.primary, disabled && styles.disabled, style]}>
       <Text style={[styles.label, { color: filled ? colors.accent : colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
     </PressableScale>
   );
@@ -47,6 +47,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
 }
 
 const styles = StyleSheet.create({
+  disabled: { opacity: 0.4 },
   base: {
     minHeight: 40,
     paddingHorizontal: spacing.lg,

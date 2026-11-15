@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Icon } from '@/components/Icon';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { PillButton } from '@/components/ui/PillButton';
 import { Appear } from '@/components/ui/Skeleton';
@@ -15,12 +14,6 @@ import { colors, radius, spacing, type } from '@/theme';
 // 3 hazır seçenek + "Özel" (klavyeden giriş)
 const GLASSES = [6, 8, 10];
 const STEPS = [6000, 8000, 10000];
-type IconName = Parameters<typeof Icon>[0]['name'];
-const TIPS: { icon: IconName; text: string }[] = [
-  { icon: 'calendar_month', text: 'Haftalık programın hazır; Program sekmesinden değiştirebilirsin.' },
-  { icon: 'home', text: 'Bugün ekranında su, adım ve uykunu tek dokunuşla kaydet.' },
-  { icon: 'add', text: 'Ortadaki + ile hızlıca su ekle veya antrenmana başla.' },
-];
 
 /** İlk açılışta kısa tanıtım: isim, hedefler, kısa özet. Her adım atlanabilir. */
 export default function Onboarding() {
@@ -47,7 +40,7 @@ export default function Onboarding() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.top}>
-        <View style={styles.dots}>{[0, 1, 2].map((i) => <View key={i} style={[styles.dot, i === step && styles.dotOn]} />)}</View>
+        <View style={styles.dots}>{[0, 1].map((i) => <View key={i} style={[styles.dot, i === step && styles.dotOn]} />)}</View>
         <Pressable onPress={() => finish(false)} hitSlop={12} accessibilityRole="button"><Text style={type.caption}>Atla</Text></Pressable>
       </View>
 
@@ -55,14 +48,12 @@ export default function Onboarding() {
         {step === 0 ? (
           <>
             <Text style={type.hero}>Hoş geldin!</Text>
-            <Text style={styles.lead}>Sana nasıl hitap edelim?</Text>
             <TextInput value={name} onChangeText={setName} placeholder="Adın" placeholderTextColor={colors.textSecondary}
               style={styles.input} maxLength={24} autoFocus accessibilityLabel="Adın" onSubmitEditing={() => setStep(1)} />
           </>
-        ) : step === 1 ? (
+        ) : (
           <>
             <Text style={type.hero}>Günlük hedeflerin</Text>
-            <Text style={styles.lead}>Sonra istediğin zaman değiştirebilirsin.</Text>
             <Text style={type.subtitle}>Su</Text>
             <View style={styles.choices}>
               {GLASSES.map((g) => <PillButton key={g} label={`${g} bardak`} active={glasses === g} onPress={() => setGlasses(g)} style={styles.choice} />)}
@@ -76,21 +67,11 @@ export default function Onboarding() {
                 accessibilityLabel="Özel adım hedefi gir" />
             </View>
           </>
-        ) : (
-          <>
-            <Text style={type.hero}>Hazırsın{name.trim() ? `, ${name.trim()}` : ''}!</Text>
-            {TIPS.map((t) => (
-              <View key={t.icon} style={styles.tip}>
-                <View style={styles.tipIcon}><Icon name={t.icon} color={colors.accent} /></View>
-                <Text style={[type.body, styles.flex]}>{t.text}</Text>
-              </View>
-            ))}
-          </>
         )}
       </Appear>
 
-      <PillButton label={step < 2 ? 'Devam' : 'Başla'} variant="primary" style={styles.cta}
-        onPress={() => (step < 2 ? setStep(step + 1) : finish(true))} />
+      <PillButton label={step < 1 ? 'Devam' : 'Başla'} variant="primary" style={styles.cta}
+        onPress={() => (step < 1 ? setStep(step + 1) : finish(true))} />
 
       <NumberPrompt visible={custom === 'water'} onClose={() => setCustom(null)} title="Günlük su hedefi" suffix="bardak"
         initial={glasses} onSubmit={(v) => setGlasses(Math.max(1, Math.round(v)))} />
@@ -107,15 +88,11 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.divider },
   dotOn: { width: 24, backgroundColor: colors.primaryLight },
   body: { flex: 1, justifyContent: 'center', gap: spacing.lg },
-  lead: { ...type.body, color: colors.textSecondary },
   input: {
     minHeight: 60, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.divider,
     paddingHorizontal: spacing.lg, color: colors.textPrimary, fontSize: 22, fontWeight: '700',
   },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   choice: { minWidth: '45%', flexGrow: 1 },
-  tip: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.lg },
-  tipIcon: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  flex: { flex: 1 },
   cta: { marginBottom: spacing.md },
 });

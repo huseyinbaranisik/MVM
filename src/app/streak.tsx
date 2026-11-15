@@ -99,11 +99,7 @@ export default function StreakScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={type.subtitle}>Kurallar</Text>
-          <Text style={type.caption}>
-            Antrenman günü: antrenmanı bitir. Dinlenme / yürüyüş günü aşağıdaki seçimle tamamlanır.
-            Her 7 tamamlanan günde 1 dondurma hakkı kazanırsın (en fazla {MAX_FREEZES}); kaçırılan gün hakkın varsa seriyi bozmaz.
-          </Text>
+          <Text style={type.subtitle}>Dinlenme günü</Text>
           <View style={styles.segment}>
             <SegmentedControl<StreakRule['restDayMode']>
               options={[{ value: 'stepsOrChecklist', label: 'Adım veya liste' }, { value: 'steps', label: 'Adım' }, { value: 'checklist', label: 'Liste' }]}
@@ -111,12 +107,10 @@ export default function StreakScreen() {
               onChange={(v) => setSetting('streakRule', { ...rule, restDayMode: v })}
             />
           </View>
-          <Text style={type.caption}>{`Liste: günlük alışkanlıkların en az %${Math.round(rule.checklistThreshold * 100)}'i.`}</Text>
         </View>
 
         <View style={styles.card}>
           <Text style={type.subtitle}>Akşam hatırlatması</Text>
-          <Text style={type.caption}>Gün tamamlanmadıysa bu saatte bildirim gelir; tamamladıysan o gün gelmez.</Text>
           <SheetRow label="Saat" value={notif.streakReminder ?? 'Kapalı'} onPress={setReminder} />
           {notif.streakReminder ? (
             <SheetRow label="Hatırlatmayı kapat" onPress={() => setSetting('notifications', { ...notif, streakReminder: null })} />

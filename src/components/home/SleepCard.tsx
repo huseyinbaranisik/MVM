@@ -93,7 +93,7 @@ export function SleepCard({ date }: { date: string }) {
         }
         footer={
           <Text style={type.caption}>
-            {avg != null ? `Haftalık ort. ${formatDuration(Math.round(avg), display)} · Ort. yatış ${avgBed}` : 'Kayıt eklemek için karta dokun'}
+            {avg != null ? `Haftalık ort. ${formatDuration(Math.round(avg), display)} · Ort. yatış ${avgBed}` : ''}
           </Text>
         }
       />

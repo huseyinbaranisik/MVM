@@ -9,7 +9,8 @@ import { colors, spacing } from '@/theme';
 export function Screen({ children }: { children: ReactNode }) {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>{children}</ScrollView>
+      {/* "handled": sayfadaki Sheet'ler React ağacında bu ScrollView'un içinde; varsayılan "never" paneldeki her dokunuşta klavyeyi kapatıp dokunuşu yutuyordu */}
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">{children}</ScrollView>
     </SafeAreaView>
   );
 }

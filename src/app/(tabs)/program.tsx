@@ -31,7 +31,6 @@ export default function ProgramScreen() {
   return (
     <Screen>
       <Text style={type.hero}>Program</Text>
-      <Text style={type.caption}>Bir güne dokunarak antrenman ata</Text>
       <View style={styles.card}>
         {data?.week.map((d) => (
           <Pressable key={d.weekday} onPress={() => setAssigning(d)} style={styles.row} accessibilityRole="button"

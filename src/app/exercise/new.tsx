@@ -58,7 +58,7 @@ export default function NewExercise() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TextInput value={name} onChangeText={setName} placeholder="Hareket adı" placeholderTextColor={colors.textSecondary}
           style={styles.input} maxLength={60} accessibilityLabel="Hareket adı" />
-        <TextInput value={description} onChangeText={setDescription} placeholder="Açıklama / nasıl yapılır (isteğe bağlı)"
+        <TextInput value={description} onChangeText={setDescription} placeholder="Açıklama"
           placeholderTextColor={colors.textSecondary} style={[styles.input, styles.multiline]} multiline accessibilityLabel="Açıklama" />
 
         <Pressable onPress={pickPhoto} style={styles.photo} accessibilityRole="button" accessibilityLabel="Fotoğraf seç">

@@ -22,7 +22,7 @@ export function CalorieCard({ date }: { date: string }) {
   const db = useSQLiteContext();
   const data = useDb(async (db) => ({
     date, logs: await getFoodLogs(db, date), foods: await getFoods(db), s: await getTrackerSettings(db, 'calories'),
-  }), [date]);
+  }), [date], ['food_logs', 'foods', 'tracker_settings']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'search' | 'grams' | 'new' | 'logs' | null>(null);
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<Pick<Food, 'id' | 'name'> | null>(null);

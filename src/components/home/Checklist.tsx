@@ -22,7 +22,7 @@ const HABIT_ICONS: IconName[] = [
 
 export function Checklist({ date }: { date: string }) {
   const db = useSQLiteContext();
-  const loaded = useDb((db) => getHabitsForDate(db, date), [date]);
+  const loaded = useDb((db) => getHabitsForDate(db, date), [date], ['habits', 'habit_logs']);
   const habits = loaded ?? [];
   const [editing, setEditing] = useState<Partial<Habit> | null>(null);
   const done = habits.filter((h) => h.done).length;

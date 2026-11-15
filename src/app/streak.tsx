@@ -30,7 +30,7 @@ export default function StreakScreen() {
     state: await getStreakState(db),
     days: await getStreakDays(db, first, last),
     rule: await getSetting(db, 'streakRule'),
-  }), [first, last]);
+  }), [first, last], ['streak_state', 'streak_days', 'settings']);
 
   if (!data?.state) return <LoadingScreen blocks={[120, 320, 90]} />;
   const rule = data.rule;

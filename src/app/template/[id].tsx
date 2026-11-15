@@ -29,7 +29,7 @@ export default function TemplateEditor() {
   const data = useDb(async (db) => ({
     name: (await getTemplateName(db, templateId))?.name ?? '',
     items: await getTemplateExercises(db, templateId),
-  }), [templateId]);
+  }), [templateId], ['workout_templates', 'template_exercises', 'exercises']);
   const [name, setName] = useState<string | null>(null);
   const [editing, setEditing] = useState<TemplateExercise | null>(null);
   const [picking, setPicking] = useState(false);
@@ -179,7 +179,7 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 }
 
 function PickerSheet({ visible, onClose, onPick }: { visible: boolean; onClose: () => void; onPick: (id: string) => void }) {
-  const list = useDb((db) => getExerciseList(db), []);
+  const list = useDb((db) => getExerciseList(db), [], ['exercises', 'exercise_muscles']);
   const [q, setQ] = useState('');
   const filtered = useMemo(() => {
     const s = q.trim().toLocaleLowerCase('tr-TR');

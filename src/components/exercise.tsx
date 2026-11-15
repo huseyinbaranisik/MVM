@@ -85,7 +85,7 @@ export function BackHeader({ title, right }: { title: string; right?: ReactNode 
 /** "Programıma ekle": gün seç → o günün antrenmanına eklenir. */
 export function AddToProgramSheet({ exerciseId, onClose }: { exerciseId: string | null; onClose: (msg?: string) => void }) {
   const db = useSQLiteContext();
-  const week = useDb((db) => getWeekPlan(db), []) ?? [];
+  const week = useDb((db) => getWeekPlan(db), [], ['day_schedule', 'workout_templates', 'template_exercises']) ?? [];
   return (
     <Sheet visible={!!exerciseId} onClose={() => onClose()} title="Hangi güne eklensin?">
       {week.map((d) => (

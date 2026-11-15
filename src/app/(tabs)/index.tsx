@@ -33,7 +33,7 @@ export default function TodayScreen() {
     name: (await getSetting(db, 'profile')).name,
     onboarded: await getSetting(db, 'onboarded'),
     streak: (await db.getFirstAsync<{ current: number }>('SELECT current FROM streak_state WHERE id = 1'))?.current ?? 0,
-  }), []);
+  }), [], ['settings', 'streak_state']);
   const [morningPrompt, setMorningPrompt] = useState(false);
 
   // Canlı adım sayımı: uygulama açıkken atılan adımlar bugüne eklenir. Sensör/izin yoksa manuel giriş kalır.

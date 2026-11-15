@@ -17,7 +17,7 @@ export default function QuickAdd() {
   const data = useDb(async (db) => ({
     plan: await getDayPlan(db, weekday(today())),
     glass: (await getTrackerSettings(db, 'water'))?.unit_size ?? 250,
-  }), []);
+  }), [], ['day_schedule', 'workout_templates', 'template_exercises', 'tracker_settings']);
   const templateId = data?.plan?.kind === 'workout' ? data.plan.templateId : null;
   const glass = data?.glass ?? 250;
 

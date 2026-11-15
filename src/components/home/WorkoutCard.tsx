@@ -24,7 +24,7 @@ export function WorkoutCard({ date }: { date: string }) {
       progress: await getDayWorkoutProgress(db, date, plan?.templateId ?? null),
       stepGoal: (await getTrackerSettings(db, 'steps'))?.goal ?? 0,
     };
-  }, [date]);
+  }, [date], ['day_schedule', 'workout_templates', 'template_exercises', 'workout_sessions', 'session_sets', 'tracker_settings']);
   if (!data?.plan) return <Skeleton height={data ? 0 : 220} />;
   const { plan, progress } = data;
   const dayLabel = date === today() ? 'Bugünün' : `${WEEKDAYS_TR[weekday(date)]} günü`;

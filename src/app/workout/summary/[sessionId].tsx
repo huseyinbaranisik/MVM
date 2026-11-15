@@ -23,7 +23,7 @@ export default function WorkoutSummary() {
       names: new Map(names.map((n) => [n.id, n.name_tr])),
       prs: findPRs(sets, await getPreviousBests(db, sessionId)),
     };
-  }, [sessionId]);
+  }, [sessionId], ['workout_sessions', 'session_sets', 'exercises']);
   if (!data?.session) return <LoadingScreen blocks={[120, 90, 160]} />;
 
   const { session, sets, names, prs } = data;

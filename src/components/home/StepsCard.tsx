@@ -24,7 +24,7 @@ export function StepsCard({ date }: { date: string }) {
     steps: await getTrackerValue(db, 'steps', date),
     s: await getTrackerSettings(db, 'steps'),
     heightCm: await getLatestMeasurement(db, 'height'),
-  }), [date]);
+  }), [date], ['daily_trackers', 'tracker_settings', 'body_measurements']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'stride' | 'add' | null>(null);
 
   if (!data?.s) return <Skeleton height={300} style={styles.placeholder} />;

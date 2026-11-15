@@ -46,7 +46,7 @@ export default function ActiveWorkout() {
     const prev: Record<string, SessionSet[]> = {};
     for (const x of plan) prev[x.exercise_id] = await getPreviousSets(db, x.exercise_id, sessionId);
     return { session, plan, prev, done: await getSessionSets(db, sessionId), rest: await getSetting(db, 'restSec') };
-  }, [sessionId]);
+  }, [sessionId], ['workout_sessions', 'session_sets', 'template_exercises', 'exercises', 'settings']);
 
   const [inputs, setInputs] = useState<Inputs>({});
   const [stopwatch, setStopwatch] = useState<{ key: string; startedAt: number } | null>(null);

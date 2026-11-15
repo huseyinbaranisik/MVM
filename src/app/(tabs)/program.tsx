@@ -16,7 +16,7 @@ import { colors, radius, spacing, type } from '@/theme';
 
 export default function ProgramScreen() {
   const db = useSQLiteContext();
-  const data = useDb(async (db) => ({ week: await getWeekPlan(db), templates: await getTemplates(db) }), []);
+  const data = useDb(async (db) => ({ week: await getWeekPlan(db), templates: await getTemplates(db) }), [], ['day_schedule', 'workout_templates', 'template_exercises']);
   const [assigning, setAssigning] = useState<DayPlan | null>(null);
   const todayWd = weekday(today());
   // React Compiler closure bağımlılıklarını render sırasında okur: null olabilen state'ten alanları burada güvenle çıkar

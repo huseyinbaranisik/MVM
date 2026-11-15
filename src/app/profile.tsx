@@ -32,7 +32,7 @@ export default function ProfileScreen() {
     heights: await getMeasurements(db, 'height'),
     streak: await getStreakState(db),
     badges: await getBadges(db),
-  }), []);
+  }), [], ['settings', 'body_measurements', 'streak_state', 'badges']);
   const [prompt, setPrompt] = useState<Prompt>(null);
   const [name, setName] = useState<string | null>(null); // null = düzenlenmiyor, kayıtlı adı göster
 

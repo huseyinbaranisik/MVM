@@ -34,7 +34,7 @@ export default function TrackerHistory() {
       : kind === 'calories' ? await getCalorieHistory(db, from, to)
       : await getTrackerHistory(db, kind, from, to);
     return { s, raw, height: await getLatestMeasurement(db, 'height') };
-  }, [kind, from, to]);
+  }, [kind, from, to], ['tracker_settings', 'daily_trackers', 'sleep_logs', 'food_logs', 'foods', 'body_measurements']);
 
   if (!data?.s) return <LoadingScreen blocks={[44, 260, 90]} />;
   const s = data.s;

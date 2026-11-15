@@ -18,7 +18,7 @@ const EQUIPMENT_FILTERS = ['dumbbell', 'machine', 'bodyweight'] as const;
 
 export default function LibraryScreen() {
   const { width } = useWindowDimensions();
-  const list = useDb((db) => getExerciseList(db), []);
+  const list = useDb((db) => getExerciseList(db), [], ['exercises', 'exercise_muscles']);
   const { side, flip, style } = useFlip();
   const [mode, setMode] = useState<MapMode>('region');
   const [group, setGroup] = useState<string | null>(null);

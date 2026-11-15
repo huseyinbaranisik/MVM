@@ -32,7 +32,7 @@ export function SleepCard({ date }: { date: string }) {
       s: await getTrackerSettings(db, 'sleep'),
       notif: await getSetting(db, 'notifications'),
     };
-  }, [date]);
+  }, [date], ['sleep_logs', 'tracker_settings', 'settings']);
   const [open, setOpen] = useState<'entry' | 'menu' | 'goal' | null>(null);
   const [notice, setNotice] = useState('');
 

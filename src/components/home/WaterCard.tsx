@@ -17,7 +17,7 @@ export function WaterCard({ date }: { date: string }) {
   const db = useSQLiteContext();
   const data = useDb(async (db) => ({
     date, ml: await getTrackerValue(db, 'water', date), s: await getTrackerSettings(db, 'water'),
-  }), [date]);
+  }), [date], ['daily_trackers', 'tracker_settings']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'glass' | null>(null);
 
   if (!data?.s) return <Skeleton height={300} style={styles.placeholder} />;

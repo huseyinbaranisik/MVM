@@ -131,3 +131,14 @@ export function diffStreakDays(prev: ReadonlyMap<string, StreakStatus>, next: { 
   const nextDates = new Set(next.map((d) => d.date));
   return { changed: next.filter((d) => prev.get(d.date) !== d.status), removed: [...prev.keys()].filter((d) => !nextDates.has(d)) };
 }
+
+/**
+ * Akşam seri hatırlatmasının zamanı: bugün tamamlanmadıysa ve saat geçmediyse bugün, yoksa yarın aynı saatte.
+ * Yarınki bildirim, uygulama açılıp gün tamamlanınca tekrar ertelenir.
+ */
+export function nextStreakReminder(now: Date, time: string, todayCompleted: boolean): Date {
+  const [h, m] = time.split(':').map(Number);
+  const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+  if (todayCompleted || at <= now) at.setDate(at.getDate() + 1);
+  return at;
+}

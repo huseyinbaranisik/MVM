@@ -4,8 +4,8 @@ import { seedExercises } from '@/data/seedExercises';
 import { seedTemplates } from '@/data/seedProgram';
 
 import { builtInExercises, exercisesForMuscles, fromUserRow, musclesOfRegion, regionsOf, sortForLibrary } from '../catalog';
-import { filterFoods, sumMacros } from '../nutrition';
-import { buildDayInputs, computeStreak, diffStreakDays } from '../streakService';
+import { filterFoods, proteinTarget, suggestCalories, sumMacros } from '../nutrition';
+import { buildDayInputs, computeStreak, diffStreakDays, nextStreakReminder } from '../streakService';
 import { bestsByExercise } from '../workout';
 
 describe('katalog', () => {
@@ -89,5 +89,29 @@ describe('seri girdileri', () => {
     const prev = new Map([['2026-11-02', 'completed' as const], ['2026-11-03', 'missed' as const], ['2026-11-04', 'completed' as const]]);
     expect(diffStreakDays(prev, [{ date: '2026-11-02', status: 'completed' }, { date: '2026-11-03', status: 'frozen' }]))
       .toEqual({ changed: [{ date: '2026-11-03', status: 'frozen' }], removed: ['2026-11-04'] });
+  });
+});
+
+describe('kalori hedefi', () => {
+  it('Mifflin-St Jeor × 1,55, 50 kcal yuvarlı; eksik bilgide null', () => {
+    // erkek 80 kg 180 cm 25 yaş: BMR 1805 → ×1,55 = 2797,75 → 2800
+    expect(suggestCalories({ weightKg: 80, heightCm: 180, age: 25, sex: 'male' })).toBe(2800);
+    // kadın 60 kg 165 cm 30 yaş: BMR 1320,25 → 2046,4 → 2050
+    expect(suggestCalories({ weightKg: 60, heightCm: 165, age: 30, sex: 'female' })).toBe(2050);
+    expect(suggestCalories({ weightKg: 80, heightCm: null, age: 25, sex: 'male' })).toBeNull();
+    expect(proteinTarget(80)).toBe(144);
+    expect(proteinTarget(null)).toBeNull();
+  });
+});
+
+describe('seri hatırlatması', () => {
+  const now = new Date(2026, 10, 15, 18, 30);
+  it('gün tamamlanmadıysa bugün, tamamlandıysa veya saat geçtiyse yarın', () => {
+    expect(nextStreakReminder(now, '20:00', false)).toEqual(new Date(2026, 10, 15, 20, 0));
+    expect(nextStreakReminder(now, '20:00', true)).toEqual(new Date(2026, 10, 16, 20, 0));
+    expect(nextStreakReminder(now, '18:00', false)).toEqual(new Date(2026, 10, 16, 18, 0));
+  });
+  it('ay sonunda bir sonraki aya geçer', () => {
+    expect(nextStreakReminder(new Date(2026, 10, 30, 21, 0), '20:00', false)).toEqual(new Date(2026, 11, 1, 20, 0));
   });
 });

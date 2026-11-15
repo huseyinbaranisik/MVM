@@ -51,3 +51,17 @@ export async function getCalorieHistory(from: string, to: string) {
   for (const l of rows) byDate.set(l.date, (byDate.get(l.date) ?? 0) + toLog(l).kcal);
   return [...byDate].sort(([a], [b]) => a.localeCompare(b)).map(([date, value]) => ({ date, value }));
 }
+
+/** Son yenen farklı yiyecekler (en yenisi önce); aramada ilk sırada gösterilir. */
+export async function getRecentFoods(limit = 8): Promise<Food[]> {
+  const rows = must(await supabase.from('food_logs').select('name, kcal_100, protein_100, fat_100, carbs_100')
+    .order('logged_at', { ascending: false }).limit(60));
+  const seen = new Map<string, Food>();
+  for (const r of rows) {
+    if (seen.size >= limit) break;
+    if (!seen.has(r.name)) {
+      seen.set(r.name, { id: `r:${r.name}`, name: r.name, kcal: r.kcal_100, protein: r.protein_100, fat: r.fat_100, carbs: r.carbs_100, source: 'user' });
+    }
+  }
+  return [...seen.values()];
+}

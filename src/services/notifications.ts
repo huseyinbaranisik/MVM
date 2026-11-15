@@ -25,7 +25,7 @@ async function channelId(): Promise<string | undefined> {
   }
 }
 
-async function ensurePermission() {
+export async function ensurePermission() {
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
   return (await Notifications.requestPermissionsAsync()).granted;
@@ -61,6 +61,23 @@ export async function scheduleIn(id: string, seconds: number, title: string, bod
     identifier: id,
     content: { title, body },
     trigger: { type: SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: Math.max(1, Math.round(seconds)), channelId: channel },
+  });
+  return true;
+}
+
+export async function hasPermission() {
+  return (await Notifications.getPermissionsAsync()).granted;
+}
+
+/** Belirli bir anda bir kez bildirim. Aynı id ile tekrar çağrılırsa eskisinin yerine geçer. İzin istemez; izin yoksa false. */
+export async function scheduleAt(id: string, at: Date, title: string, body: string) {
+  if (!(await hasPermission())) return false;
+  const channel = await channelId();
+  await cancelReminder(id);
+  await Notifications.scheduleNotificationAsync({
+    identifier: id,
+    content: { title, body },
+    trigger: { type: SchedulableTriggerInputTypes.DATE, date: at, channelId: channel },
   });
   return true;
 }

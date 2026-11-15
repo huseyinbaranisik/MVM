@@ -8,19 +8,24 @@ import { confirm } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { addFood, deleteFoodLog, getFoodLogs, getFoods, logFood, type Food } from '@/db/repos/foods';
-import { getTrackerSettings, updateTrackerSettings } from '@/db/repos/trackers';
+import { addFood, deleteFoodLog, getFoodLogs, getFoods, getRecentFoods, logFood, type Food } from '@/db/repos/foods';
+import { getSetting } from '@/db/repos/settings';
+import { getLatestMeasurement, getTrackerSettings, updateTrackerSettings } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
-import { filterFoods, sumMacros } from '@/services/nutrition';
+import { filterFoods, proteinTarget, suggestCalories, sumMacros } from '@/services/nutrition';
 import { fmtInt, parseNumber } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
 
 const MAX_RESULTS = 40;
 
 export function CalorieCard({ date }: { date: string }) {
-  const data = useDb(async () => ({
-    date, logs: await getFoodLogs(date), foods: await getFoods(), s: await getTrackerSettings('calories'),
-  }), [date], ['food_logs', 'user_foods', 'tracker_settings']);
+  const data = useDb(async () => {
+    const [logs, foods, recent, s, profile, weight, height] = await Promise.all([
+      getFoodLogs(date), getFoods(), getRecentFoods(), getTrackerSettings('calories'),
+      getSetting('profile'), getLatestMeasurement('weight'), getLatestMeasurement('height'),
+    ]);
+    return { date, logs, foods, recent, s, weight, suggested: suggestCalories({ weightKg: weight, heightCm: height, age: profile.age, sex: profile.sex }) };
+  }, [date], ['food_logs', 'user_foods', 'tracker_settings', 'settings', 'body_measurements']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'search' | 'grams' | 'new' | 'logs' | null>(null);
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<Food | null>(null);
@@ -28,7 +33,13 @@ export function CalorieCard({ date }: { date: string }) {
   if (!data?.s) return <Skeleton height={240} />;
   const total = sumMacros(data.logs);
   const goal = data.s.goal;
-  const results = filterFoods(data.foods, query).slice(0, MAX_RESULTS);
+  const searching = query.trim() !== '';
+  const recentNames = new Set(data.recent.map((f) => f.name));
+  // arama boşken önce son yenenler, sonra kalan yiyecekler
+  const results = searching ? filterFoods(data.foods, query).slice(0, MAX_RESULTS)
+    : data.foods.filter((f) => !recentNames.has(f.name)).slice(0, MAX_RESULTS);
+  const protein = proteinTarget(data.weight);
+  const suggested = data.suggested;
   const close = () => setOpen(null);
   const choose = (f: Food) => { setPicked(f); setOpen('grams'); };
 
@@ -50,7 +61,7 @@ export function CalorieCard({ date }: { date: string }) {
         onPress={() => { setQuery(''); setOpen('search'); }}
         side={
           <>
-            <Info label="Protein" value={`${fmtInt(total.protein)} g`} />
+            <Info label="Protein" value={protein ? `${fmtInt(total.protein)} / ${protein} g` : `${fmtInt(total.protein)} g`} />
             <Info label="Yağ" value={`${fmtInt(total.fat)} g`} />
             <Info label="Karbonhidrat" value={`${fmtInt(total.carbs)} g`} />
           </>
@@ -66,6 +77,13 @@ export function CalorieCard({ date }: { date: string }) {
         <TextInput value={query} onChangeText={setQuery} placeholder="Ara: tavuk, pirinç, yoğurt…" placeholderTextColor={colors.textSecondary}
           style={styles.input} accessibilityLabel="Yiyecek ara" autoCorrect={false} />
         <SheetRow label="+ Kendi yiyeceğini ekle" onPress={() => setOpen('new')} />
+        {!searching && data.recent.length ? (
+          <>
+            <Text style={type.caption}>Son yenenler</Text>
+            {data.recent.map((f) => <SheetRow key={f.id} label={f.name} value={`${fmtInt(f.kcal)} kcal/100 g`} onPress={() => choose(f)} />)}
+            <Text style={type.caption}>Tüm yiyecekler</Text>
+          </>
+        ) : null}
         {results.map((f) => <SheetRow key={f.id} label={f.name} value={`${fmtInt(f.kcal)} kcal/100 g`} onPress={() => choose(f)} />)}
         {!results.length ? <Text style={type.caption}>Bulunamadı. Kendi yiyeceğini ekleyebilirsin.</Text> : null}
       </Sheet>
@@ -80,6 +98,12 @@ export function CalorieCard({ date }: { date: string }) {
 
       <Sheet visible={open === 'menu'} onClose={close} title="Kalori">
         <SheetRow label="Hedefi değiştir" value={`${fmtInt(goal)} kcal`} onPress={() => setOpen('goal')} />
+        {suggested ? (
+          <SheetRow label="Profiline göre öneri (orta aktif)" value={`${fmtInt(suggested)} kcal`}
+            onPress={() => { updateTrackerSettings('calories', { goal: suggested }); close(); }} />
+        ) : (
+          <SheetRow label="Hedef önerisi için profilde kilo, boy ve yaşını gir" onPress={() => { close(); router.push('/profile'); }} />
+        )}
         <SheetRow label="Bugünkü kayıtlar" value={String(data.logs.length)} onPress={() => setOpen('logs')} />
         <SheetRow label="Geçmişi gör" onPress={() => { close(); router.push('/tracker/calories'); }} />
       </Sheet>

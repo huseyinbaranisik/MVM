@@ -4,12 +4,15 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
+import { pickTime, toast } from '@/components/ui/overlays';
 import { SegmentedControl } from '@/components/ui/PillButton';
+import { SheetRow } from '@/components/ui/Sheet';
 import { LoadingScreen } from '@/components/ui/Skeleton';
 import { getSetting, setSetting } from '@/db/repos/settings';
 import { getStreakDays, getStreakState } from '@/db/repos/streak';
 import { useDb } from '@/db/useDb';
 import { addDays, MONTHS_TR, today, weekday, WEEKDAYS_SHORT_TR } from '@/services/dates';
+import { ensurePermission } from '@/services/notifications';
 import { MAX_FREEZES, type StreakRule } from '@/services/streakService';
 import { colors, radius, spacing, type } from '@/theme';
 
@@ -28,10 +31,18 @@ export default function StreakScreen() {
     state: await getStreakState(),
     days: await getStreakDays(first, last),
     rule: await getSetting('streakRule'),
+    notif: await getSetting('notifications'),
   }), [first, last], ['streak_state', 'streak_days', 'settings']);
 
   if (!data?.state) return <LoadingScreen blocks={[120, 320, 90]} />;
   const rule = data.rule;
+  const notif = data.notif;
+  const setReminder = async () => {
+    const t = await pickTime(notif.streakReminder ?? '20:00');
+    if (!t) return;
+    if (!(await ensurePermission())) { toast('Bildirim izni verilmedi.'); return; }
+    await setSetting('notifications', { ...notif, streakReminder: t });
+  };
   const status = new Map(data.days.map((d) => [d.date, d.status]));
   const cells = [...Array<null>(weekday(first)).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => addDays(first, i))];
   const shift = (n: number) => {
@@ -101,6 +112,15 @@ export default function StreakScreen() {
             />
           </View>
           <Text style={type.caption}>{`Liste: günlük alışkanlıkların en az %${Math.round(rule.checklistThreshold * 100)}'i.`}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={type.subtitle}>Akşam hatırlatması</Text>
+          <Text style={type.caption}>Gün tamamlanmadıysa bu saatte bildirim gelir; tamamladıysan o gün gelmez.</Text>
+          <SheetRow label="Saat" value={notif.streakReminder ?? 'Kapalı'} onPress={setReminder} />
+          {notif.streakReminder ? (
+            <SheetRow label="Hatırlatmayı kapat" onPress={() => setSetting('notifications', { ...notif, streakReminder: null })} />
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>

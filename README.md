@@ -10,6 +10,8 @@ MVM is a personal mobile app that keeps a strength-training program and the smal
 
 **Built with:** Expo SDK 58 (React Native 0.88, TypeScript) · data in Supabase · runs in Expo Go or a development build.
 
+**Android:** download `app-release.apk` from the [latest release](https://github.com/huseyinbaranisik/MVM/releases/latest), open it on the phone and allow installing from that source.
+
 ## Demo
 
 <p align="center"><img src="assets/demo.gif" alt="Fig. 2: a real recording. Home screen, scrolling through the cards, the Program tab, the exercise library with a tap on the abdominals, the profile, opening the theme picker and switching to the Erik & Bal theme." width="380"></p>
@@ -111,6 +113,11 @@ npx jest
 
 The README figures are rendered by `tools/render_figures.py` from the screenshots and recording in `assets/src/` (`uv run --with pillow --with imageio-ffmpeg python tools/render_figures.py`).
 
+Release APK: `npx expo prebuild --platform android`, then `gradlew.bat assembleRelease` in `android/`; the file lands in `android/app/build/outputs/apk/release/`.
+
+> [!WARNING]
+> On Windows the native build fails when the project path contains non-ASCII characters (for example `Masaüstü`), and the Ninja 1.10.2 that ships with the Android SDK's CMake 3.22.1 cannot handle the long codegen paths. Build from an ASCII path such as `C:\dev\mvm`, and point `cmake.dir` in `android/local.properties` to a CMake copy whose `bin/ninja.exe` is Ninja 1.12 or newer.
+
 > [!NOTE]
 > The app needs a connection: every screen reads from Supabase, and without one it shows a "server unreachable" screen. Steps are counted only while the app is open; background counting would need Health Connect and a development build. The Statistics tab is still a placeholder. The theme choice is stored on the device, not in the account.
 
@@ -128,6 +135,8 @@ The README figures are rendered by `tools/render_figures.py` from the screenshot
 MVM, bir kuvvet antrenmanı programını ve çevresindeki küçük günlük alışkanlıkları tek yerde toplayan kişisel bir mobil uygulama. Haftayı planlıyor, antrenman sırasında setleri kaydediyor; su, adım, uyku ve kaloriyi aynı ana ekranda takip ediyorsun. Günlük seri hepsini birbirine bağlıyor. Arayüz Türkçe.
 
 **Teknoloji:** Expo SDK 58 (React Native 0.88, TypeScript) · veriler Supabase'de · Expo Go'da ya da development build ile çalışır.
+
+**Android:** `app-release.apk` dosyasını [son sürümden](https://github.com/huseyinbaranisik/MVM/releases/latest) indir, telefonda aç ve o kaynaktan yüklemeye izin ver.
 
 ### Demo
 
@@ -191,6 +200,11 @@ npx expo start
 ```
 
 İlk girişte varsayılan haftalık program, alışkanlıklar ve hedefler hesaba yazılır. Denetimler Şekil 3'teki gibi: `npx tsc --noEmit`, `npx expo lint`, `npx jest`. README görselleri `assets/src/` içindeki ekran görüntüleri ve kayıttan `tools/render_figures.py` ile üretilir.
+
+Sürüm APK'sı: `npx expo prebuild --platform android`, ardından `android/` içinde `gradlew.bat assembleRelease`; dosya `android/app/build/outputs/apk/release/` altına düşer.
+
+> [!WARNING]
+> Windows'ta proje yolunda ASCII dışı karakter varsa (ör. `Masaüstü`) yerel derleme başarısız olur. Android SDK'daki CMake 3.22.1 ile gelen Ninja 1.10.2 de uzun codegen yollarını kaldıramaz. `C:\dev\mvm` gibi ASCII bir yoldan derle ve `android/local.properties` içindeki `cmake.dir` değerini, `bin/ninja.exe` dosyası Ninja 1.12 ya da üstü olan bir CMake kopyasına yönlendir.
 
 > [!NOTE]
 > Uygulama bağlantı ister: her ekran Supabase'den okur, bağlantı yoksa "sunucuya ulaşılamadı" ekranı çıkar. Adımlar yalnızca uygulama açıkken sayılır; arka planda saymak Health Connect ve development build gerektirir. İstatistik sekmesi henüz yer tutucu. Tema seçimi hesapta değil, cihazda saklanır.

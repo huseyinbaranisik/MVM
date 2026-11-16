@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.mvm.app",
       "adaptiveIcon": {
         "backgroundColor": "#0E0C0B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

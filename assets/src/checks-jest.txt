@@ -1,0 +1,7 @@
+
+Test Suites: 7 passed, 7 total
+Tests:       48 passed, 48 total
+Snapshots:   0 total
+Time:        3.975 s, estimated 5 s
+Ran all test suites.
+jest rc=0

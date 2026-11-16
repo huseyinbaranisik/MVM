@@ -84,7 +84,8 @@ export const THEME_KEY = 'mvm.theme';
 function savedTheme(): ThemeId {
   try {
     // renkler her şeyden önce yüklenir: localStorage'ı burada kur (supabase.ts'ten önce çalışabilir)
-    if (process.env.NODE_ENV !== 'test') require('expo-sqlite/localStorage/install'); // Jest'te yerel modül yok
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- koşullu yükleme: Jest'te yerel modül yok
+    if (process.env.NODE_ENV !== 'test') require('expo-sqlite/localStorage/install');
     const v = globalThis.localStorage?.getItem(THEME_KEY);
     return v && (v === 'bordo' || v in PALETTES) ? (v as ThemeId) : 'bordo';
   } catch {

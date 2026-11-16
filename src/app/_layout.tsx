@@ -1,4 +1,4 @@
-import { DarkTheme, Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -17,8 +17,8 @@ import '@/services/notifications'; // bildirim gösterim davranışını kaydede
 import { colors, spacing, type } from '@/theme';
 
 const navTheme = {
-  ...DarkTheme,
-  colors: { ...DarkTheme.colors, background: colors.background, card: colors.background, primary: colors.primaryLight, text: colors.textPrimary, border: colors.divider },
+  ...(colors.dark ? DarkTheme : DefaultTheme),
+  colors: { ...(colors.dark ? DarkTheme : DefaultTheme).colors, background: colors.background, card: colors.background, primary: colors.primaryLight, text: colors.textPrimary, border: colors.divider },
 };
 
 function Loading() {
@@ -97,7 +97,7 @@ export default function RootLayout() {
         </AuthGate>
         <OverlayHost />
       </ThemeProvider>
-      <StatusBar style="light" />
+      <StatusBar style={colors.dark ? 'light' : 'dark'} />
     </GestureHandlerRootView>
   );
 }

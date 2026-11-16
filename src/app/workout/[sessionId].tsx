@@ -185,7 +185,7 @@ export default function ActiveWorkout() {
                     )}
                     <Pressable onPress={() => complete(x, xi, i)} disabled={locked} style={[styles.check, styles.colCheck, d && styles.checkOn]}
                       accessibilityRole="checkbox" accessibilityState={{ checked: !!d }} accessibilityLabel={`Set ${i + 1} tamamlandı`}>
-                      <Icon name="check" size={20} color={d ? colors.accent : colors.textSecondary} />
+                      <Icon name="check" size={20} color={d ? colors.onPrimary : colors.textSecondary} />
                     </Pressable>
                   </View>
                 );
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   finish: { minHeight: 40 },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg },
   pill: { backgroundColor: colors.primary, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
-  pillText: { color: colors.accent, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  pillText: { color: colors.onPrimary, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: 180 },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
   exHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

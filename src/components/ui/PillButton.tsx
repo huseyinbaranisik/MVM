@@ -26,7 +26,7 @@ export function PillButton({ label, onPress, active = false, variant = 'chip', d
       accessibilityLabel={accessibilityLabel ?? label}
       hitSlop={6}
       style={[styles.base, filled ? styles.filled : styles.outline, variant === 'primary' && styles.primary, style]}>
-      <Text style={[styles.label, { color: filled ? colors.accent : colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
+      <Text style={[styles.label, { color: filled ? colors.onPrimary : colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>{label}</Text>
     </PressableScale>
   );
 }

@@ -20,6 +20,15 @@ import { today } from '@/services/dates';
 import { MILESTONES } from '@/services/streakService';
 import { bmi, bmiLabel, fmtDec } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { PALETTES, themeId, type ThemeId } from '@/theme/colors';
+import { setTheme } from '@/theme/select';
+
+// Seçicideki önizleme renkleri: zemin, ana renk, vurgu
+const THEMES: { id: ThemeId; name: string; swatch: string[] }[] = [
+  { id: 'bordo', name: 'Bordo & Bej', swatch: ['#0E0C0B', '#7A1F2B', '#E8DCC4'] },
+  ...(Object.entries(PALETTES) as [Exclude<ThemeId, 'bordo'>, (typeof PALETTES)['gece']][])
+    .map(([id, p]) => ({ id, name: p.name, swatch: [p.bg, p.primary, p.highlight] })),
+];
 
 type Prompt = 'weight' | 'height' | 'age' | 'target' | null;
 
@@ -34,6 +43,8 @@ export default function ProfileScreen() {
     email: (await supabase.auth.getSession()).data.session?.user.email ?? '',
   }), [], ['settings', 'body_measurements', 'streak_state', 'badges']);
   const [prompt, setPrompt] = useState<Prompt>(null);
+  const [themesOpen, setThemesOpen] = useState(false);
+  const current = THEMES.find((t) => t.id === themeId) ?? THEMES[0];
   const [name, setName] = useState<string | null>(null); // null = düzenlenmiyor, kayıtlı adı göster
 
   if (!data) return <LoadingScreen blocks={[80, 120, 220, 120]} />;
@@ -49,7 +60,7 @@ export default function ProfileScreen() {
   const earned = new Set(data.badges.map((b) => b.milestone));
   const close = () => setPrompt(null);
   const signOut = async () => {
-    if (await confirm({ title: 'Çıkış yapılsın mı?', message: 'Verilerin hesabında kalır; tekrar giriş yapınca geri gelir.', confirmLabel: 'Çıkış yap' })) {
+    if (await confirm({ title: 'Çıkış yapılsın mı?', confirmLabel: 'Çıkış yap' })) {
       await supabase.auth.signOut();
     }
   };
@@ -149,6 +160,22 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        <View style={styles.card}>
+          <PressableScale style={styles.themeRow} onPress={() => setThemesOpen(!themesOpen)} accessibilityRole="button"
+            accessibilityState={{ expanded: themesOpen }} accessibilityLabel={`Tema: ${current.name}`}>
+            <Text style={[type.subtitle, styles.flex]}>Tema</Text>
+            <Swatches colors={current.swatch} />
+            <Text style={type.body}>{current.name}</Text>
+            <Icon name={themesOpen ? 'expand_less' : 'expand_more'} color={colors.textSecondary} />
+          </PressableScale>
+          {themesOpen ? THEMES.filter((t) => t.id !== themeId).map((t) => (
+            <PressableScale key={t.id} style={styles.themeRow} onPress={() => setTheme(t.id)} accessibilityRole="button" accessibilityLabel={t.name}>
+              <Swatches colors={t.swatch} />
+              <Text style={[type.body, styles.flex]}>{t.name}</Text>
+            </PressableScale>
+          )) : null}
+        </View>
+
         <SheetRow label="Çıkış yap" value={email} onPress={signOut} />
       </ScrollView>
 
@@ -161,6 +188,15 @@ export default function ProfileScreen() {
       <NumberPrompt visible={prompt === 'target'} onClose={close} title="Hedef kilo" suffix="kg" initial={p.targetWeightKg ?? undefined} min={20}
         onSubmit={(v) => saveProfile({ targetWeightKg: Math.round(v * 10) / 10 })} />
     </SafeAreaView>
+  );
+}
+
+/** Tema renkleri yarı saydam gri zeminde: açık renkler açık temada da seçilebilsin */
+function Swatches({ colors: list }: { colors: string[] }) {
+  return (
+    <View style={styles.swatches}>
+      {list.map((c) => <View key={c} style={[styles.swatch, { backgroundColor: c }]} />)}
+    </View>
   );
 }
 
@@ -200,4 +236,8 @@ const styles = StyleSheet.create({
   badgeOn: { borderColor: colors.primaryLight, opacity: 1 },
   badgeIcon: { fontSize: 22 },
   badgeTextOn: { color: colors.textPrimary },
+  themeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 48 },
+  flex: { flex: 1 },
+  swatches: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: radius.pill, backgroundColor: colors.neutral },
+  swatch: { width: 22, height: 22, borderRadius: 11 },
 });

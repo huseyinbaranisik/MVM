@@ -40,7 +40,7 @@ export default function LibraryScreen() {
         <Text style={[type.hero, styles.flex]}>Kütüphane</Text>
         <Pressable onPress={() => router.push('/exercise/new')} style={styles.addBtn} hitSlop={8}
           accessibilityRole="button" accessibilityLabel="Kendi hareketini ekle">
-          <Icon name="add" color={colors.accent} />
+          <Icon name="add" color={colors.onPrimary} />
         </Pressable>
       </View>
       <View style={styles.controls}>

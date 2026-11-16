@@ -11,7 +11,7 @@ export default function StatsScreen() {
     <Screen>
       <Text style={type.hero}>İstatistik</Text>
       <Appear style={styles.empty}>
-        <View style={styles.icon}><Icon name="bar_chart" size={32} color={colors.accent} /></View>
+        <View style={styles.icon}><Icon name="bar_chart" size={32} color={colors.onPrimary} /></View>
         <Text style={[type.title, styles.center]}>Yakında</Text>
       </Appear>
     </Screen>

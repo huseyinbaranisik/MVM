@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     fontSize: 11, fontWeight: '700', color: colors.accentMuted, borderWidth: 1, borderColor: colors.accentMuted,
     paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.pill,
   },
-  tagPrimary: { color: colors.accent, backgroundColor: colors.primary, borderColor: colors.primary },
+  tagPrimary: { color: colors.onPrimary, backgroundColor: colors.primary, borderColor: colors.primary },
   headerSafe: { backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   back: { minWidth: 32, minHeight: 32, justifyContent: 'center' },

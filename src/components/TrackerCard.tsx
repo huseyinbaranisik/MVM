@@ -92,7 +92,7 @@ export function Counter({ onMinus, onPlus, minusLabel, plusLabel }: {
         <Icon name="remove" size={22} color={colors.textPrimary} />
       </PressableScale>
       <PressableScale onPress={onPlus} style={[styles.counterBtn, styles.plus]} hitSlop={6} accessibilityRole="button" accessibilityLabel={plusLabel}>
-        <Icon name="add" size={22} color={colors.accent} />
+        <Icon name="add" size={22} color={colors.onPrimary} />
       </PressableScale>
     </View>
   );
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   caption: { fontSize: 11, fontWeight: '500', color: colors.textSecondary, textAlign: 'center', maxWidth: 92 },
   badge: { position: 'absolute', top: spacing.lg + 28, alignSelf: 'center' },
   badgeText: {
-    fontSize: 12, fontWeight: '700', color: colors.accent, backgroundColor: colors.primary,
+    fontSize: 12, fontWeight: '700', color: colors.onPrimary, backgroundColor: colors.primary,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, overflow: 'hidden',
   },
   counter: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg },

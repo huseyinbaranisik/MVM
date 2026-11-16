@@ -32,7 +32,7 @@ export function Checklist({ date }: { date: string }) {
         <Text style={styles.count}>{done}/{habits.length}</Text>
         <Pressable onPress={() => setEditing({})} style={styles.addBtn} hitSlop={8}
           accessibilityRole="button" accessibilityLabel="Alışkanlık ekle">
-          <Icon name="add" size={22} color={colors.accent} />
+          <Icon name="add" size={22} color={colors.onPrimary} />
         </Pressable>
       </View>
       {!loaded ? <Skeleton height={224} /> : habits.length === 0 ? (
@@ -55,7 +55,7 @@ export function Checklist({ date }: { date: string }) {
               <Icon name={h.icon as IconName} size={22} color={h.done ? colors.accent : colors.textSecondary} />
               <Text style={[type.body, styles.flex, h.done ? styles.doneText : null]}>{h.name}</Text>
               <View style={[styles.check, h.done ? styles.checkOn : null]}>
-                {h.done ? <Icon name="check" size={18} color={colors.accent} /> : null}
+                {h.done ? <Icon name="check" size={18} color={colors.onPrimary} /> : null}
               </View>
             </Pressable>
           ))}

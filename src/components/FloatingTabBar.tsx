@@ -38,7 +38,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab, insets }: Bottom
   const plus = (
     <Pressable key="plus" onPress={() => router.push('/quick-add')} style={styles.plus}
       accessibilityRole="button" accessibilityLabel="Hızlı ekle">
-      <Icon name="add" size={32} color={colors.accent} />
+      <Icon name="add" size={32} color={colors.onPrimary} />
     </Pressable>
   );
 

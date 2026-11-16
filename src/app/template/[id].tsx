@@ -190,7 +190,7 @@ function PickerSheet({ visible, onClose, onPick }: { visible: boolean; onClose: 
         <ExerciseRow key={e.id} id={e.id} name={e.name_tr} imageKey={e.image_key} photoUri={e.photo_uri} favorite={!!e.is_favorite}
           right={
             <Pressable onPress={() => onPick(e.id)} hitSlop={8} style={styles.addBtn} accessibilityRole="button" accessibilityLabel={`${e.name_tr} ekle`}>
-              <Icon name="add" color={colors.accent} />
+              <Icon name="add" color={colors.onPrimary} />
             </Pressable>
           } />
       ))}
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   list: { borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.surface },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, height: ROW_H },
   superset: {
-    fontSize: 11, fontWeight: '700', color: colors.accent, backgroundColor: colors.primary,
+    fontSize: 11, fontWeight: '700', color: colors.onPrimary, backgroundColor: colors.primary,
     paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.pill, overflow: 'hidden',
   },
   setsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

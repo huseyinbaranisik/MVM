@@ -93,5 +93,5 @@ const styles = StyleSheet.create({
   dayBadge: { width: 48, height: 36, borderRadius: radius.pill, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   today: { backgroundColor: colors.primary },
   dayText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary },
-  todayText: { color: colors.accent },
+  todayText: { color: colors.onPrimary },
 });

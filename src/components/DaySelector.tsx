@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   selected: { backgroundColor: colors.primary },
   todayRing: { borderWidth: 1.5, borderColor: colors.accentMuted },
   numText: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
-  selText: { color: colors.accent },
+  selText: { color: colors.onPrimary },
   dot: { width: 5, height: 5, borderRadius: 3 },
   dotOn: { backgroundColor: colors.primaryLight },
 });

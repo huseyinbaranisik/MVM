@@ -6,7 +6,9 @@ import { bestsByExercise } from '@/services/workout';
 export async function getDayWorkoutProgress(date: string, templateId: number | null) {
   const [tpl, sess] = await Promise.all([
     templateId ? supabase.from('template_exercises').select('sets').eq('template_id', templateId) : Promise.resolve({ data: [], error: null }),
-    supabase.from('workout_sessions').select('status, session_sets(count)').eq('date', date).neq('status', 'abandoned')
+    // bir günde birden fazla antrenman olabilir: ilerleme şablona göre
+    (templateId ? supabase.from('workout_sessions').select('status, session_sets(count)').eq('template_id', templateId)
+      : supabase.from('workout_sessions').select('status, session_sets(count)')).eq('date', date).neq('status', 'abandoned')
       .order('id', { ascending: false }).limit(1),
   ]);
   const total = must(tpl).reduce((a, t) => a + (t as { sets: number }).sets, 0);

@@ -60,7 +60,7 @@ export default function ExerciseDetailScreen() {
 
         <View style={styles.actions}>
           <PillButton label="▶ Videoda izle" onPress={() => Linking.openURL(youtube)} style={styles.flex1} />
-          <PillButton label="Programıma ekle" variant="primary" onPress={() => setAdding(true)} style={styles.flex1} />
+          <PillButton label="Plana ekle" variant="primary" onPress={() => setAdding(true)} style={styles.flex1} />
         </View>
 
         {e.description ? <Text style={type.body}>{e.description}</Text> : null}

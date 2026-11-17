@@ -5,7 +5,7 @@ import { diffDays, today, type DateStr } from '@/services/dates';
 import { buildDayInputs, computeStreak, diffStreakDays, type StreakStatus } from '@/services/streakService';
 
 /** Bu tablolar değişince seri yeniden hesaplanır (streak_* tabloları burada yok: kendi yazması döngü yapmaz). */
-export const STREAK_INPUT_TABLES = new Set(['workout_sessions', 'habit_logs', 'habits', 'daily_trackers', 'tracker_settings', 'day_schedule', 'settings']);
+export const STREAK_INPUT_TABLES = new Set(['workout_sessions', 'habit_logs', 'habits', 'daily_trackers', 'tracker_settings', 'day_schedule_items', 'settings']);
 
 /**
  * Başlangıçtan bugüne gün girdilerini toplar, seriyi hesaplar; streak_state / streak_days / badges'e sadece değişenleri yazar.
@@ -17,7 +17,7 @@ export async function evaluateStreak(todayStr: DateStr = today()) {
   const from = diffDays(todayStr, start) >= 0 ? start : todayStr;
 
   const [plan, sessions, goal, steps, habits, logs, prevDays, state, badges] = await Promise.all([
-    supabase.from('day_schedule').select('weekday, kind, template_id'),
+    supabase.from('day_schedule_items').select('weekday').eq('kind', 'workout'),
     supabase.from('workout_sessions').select('date').eq('status', 'done').gte('date', from).lte('date', todayStr),
     supabase.from('tracker_settings').select('goal').eq('type', 'steps').maybeSingle(),
     supabase.from('daily_trackers').select('date, value').eq('type', 'steps').gte('date', from).lte('date', todayStr),
@@ -29,7 +29,7 @@ export async function evaluateStreak(todayStr: DateStr = today()) {
   ]);
 
   const inputs = buildDayInputs(from, todayStr, {
-    workoutWeekdays: new Set(must(plan).filter((p) => p.kind === 'workout' && p.template_id != null).map((p) => p.weekday)),
+    workoutWeekdays: new Set(must(plan).map((p) => p.weekday as number)),
     doneDates: new Set(must(sessions).map((s) => s.date as string)),
     steps: new Map(must(steps).map((r) => [r.date as string, r.value as number])),
     stepGoal: must(goal)?.goal ?? Infinity,

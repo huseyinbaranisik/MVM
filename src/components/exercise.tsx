@@ -8,10 +8,8 @@ import { Icon } from '@/components/Icon';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { exerciseImages } from '@/data/exerciseImages';
 import { setFavorite } from '@/db/repos/exercises';
-import { getWeekPlan } from '@/db/repos/schedule';
-import { addExerciseToDay } from '@/db/repos/templates';
+import { addTemplateExercise, createTemplate, getTemplates } from '@/db/repos/templates';
 import { useDb } from '@/db/useDb';
-import { WEEKDAYS_TR } from '@/services/dates';
 import { colors, radius, spacing, type } from '@/theme';
 
 export const EQUIPMENT_TR: Record<string, string> = {
@@ -80,20 +78,20 @@ export function BackHeader({ title, right }: { title: string; right?: ReactNode 
   );
 }
 
-/** "Programıma ekle": gün seç → o günün antrenmanına eklenir. */
+/** "Plana ekle": şablon seç (ya da yeni şablon aç), hareket şablonun sonuna eklenir. */
 export function AddToProgramSheet({ exerciseId, onClose }: { exerciseId: string | null; onClose: (msg?: string) => void }) {
-  const week = useDb(() => getWeekPlan(), [], ['day_schedule', 'workout_templates', 'template_exercises']) ?? [];
+  const templates = useDb(() => getTemplates(), [], ['workout_templates', 'template_exercises']) ?? [];
+  const add = async (templateId: number, name: string) => {
+    if (!exerciseId) return;
+    await addTemplateExercise(templateId, exerciseId);
+    onClose(`${name} planına eklendi`);
+  };
   return (
-    <Sheet visible={!!exerciseId} onClose={() => onClose()} title="Hangi güne eklensin?">
-      {week.map((d) => (
-        <SheetRow key={d.weekday} label={WEEKDAYS_TR[d.weekday]}
-          value={d.kind === 'workout' ? d.templateName ?? '' : 'Yeni antrenman açılır'}
-          onPress={async () => {
-            if (!exerciseId) return;
-            await addExerciseToDay(d.weekday, WEEKDAYS_TR[d.weekday], exerciseId);
-            onClose(`${WEEKDAYS_TR[d.weekday]} antrenmanına eklendi`);
-          }} />
+    <Sheet visible={!!exerciseId} onClose={() => onClose()} title="Plana ekle">
+      {templates.map((t) => (
+        <SheetRow key={t.id} label={t.name} value={`${t.exerciseCount} hareket`} onPress={() => add(t.id, t.name)} />
       ))}
+      <SheetRow label="+ Yeni şablon" onPress={async () => add(await createTemplate('Yeni antrenman'), 'Yeni antrenman')} />
     </Sheet>
   );
 }

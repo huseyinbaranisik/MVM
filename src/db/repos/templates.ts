@@ -58,11 +58,10 @@ export async function renameTemplate(id: number, name: string) {
   notify('workout_templates');
 }
 
-/** Şablonu siler; atandığı günler dinlenme gününe döner. */
+/** Şablonu siler; günlerdeki öğeleri de silinir (cascade). */
 export async function deleteTemplate(id: number) {
-  must(await supabase.from('day_schedule').update({ kind: 'rest', template_id: null }).eq('template_id', id));
   must(await supabase.from('workout_templates').delete().eq('id', id));
-  notify('workout_templates', 'template_exercises', 'day_schedule');
+  notify('workout_templates', 'template_exercises', 'day_schedule_items');
 }
 
 /** Şablonun sonuna varsayılan değerlerle hareket ekler (tekrarlı: 3×8-12, süreli: 3×30 sn). */
@@ -98,23 +97,6 @@ export async function removeTemplateExercise(id: number) {
 export async function reorderTemplateExercises(orderedIds: number[]) {
   await Promise.all(orderedIds.map(async (id, position) => must(await supabase.from('template_exercises').update({ position }).eq('id', id))));
   notify('template_exercises');
-}
-
-export async function setDaySchedule(weekday: number, kind: 'workout' | 'rest' | 'walk', templateId: number | null) {
-  must(await supabase.from('day_schedule').update({ kind, template_id: kind === 'workout' ? templateId : null }).eq('weekday', weekday));
-  notify('day_schedule');
-}
-
-/** "Programıma ekle": günün şablonuna ekler; günün şablonu yoksa yeni şablon açıp güne atar. */
-export async function addExerciseToDay(weekday: number, dayName: string, exerciseId: string) {
-  const day = maybe(await supabase.from('day_schedule').select('template_id').eq('weekday', weekday).maybeSingle());
-  let templateId = day?.template_id ?? null;
-  if (!templateId) {
-    templateId = await createTemplate(`${dayName} antrenmanı`);
-    await setDaySchedule(weekday, 'workout', templateId);
-  }
-  await addTemplateExercise(templateId, exerciseId);
-  return templateId;
 }
 
 /** "4 × 6-8 (her taraf) · 90 sn dinlenme" */

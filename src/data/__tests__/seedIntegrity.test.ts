@@ -3,7 +3,6 @@ import { exerciseImages } from '../exerciseImages';
 import { mapFedbMuscles } from '../fedbMuscles';
 import { muscleIds, muscles, regions } from '../muscleMap';
 import { seedExercises } from '../seedExercises';
-import { seedTemplates } from '../seedProgram';
 
 describe('seed verisi tutarlı', () => {
   it('her kas geçerli bir bölgeye bağlı, id\'ler tekil', () => {
@@ -18,11 +17,6 @@ describe('seed verisi tutarlı', () => {
       for (const m of [...s.primary, ...s.secondary]) expect(muscleIds).toContain(m);
       expect(s.primary.some((m) => s.secondary.includes(m))).toBe(false);
     }
-  });
-
-  it('şablonlardaki her hareket seed\'de var', () => {
-    const ids = new Set(seedExercises.map((s) => s.id));
-    for (const t of seedTemplates) for (const x of t.exercises) expect(ids).toContain(x.exerciseId);
   });
 
   it('her hareketin görseli gömülü', () => {

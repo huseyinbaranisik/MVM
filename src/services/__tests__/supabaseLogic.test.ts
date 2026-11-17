@@ -1,7 +1,6 @@
 // Supabase'e geçişte istemciye taşınan hesaplar (eskiden SQL'deydi).
 import { muscles } from '@/data/muscleMap';
 import { seedExercises } from '@/data/seedExercises';
-import { seedTemplates } from '@/data/seedProgram';
 
 import { builtInExercises, exercisesForMuscles, fromUserRow, musclesOfRegion, regionsOf, sortForLibrary } from '../catalog';
 import { filterFoods, proteinTarget, suggestCalories, sumMacros } from '../nutrition';
@@ -17,11 +16,6 @@ describe('katalog', () => {
     expect(list.filter((e) => e.source === 'seed')).toHaveLength(seedExercises.length);
     const ids = new Set(muscles.map((m) => m.id));
     expect(list.every((e) => [...e.primary, ...e.secondary].every((m) => ids.has(m)))).toBe(true);
-  });
-
-  it('seed programındaki tüm hareketler katalogda var', () => {
-    const ids = new Set(list.map((e) => e.id));
-    expect(seedTemplates.flatMap((t) => t.exercises).filter((x) => !ids.has(x.exerciseId))).toEqual([]);
   });
 
   it('bölge sorgusu tekrarsız, birincil olanlar önce', () => {

@@ -14,21 +14,21 @@ import { colors, radius, spacing, type } from '@/theme';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
 
-/** Alışkanlık simgeleri: emoji. Eski kayıtlarda Material Symbols adı olabilir (HabitIcon ikisini de çizer). */
-const EMOJI_GROUPS: { label: string; items: string[] }[] = [
-  { label: 'Spor', items: ['🏋️', '🏃', '🚶', '🚴', '🏊', '🧘', '🤸', '⚽', '🏀', '🥊', '🧗', '⛹️'] },
-  { label: 'Sağlık', items: ['💧', '😴', '💊', '🦷', '🧴', '🚭', '🩺', '❤️'] },
-  { label: 'Beslenme', items: ['🥗', '🍎', '🥦', '🥚', '🍗', '🥛', '🚫', '🍬', '☕', '🍵'] },
-  { label: 'Zihin', items: ['📖', '✍️', '🧠', '🙏', '🎧', '🎯', '📵', '🌿'] },
-  { label: 'Ev & İş', items: ['🧹', '🛏️', '🧺', '🍳', '💻', '📚', '💰', '📞', '🌱', '☀️'] },
+/** Alışkanlık simgeleri: tek renkli Material Symbols, gruplu. Ara sürümde emoji seçilmiş kayıtlar da çizilir (HabitIcon). */
+const ICON_GROUPS: { label: string; items: IconName[] }[] = [
+  { label: 'Spor', items: ['fitness_center', 'directions_run', 'directions_walk', 'directions_bike', 'pool', 'self_improvement', 'sports_soccer', 'sports_basketball', 'sports_martial_arts', 'hiking', 'sports_tennis', 'rowing'] },
+  { label: 'Sağlık', items: ['water_drop', 'bedtime', 'medication', 'monitor_heart', 'smoke_free', 'spa', 'healing', 'sunny'] },
+  { label: 'Beslenme', items: ['restaurant', 'nutrition', 'egg', 'no_food', 'local_cafe', 'emoji_food_beverage', 'set_meal', 'bakery_dining'] },
+  { label: 'Zihin', items: ['menu_book', 'edit_note', 'psychology', 'headphones', 'track_changes', 'phonelink_erase', 'eco', 'favorite'] },
+  { label: 'Ev & İş', items: ['cleaning_services', 'bed', 'local_laundry_service', 'cooking', 'laptop', 'school', 'savings', 'call', 'check_circle'] },
 ];
-const DEFAULT_ICON = '✅';
+const DEFAULT_ICON: IconName = 'check_circle';
 const isSymbolName = (v: string) => /^[a-z_]+$/.test(v);
 
 function HabitIcon({ icon, done }: { icon: string; done?: boolean }) {
   return isSymbolName(icon)
     ? <Icon name={icon as IconName} size={22} color={done ? colors.accent : colors.textSecondary} />
-    : <Text style={[styles.emoji, done && styles.emojiDone]}>{icon}</Text>;
+    : <Text style={[styles.emoji, done && styles.emojiDone]}>{icon}</Text>; // ara sürümde seçilmiş emoji
 }
 
 export function Checklist({ date }: { date: string }) {
@@ -99,14 +99,14 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
       <TextInput
         value={name} onChangeText={setName} placeholder="ör. Esneme" placeholderTextColor={colors.textSecondary}
         style={styles.input} maxLength={40} accessibilityLabel="Alışkanlık adı" />
-      {EMOJI_GROUPS.map((g) => (
+      {ICON_GROUPS.map((g) => (
         <View key={g.label} style={styles.group}>
           <Text style={type.caption}>{g.label}</Text>
           <View style={styles.icons}>
             {g.items.map((i) => (
               <Pressable key={i} onPress={() => setIcon(i)} style={[styles.iconChoice, icon === i && styles.iconOn]}
                 accessibilityRole="button" accessibilityState={{ selected: icon === i }} accessibilityLabel={i}>
-                <Text style={styles.emojiChoice}>{i}</Text>
+                <Icon name={i} size={24} color={icon === i ? colors.onPrimary : colors.textPrimary} />
               </Pressable>
             ))}
           </View>
@@ -159,7 +159,6 @@ const styles = StyleSheet.create({
   group: { gap: spacing.xs },
   emoji: { fontSize: 20, width: 24, textAlign: 'center' },
   emojiDone: { opacity: 0.5 },
-  emojiChoice: { fontSize: 24 },
   iconChoice: {
     width: 48, height: 48, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.divider,

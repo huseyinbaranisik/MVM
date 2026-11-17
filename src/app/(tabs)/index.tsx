@@ -24,6 +24,7 @@ import { useDb } from '@/db/useDb';
 import { formatLongTR, today } from '@/services/dates';
 import { DEFAULT_LAYOUT, toRows, type HomeCardId, type HomeCardSize } from '@/services/homeLayout';
 import { startStepTracking } from '@/services/steps';
+import { autoConnectHealthConnect } from '@/services/healthConnect';
 import { syncStepsFromHealthConnect } from '@/services/stepSync';
 import { useAppStore } from '@/stores/useAppStore';
 import { colors, radius, spacing, type } from '@/theme';
@@ -42,14 +43,14 @@ export default function TodayScreen() {
   const level = useDb(getLevel, [], XP_TABLES)?.level;
   const [morningPrompt, setMorningPrompt] = useState(false);
 
-  // Adımlar: Health Connect bağlıysa telefonun arka planda saydığı adımlar (açılışta, uygulamaya dönünce ve dakikada bir) alınır;
+  // Adımlar otomatik: Health Connect varsa ilk açılışta izni kendiliğinden istenir. Bağlıysa telefonun arka planda saydığı adımlar (açılışta, uygulamaya dönünce ve dakikada bir) alınır;
   // değilse uygulama açıkken telefon sensörü sayar. İkisi birlikte çalışmaz, yoksa adımlar iki kez sayılır.
   useEffect(() => {
     let stop: (() => void) | null = null;
     let cancelled = false;
     let timer: ReturnType<typeof setInterval> | null = null;
     const appSub = AppState.addEventListener('change', (st) => { if (st === 'active') syncStepsFromHealthConnect(); });
-    syncStepsFromHealthConnect().then(async (health) => {
+    autoConnectHealthConnect().then(() => syncStepsFromHealthConnect()).then(async (health) => {
       if (cancelled) return;
       if (health) {
         setStepSensor('health');

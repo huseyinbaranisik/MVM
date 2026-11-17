@@ -110,14 +110,15 @@ export function buildDayInputs(from: DateStr, to: DateStr, d: {
   doneDates: ReadonlySet<string>;
   steps: ReadonlyMap<string, number>;
   stepGoal: number;
-  habits: { id: number; weekdays: number; archived_at: string | null }[];
+  habits: { id: number; weekdays: number; only_date?: string | null; archived_at: string | null }[];
   /** `${habit_id}|${date}` */
   logs: ReadonlySet<string>;
 }): DayInput[] {
   const out: DayInput[] = [];
   for (let date = from; diffDays(to, date) >= 0; date = addDays(date, 1)) {
     const wd = weekday(date);
-    const visible = d.habits.filter((h) => (h.weekdays & (1 << wd)) !== 0 && (h.archived_at == null || date < h.archived_at.slice(0, 10)));
+    const visible = d.habits.filter((h) => (h.only_date ? h.only_date === date : (h.weekdays & (1 << wd)) !== 0)
+      && (h.archived_at == null || date < h.archived_at.slice(0, 10)));
     const checked = visible.filter((h) => d.logs.has(`${h.id}|${date}`)).length;
     out.push({
       date,

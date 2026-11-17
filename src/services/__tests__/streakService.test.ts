@@ -1,5 +1,5 @@
 import { addDays, diffDays, toDateStr, weekday } from '../dates';
-import { computeStreak, isDayComplete, type DayInput } from '../streakService';
+import { buildDayInputs, computeStreak, isDayComplete, type DayInput } from '../streakService';
 
 const workout = (date: string, done = true): DayInput => ({
   date, kind: 'workout', workoutDone: done, stepGoalMet: false, checklistRatio: 0,
@@ -126,5 +126,19 @@ describe('computeStreak', () => {
   it('kilometre taşları en uzun seriden gelir', () => {
     const r = computeStreak(doneRun('2026-01-01', 15), '2026-01-01', '2026-01-20');
     expect(r.milestones).toEqual([3, 7, 14]);
+  });
+});
+
+describe('buildDayInputs', () => {
+  it('günlük görev yalnızca kendi tarihinde, haftalık görev seçili günlerde sayılır', () => {
+    const habits = [
+      { id: 1, weekdays: 0b1111111, archived_at: null }, // haftalık, her gün
+      { id: 2, weekdays: 0, only_date: '2026-11-18', archived_at: null }, // günlük
+    ];
+    const r = buildDayInputs('2026-11-17', '2026-11-18', {
+      workoutWeekdays: new Set(), doneDates: new Set(), steps: new Map(), stepGoal: Infinity, habits,
+      logs: new Set(['1|2026-11-17', '2|2026-11-18']),
+    });
+    expect(r.map((d) => d.checklistRatio)).toEqual([1, 0.5]);
   });
 });

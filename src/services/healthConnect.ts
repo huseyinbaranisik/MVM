@@ -49,6 +49,21 @@ export async function connectHealthConnect() {
   return ok;
 }
 
+const ASKED = 'mvm.healthConnectAsked';
+
+/** Otomatik bağlantı: Health Connect varsa izni ilk açılışta bir kez kendiliğinden ister; reddedilir ya da kesilirse tekrar sormaz. */
+export async function autoConnectHealthConnect() {
+  const ls = globalThis.localStorage;
+  if (ls?.getItem(ASKED) === '1' || ls?.getItem(KEY) === '1') return;
+  if (!(await healthConnectAvailable())) return;
+  ls?.setItem(ASKED, '1');
+  try {
+    await connectHealthConnect();
+  } catch (e) {
+    console.warn('Health Connect izni istenemedi', e);
+  }
+}
+
 export function disconnectHealthConnect() {
   globalThis.localStorage?.removeItem(KEY);
 }

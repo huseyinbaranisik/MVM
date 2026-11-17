@@ -4,12 +4,12 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { confirm } from '@/components/ui/overlays';
-import { PillButton } from '@/components/ui/PillButton';
+import { PillButton, SegmentedControl } from '@/components/ui/PillButton';
 import { Sheet } from '@/components/ui/Sheet';
 import { ALL_DAYS, archiveHabit, getHabitsForDate, saveHabit, setHabitDone, type Habit } from '@/db/repos/habits';
 import { useDb, useOptimistic } from '@/db/useDb';
 import { play } from '@/services/sounds';
-import { WEEKDAYS_SHORT_TR } from '@/services/dates';
+import { formatLongTR, WEEKDAYS_SHORT_TR } from '@/services/dates';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, radius, spacing, type } from '@/theme';
 
@@ -91,7 +91,7 @@ export function Checklist({ date }: { date: string }) {
           ))}
         </View>
       )}
-      <HabitSheet habit={editing} onClose={() => setEditing(null)} />
+      <HabitSheet habit={editing} date={date} onClose={() => setEditing(null)} />
     </View>
   );
 }
@@ -102,8 +102,9 @@ async function removeHabit(h: Pick<Habit, 'id' | 'name'>) {
   return true;
 }
 
-function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose: () => void }) {
+function HabitSheet({ habit, date, onClose }: { habit: Partial<Habit> | null; date: string; onClose: () => void }) {
   const [name, setName] = useState('');
+  const [kind, setKind] = useState<'daily' | 'weekly'>('weekly');
   const [icon, setIcon] = useState<string>(DEFAULT_ICON);
   const [days, setDays] = useState(ALL_DAYS);
   const [prev, setPrev] = useState<Partial<Habit> | null>(null);
@@ -113,9 +114,10 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
       setName(habit.name ?? '');
       setIcon(habit.icon ?? DEFAULT_ICON);
       setDays(habit.weekdays ?? ALL_DAYS);
+      setKind(habit.only_date ? 'daily' : 'weekly');
     }
   }
-  const valid = name.trim().length > 0 && days !== 0;
+  const valid = name.trim().length > 0 && (kind === 'daily' || days !== 0);
   const habitId = habit?.id; // closure'larda null olabilen habit'e dokunmamak için
 
   return (
@@ -123,6 +125,10 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
       <TextInput
         value={name} onChangeText={setName} placeholder="ör. Esneme" placeholderTextColor={colors.textSecondary}
         style={styles.input} maxLength={40} accessibilityLabel="Alışkanlık adı" />
+      <View style={styles.days}>
+        <SegmentedControl<'daily' | 'weekly'> options={[{ value: 'daily', label: 'Günlük' }, { value: 'weekly', label: 'Haftalık' }]}
+          value={kind} onChange={setKind} />
+      </View>
       {ICON_GROUPS.map((g) => (
         <View key={g.label} style={styles.group}>
           <Text style={type.caption}>{g.label}</Text>
@@ -136,15 +142,24 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
           </View>
         </View>
       ))}
-      <Text style={type.caption}>Hangi günler</Text>
-      <View style={styles.days}>
-        {WEEKDAYS_SHORT_TR.map((d, i) => (
-          <PillButton key={d} label={d} active={(days & (1 << i)) !== 0} onPress={() => setDays(days ^ (1 << i))}
-            style={styles.day} />
-        ))}
-      </View>
+      {kind === 'daily' ? (
+        <Text style={type.caption}>{formatLongTR(habit?.only_date ?? date)}</Text>
+      ) : (
+        <>
+          <Text style={type.caption}>Hangi günler</Text>
+          <View style={styles.days}>
+            {WEEKDAYS_SHORT_TR.map((d, i) => (
+              <PillButton key={d} label={d} active={(days & (1 << i)) !== 0} onPress={() => setDays(days ^ (1 << i))}
+                style={styles.day} />
+            ))}
+          </View>
+        </>
+      )}
       <PillButton label="Kaydet" variant="primary" disabled={!valid}
-        onPress={async () => { await saveHabit({ id: habitId, name: name.trim(), icon, weekdays: days }); onClose(); }} />
+        onPress={async () => {
+          await saveHabit({ id: habitId, name: name.trim(), icon, weekdays: days, only_date: kind === 'daily' ? habit?.only_date ?? date : null });
+          onClose();
+        }} />
       {habit?.id ? (
         <PillButton label="Sil" onPress={async () => {
           if (habitId && await removeHabit({ id: habitId, name: habit.name ?? '' })) onClose();

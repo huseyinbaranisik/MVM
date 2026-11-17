@@ -23,7 +23,7 @@ export async function evaluateStreak(todayStr: DateStr = today()) {
     supabase.from('workout_sessions').select('date').eq('status', 'done').gte('date', from).lte('date', todayStr),
     supabase.from('tracker_settings').select('goal').eq('type', 'steps').maybeSingle(),
     supabase.from('daily_trackers').select('date, value').eq('type', 'steps').gte('date', from).lte('date', todayStr),
-    supabase.from('habits').select('id, weekdays, archived_at'),
+    supabase.from('habits').select('id, weekdays, only_date, archived_at'),
     supabase.from('habit_logs').select('habit_id, date').gte('date', from).lte('date', todayStr),
     supabase.from('streak_days').select('date, status'),
     getStreakState(),

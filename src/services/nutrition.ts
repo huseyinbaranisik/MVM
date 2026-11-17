@@ -1,7 +1,8 @@
 /** Türkçe harf duyarlı arama: "ışık" ↔ "IŞIK", "çilek" ↔ "Çilek". */
-export function filterFoods<T extends { name: string }>(foods: T[], query: string) {
+/** Ada göre (Türkçe harf duyarlı) ve isteğe bağlı kategoriye göre süzer. */
+export function filterFoods<T extends { name: string; category?: string | null }>(foods: T[], query: string, category: string | null = null) {
   const q = query.trim().toLocaleLowerCase('tr-TR');
-  return q ? foods.filter((f) => f.name.toLocaleLowerCase('tr-TR').includes(q)) : foods;
+  return foods.filter((f) => (!q || f.name.toLocaleLowerCase('tr-TR').includes(q)) && (!category || f.category === category));
 }
 
 export function sumMacros(logs: { kcal: number; protein: number; fat: number; carbs: number }[]) {

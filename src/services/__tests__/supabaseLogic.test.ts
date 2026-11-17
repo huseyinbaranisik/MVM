@@ -140,3 +140,12 @@ describe('antrenman özeti', () => {
     expect(regionVolume(sets, (id) => (id === 'a' ? ['chest', 'chest', 'triceps'] : ['abs']))).toEqual([['chest', 940], ['triceps', 940]]);
   });
 });
+
+describe('yiyecek kategorisi', () => {
+  it('ad ve kategori birlikte süzülür', () => {
+    const foods = [{ name: 'Süt', category: 'Süt & Yumurta' }, { name: 'Sütlaç', category: 'Tatlı & Atıştırmalık' }, { name: 'Elma', category: 'Meyve' }];
+    expect(filterFoods(foods, 'süt', 'Süt & Yumurta').map((f) => f.name)).toEqual(['Süt']);
+    expect(filterFoods(foods, '', 'Meyve').map((f) => f.name)).toEqual(['Elma']);
+    expect(filterFoods(foods, 'SÜT')).toHaveLength(2);
+  });
+});

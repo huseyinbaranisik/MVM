@@ -10,7 +10,7 @@ MVM is a personal mobile app that keeps a strength-training program and the smal
 
 **Built with:** Expo SDK 58 (React Native 0.88, TypeScript) · data in Supabase · runs in Expo Go or a development build.
 
-**Android:** download `app-release.apk` from the [latest release](https://github.com/huseyinbaranisik/MVM/releases/latest), open it on the phone and allow installing from that source.
+**Android:** download `app-release.apk` from the [latest release](https://github.com/huseyinbaranisik/MVM/releases/latest), open it on the phone and allow installing from that source. For background steps, open the Steps card menu and choose "Health Connect'e bağlan"; for the widget, long-press the home screen → Widgets → MVM.
 
 ## Demo
 
@@ -37,8 +37,9 @@ MVM is a personal mobile app that keeps a strength-training program and the smal
 <table>
   <tr><td><b>Weekly program</b></td><td>Each weekday gets one or more items (workout templates, a walk) or a rest day; a new account starts with an empty week. Templates hold sets, rep ranges, timed holds, rest, per-side work and supersets; exercises are reordered by dragging.</td></tr>
   <tr><td><b>Live workout</b></td><td>Previous values next to every set, a scroll wheel for kg and reps, a rest timer with a notification, a stopwatch for timed exercises, a progressive-overload hint, and a summary with duration, volume (with a comparison to the last session of the same template), volume per muscle group, the best set per exercise and personal records. Rest ±15 s shortens the bar proportionally. Past days are locked: yesterday's workout cannot be filled in today.</td></tr>
-  <tr><td><b>Exercise library</b></td><td>About 260 exercises. Tapping the body map selects the region or single muscle below and colours it; several muscles can be selected at once to find exercises that train all of them. Search, equipment filters, favourites and your own exercises with a photo. "Add to plan" adds an exercise to a template.</td></tr>
-  <tr><td><b>Daily trackers</b></td><td>Water and steps as rings, sleep with bed time, wake time and quality, a bedtime reminder, and a 2-week / 1-month history chart for each.</td></tr>
+  <tr><td><b>Exercise library</b></td><td>About 260 exercises. Tapping the body map selects the region or single muscle below and colours it; several muscles can be selected at once to find exercises that train all of them. Search, equipment filters, favourites and your own exercises with a photo. "Add to plan" adds an exercise to a template. Each exercise page shows progress: record weight, best estimated 1RM, and a chart of heaviest set, 1RM or volume per session.</td></tr>
+  <tr><td><b>Home screen widget</b></td><td>"MVM Bugün": streak, level, today's plan, water with a + button to add a glass, and steps, without opening the app.</td></tr>
+  <tr><td><b>Daily trackers</b></td><td>Water and steps as rings, sleep with bed time, wake time and quality, a bedtime reminder, and a 2-week / 1-month history chart for each. Steps can come from Health Connect, so steps counted by the phone while the app is closed are picked up when it opens.</td></tr>
   <tr><td><b>Calories</b></td><td>A built-in food list with values per 100 g or 100 ml (USDA FoodData Central), grouped into categories, logging by grams or millilitres, macros, your own foods, recently eaten foods first, and a calorie and protein goal suggested from your profile (Mifflin-St Jeor).</td></tr>
   <tr><td><b>Streak</b></td><td>A workout day counts when the workout is finished; a rest day counts with the step goal or the habit checklist. Freezes, a monthly calendar and an evening reminder if the day is not done yet.</td></tr>
   <tr><td><b>XP and level</b></td><td>Sets, habits, water and step goals and streak days give XP; levels and ranks (Çaylak → Efsane) are shown on the profile, the streak screen and the home avatar.</td></tr>
@@ -121,7 +122,7 @@ Release APK: `npx expo prebuild --platform android`, then `gradlew.bat assembleR
 > On Windows the native build fails when the project path contains non-ASCII characters (for example `Masaüstü`), and the Ninja 1.10.2 that ships with the Android SDK's CMake 3.22.1 cannot handle the long codegen paths. Build from an ASCII path such as `C:\dev\mvm`, and point `cmake.dir` in `android/local.properties` to a CMake copy whose `bin/ninja.exe` is Ninja 1.12 or newer.
 
 > [!NOTE]
-> The app needs a connection: every screen reads from Supabase, and without one it shows a "server unreachable" screen. Steps are counted only while the app is open; background counting would need Health Connect and a development build. The theme choice is stored on the device, not in the account.
+> The app needs a connection: every screen reads from Supabase, and without one it shows a "server unreachable" screen. Without Health Connect, steps are counted only while the app is open. The APK is built for 64-bit ARM phones only (almost all current phones); it does not run on x86 emulators. The theme choice is stored on the device, not in the account.
 
 ## Credits
 
@@ -138,7 +139,7 @@ MVM, bir kuvvet antrenmanı programını ve çevresindeki küçük günlük alı
 
 **Teknoloji:** Expo SDK 58 (React Native 0.88, TypeScript) · veriler Supabase'de · Expo Go'da ya da development build ile çalışır.
 
-**Android:** `app-release.apk` dosyasını [son sürümden](https://github.com/huseyinbaranisik/MVM/releases/latest) indir, telefonda aç ve o kaynaktan yüklemeye izin ver.
+**Android:** `app-release.apk` dosyasını [son sürümden](https://github.com/huseyinbaranisik/MVM/releases/latest) indir, telefonda aç ve o kaynaktan yüklemeye izin ver. Arka planda adım için Adım kartının menüsünden "Health Connect'e bağlan"ı seç; widget için ana ekrana uzun bas → Widget'lar → MVM.
 
 ### Demo
 
@@ -149,8 +150,9 @@ MVM, bir kuvvet antrenmanı programını ve çevresindeki küçük günlük alı
 <table>
   <tr><td><b>Haftalık program</b></td><td>Her güne bir ya da birden fazla öğe (antrenman şablonu, yürüyüş) ya da dinlenme atanır; yeni hesap boş haftayla başlar. Şablonlarda set, tekrar aralığı, süreli hareket, dinlenme, tek taraf ve süperset ayarları var; hareketler sürükleyerek sıralanır.</td></tr>
   <tr><td><b>Canlı antrenman</b></td><td>Her setin yanında önceki değerler, kg ve tekrar için kaydırmalı seçici, bildirimli dinlenme sayacı, süreli hareketler için kronometre, progressive overload önerisi, süre, hacim (aynı şablonun önceki oturumuyla kıyas), kas grubuna göre hacim, hareket başına en iyi set ve kişisel rekorlarla özet. Dinlenmede ±15 sn çubuğu orantılı kısaltır. Geçmiş günler kilitli: dünün antrenmanı bugün doldurulamaz.</td></tr>
-  <tr><td><b>Hareket kütüphanesi</b></td><td>Yaklaşık 260 hareket. Vücut haritasına dokununca bölge ya da kas aşağıda seçilir ve renklenir; birden fazla kas seçilince hepsini çalıştıran hareketler listelenir. Arama, ekipman filtresi, favoriler, fotoğraflı kendi hareketin ve "Plana ekle".</td></tr>
-  <tr><td><b>Günlük takip</b></td><td>Su ve adım halkaları; yatış, kalkış ve kaliteyle uyku; yatma hatırlatıcısı; her biri için 2 haftalık / 1 aylık geçmiş grafiği.</td></tr>
+  <tr><td><b>Hareket kütüphanesi</b></td><td>Yaklaşık 260 hareket. Vücut haritasına dokununca bölge ya da kas aşağıda seçilir ve renklenir; birden fazla kas seçilince hepsini çalıştıran hareketler listelenir. Arama, ekipman filtresi, favoriler, fotoğraflı kendi hareketin ve "Plana ekle". Her hareketin sayfasında ilerleme: rekor ağırlık, en iyi tahmini 1RM ve oturum başına en ağır set, 1RM ya da hacim grafiği.</td></tr>
+  <tr><td><b>Ana ekran widget'ı</b></td><td>"MVM Bugün": seri, seviye, günün planı, + düğmesiyle bardak eklenebilen su ve adım; uygulamayı açmadan.</td></tr>
+  <tr><td><b>Günlük takip</b></td><td>Su ve adım halkaları; yatış, kalkış ve kaliteyle uyku; yatma hatırlatıcısı; her biri için 2 haftalık / 1 aylık geçmiş grafiği. Adımlar Health Connect'ten alınabilir: telefonun uygulama kapalıyken saydığı adımlar uygulama açılınca gelir.</td></tr>
   <tr><td><b>Kalori</b></td><td>100 g ya da 100 ml başına değerleriyle, kategorili hazır yiyecek listesi (USDA FoodData Central), gram ya da mililitreyle kayıt, makrolar, kendi yiyeceğin, son yenenler en üstte, profilden kalori ve protein hedefi önerisi (Mifflin-St Jeor).</td></tr>
   <tr><td><b>Seri</b></td><td>Antrenman günü antrenman bitince, dinlenme günü adım hedefi ya da alışkanlık listesiyle tamamlanır. Dondurma hakkı, aylık takvim ve gün bitmediyse akşam hatırlatması.</td></tr>
   <tr><td><b>XP ve seviye</b></td><td>Setler, alışkanlıklar, su ve adım hedefleri ve seri günleri XP kazandırır; seviye ve rank (Çaylak → Efsane) profilde, seri ekranında ve ana ekrandaki avatarda.</td></tr>
@@ -211,7 +213,7 @@ Sürüm APK'sı: `npx expo prebuild --platform android`, ardından `android/` i�
 > Windows'ta proje yolunda ASCII dışı karakter varsa (ör. `Masaüstü`) yerel derleme başarısız olur. Android SDK'daki CMake 3.22.1 ile gelen Ninja 1.10.2 de uzun codegen yollarını kaldıramaz. `C:\dev\mvm` gibi ASCII bir yoldan derle ve `android/local.properties` içindeki `cmake.dir` değerini, `bin/ninja.exe` dosyası Ninja 1.12 ya da üstü olan bir CMake kopyasına yönlendir.
 
 > [!NOTE]
-> Uygulama bağlantı ister: her ekran Supabase'den okur, bağlantı yoksa "sunucuya ulaşılamadı" ekranı çıkar. Adımlar yalnızca uygulama açıkken sayılır; arka planda saymak Health Connect ve development build gerektirir. Tema seçimi hesapta değil, cihazda saklanır.
+> Uygulama bağlantı ister: her ekran Supabase'den okur, bağlantı yoksa "sunucuya ulaşılamadı" ekranı çıkar. Health Connect bağlı değilse adımlar yalnızca uygulama açıkken sayılır. APK yalnızca 64 bit ARM telefonlar için derlenir (güncel telefonların neredeyse hepsi); x86 emülatörlerde çalışmaz. Tema seçimi hesapta değil, cihazda saklanır.
 
 ### Emeği geçenler
 

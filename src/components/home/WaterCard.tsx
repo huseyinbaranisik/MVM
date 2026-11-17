@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Counter, TrackerCard } from '@/components/TrackerCard';
+import { Counter, counterSlot, TrackerCard } from '@/components/TrackerCard';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { SegmentedControl } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
@@ -12,7 +12,7 @@ import { formatWater, waterFromDisplay, waterToDisplay, waterUnitLabel, type Wat
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing } from '@/theme';
 
-export function WaterCard({ date }: { date: string }) {
+export function WaterCard({ date, size = 'small' }: { date: string; size?: 'small' | 'large' }) {
   const data = useDb(async () => ({
     date, ml: await getTrackerValue('water', date), s: await getTrackerSettings('water'),
   }), [date], ['daily_trackers', 'tracker_settings']);
@@ -33,13 +33,14 @@ export function WaterCard({ date }: { date: string }) {
         value={fmt(data.ml)}
         caption={`/ ${fmt(data.s.goal)} ${waterUnitLabel(unit)}`}
         onMenu={() => setOpen('menu')}
-        footer={
+        layout={size === 'large' ? 'wide' : 'square'}
+        {...counterSlot(size, (
           <Counter
             minusLabel="Bir bardak çıkar" plusLabel="Bir bardak ekle"
             onMinus={() => addTrackerValue('water', date, -glass)}
             onPlus={() => addTrackerValue('water', date, glass)}
           />
-        }
+        )) }
       />
       <Sheet visible={open === 'menu'} onClose={close} title="Su">
         <SheetRow label="Hedefi değiştir" value={`${fmt(data.s.goal)} ${waterUnitLabel(unit)}`} onPress={() => setOpen('goal')} />

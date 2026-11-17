@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Counter, TrackerCard } from '@/components/TrackerCard';
+import { Counter, counterSlot, TrackerCard } from '@/components/TrackerCard';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { SegmentedControl } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
@@ -15,7 +15,7 @@ import { colors, spacing } from '@/theme';
 
 const STEP_DECREMENT = 500;
 
-export function StepsCard({ date }: { date: string }) {
+export function StepsCard({ date, size = 'small' }: { date: string; size?: 'small' | 'large' }) {
   const sensor = useAppStore((s) => s.stepSensor);
   const data = useDb(async () => ({
     date,
@@ -42,13 +42,14 @@ export function StepsCard({ date }: { date: string }) {
         value={fmt(data.steps)}
         caption={`/ ${fmt(data.s.goal)} ${stepUnitLabel(unit)}`}
         onMenu={() => setOpen('menu')}
-        footer={
+        layout={size === 'large' ? 'wide' : 'square'}
+        {...counterSlot(size, (
           <Counter
             minusLabel={`${STEP_DECREMENT} adım çıkar`} plusLabel="Adım ekle"
             onMinus={() => addTrackerValue('steps', date, -STEP_DECREMENT)}
             onPlus={() => setOpen('add')}
           />
-        }
+        )) }
       />
       <Sheet visible={open === 'menu'} onClose={close} title="Adım">
         <SheetRow label="Hedefi değiştir" value={`${fmt(data.s.goal)} ${stepUnitLabel(unit)}`} onPress={() => setOpen('goal')} />

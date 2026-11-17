@@ -20,7 +20,7 @@ import { colors, radius, spacing, type } from '@/theme';
 
 const BEDTIME_ID = 'bedtime-reminder';
 
-export function SleepCard({ date }: { date: string }) {
+export function SleepCard({ date, size = 'large' }: { date: string; size?: 'small' | 'large' }) {
   const data = useDb(async () => {
     const week = await getSleepRange(addDays(date, -6), date);
     return {
@@ -64,7 +64,7 @@ export function SleepCard({ date }: { date: string }) {
   return (
     <>
       <TrackerCard
-        layout="wide" resetKey={data.date}
+        layout={size === 'large' ? 'wide' : 'square'} resetKey={data.date}
         title="Uyku" icon="bedtime" color={colors.primary}
         progress={log ? log.duration_min / goal : 0}
         value={log ? formatDuration(log.duration_min, display) : '—'}

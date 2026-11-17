@@ -22,6 +22,7 @@ import { getLevel, XP_TABLES } from '@/db/repos/xp';
 import { addTrackerValue } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
 import { formatLongTR, today } from '@/services/dates';
+import { DEFAULT_LAYOUT, toRows, type HomeCardId, type HomeCardSize } from '@/services/homeLayout';
 import { startStepTracking } from '@/services/steps';
 import { useAppStore } from '@/stores/useAppStore';
 import { colors, radius, spacing, type } from '@/theme';
@@ -34,6 +35,7 @@ export default function TodayScreen() {
     name: (await getSetting('profile')).name,
     onboarded: await getSetting('onboarded'),
     streak: (await getStreakState())?.current ?? 0,
+    layout: await getSetting('homeLayout'),
   }), [], ['settings', 'streak_state']);
   const level = useDb(getLevel, [], XP_TABLES)?.level;
   const [morningPrompt, setMorningPrompt] = useState(false);
@@ -66,12 +68,13 @@ export default function TodayScreen() {
   if (header && !header.onboarded) return <Redirect href="/onboarding" />;
   const name = header?.name ?? '';
   const streak = header?.streak ?? 0;
+  const rows = toRows(header?.layout ?? DEFAULT_LAYOUT);
   return (
     <Screen>
       <Appear index={0}>
       <View style={styles.header}>
         <PressableScale onPress={() => router.navigate('/profile')} accessibilityRole="button" accessibilityLabel="Profil">
-          <Avatar name={name} size={48} level={level} />
+          <Avatar size={48} level={level} />
         </PressableScale>
         <View style={styles.flex}>
           <Text style={type.caption}>{formatLongTR(date)}</Text>
@@ -86,19 +89,12 @@ export default function TodayScreen() {
 
       </Appear>
       <Appear index={1}><DaySelector value={date} onChange={setDate} /></Appear>
-      <Appear index={2}><WorkoutCard date={date} /></Appear>
-
-      <Appear index={3} style={styles.section}>
-      <Text style={type.title}>Günlük check-in</Text>
-      <View style={styles.grid}>
-        <WaterCard date={date} />
-        <StepsCard date={date} />
-      </View>
-      </Appear>
-      <Appear index={4}><CalorieCard date={date} /></Appear>
-      <Appear index={5}><SleepCard date={date} /></Appear>
-
-      <Appear index={6}><Checklist date={date} /></Appear>
+      {rows.map((row, i) => (
+        <Appear key={row.map((x) => x.id).join('-')} index={i + 2} style={styles.row}>
+          {row.map((it) => <View key={it.id} style={styles.flex}><HomeCard id={it.id} size={it.size} date={date} /></View>)}
+          {row.length === 1 && row[0].size === 'small' ? <View style={styles.flex} /> : null}
+        </Appear>
+      ))}
 
       <SleepSheet
         visible={morningPrompt}
@@ -121,6 +117,16 @@ const styles = StyleSheet.create({
   },
   flameText: { fontSize: 16, fontWeight: '800', color: colors.textSecondary },
   flameOn: { color: colors.textPrimary },
-  section: { gap: spacing.lg },
-  grid: { flexDirection: 'row', gap: spacing.md },
+  row: { flexDirection: 'row', gap: spacing.md },
 });
+
+function HomeCard({ id, size, date }: { id: HomeCardId; size: HomeCardSize; date: string }) {
+  switch (id) {
+    case 'workout': return <WorkoutCard date={date} />;
+    case 'water': return <WaterCard date={date} size={size} />;
+    case 'steps': return <StepsCard date={date} size={size} />;
+    case 'calories': return <CalorieCard date={date} size={size} />;
+    case 'sleep': return <SleepCard date={date} size={size} />;
+    case 'checklist': return <Checklist date={date} />;
+  }
+}

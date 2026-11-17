@@ -18,7 +18,7 @@ import { colors, radius, spacing, type } from '@/theme';
 
 const MAX_RESULTS = 40;
 
-export function CalorieCard({ date }: { date: string }) {
+export function CalorieCard({ date, size = 'large' }: { date: string; size?: 'small' | 'large' }) {
   const data = useDb(async () => {
     const [logs, foods, recent, s, profile, weight, height] = await Promise.all([
       getFoodLogs(date), getFoods(), getRecentFoods(), getTrackerSettings('calories'),
@@ -52,7 +52,7 @@ export function CalorieCard({ date }: { date: string }) {
   return (
     <>
       <TrackerCard
-        layout="wide" resetKey={data.date}
+        layout={size === 'large' ? 'wide' : 'square'} resetKey={data.date}
         title="Kalori" icon="restaurant" color={colors.warning}
         progress={total.kcal / goal}
         value={fmtInt(total.kcal)}
@@ -67,8 +67,9 @@ export function CalorieCard({ date }: { date: string }) {
           </>
         }
         footer={
-          <Text style={type.caption}>
-            {data.logs.length ? `${data.logs.length} kayıt · kalan ${fmtInt(Math.max(0, goal - total.kcal))} kcal` : ''}
+          <Text style={type.caption} numberOfLines={1}>
+            {size === 'small' ? `Kalan ${fmtInt(Math.max(0, goal - total.kcal))} kcal`
+              : data.logs.length ? `${data.logs.length} kayıt · kalan ${fmtInt(Math.max(0, goal - total.kcal))} kcal` : ''}
           </Text>
         }
       />

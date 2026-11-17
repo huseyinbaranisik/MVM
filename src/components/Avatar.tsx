@@ -1,13 +1,27 @@
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { avatarUrl } from '@/db/repos/avatar';
+import { getSetting } from '@/db/repos/settings';
+import { useDb } from '@/db/useDb';
 import { colors, radius } from '@/theme';
 
-/** Yuvarlak avatar: baş harf; `level` verilirse sağ altta seviye rozeti. */
-export function Avatar({ name, size, level }: { name: string; size: number; level?: number }) {
+/** Yuvarlak avatar: profil fotoğrafı, yoksa baş harf; `level` verilirse sağ altta seviye rozeti. */
+export function Avatar({ size, level }: { size: number; level?: number }) {
+  const data = useDb(async () => {
+    const p = await getSetting('profile');
+    return { name: p.name, url: await avatarUrl(p.avatarPath), key: `${p.avatarPath}-${p.avatarUpdatedAt}` };
+  }, [], ['settings']);
+  const name = data?.name ?? '';
   return (
     <View style={{ width: size, height: size }}>
       <View style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}>
-        <Text style={[styles.initial, { fontSize: size * 0.42 }]}>{name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text>
+        {data?.url ? (
+          <Image source={{ uri: data.url, cacheKey: data.key }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150}
+            accessibilityLabel="Profil fotoğrafı" />
+        ) : (
+          <Text style={[styles.initial, { fontSize: size * 0.42 }]}>{name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text>
+        )}
       </View>
       {level != null ? (
         <View style={styles.badge} accessibilityLabel={`Seviye ${level}`}>

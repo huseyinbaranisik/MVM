@@ -82,6 +82,10 @@ export function TrackerCard({ title, icon, color, progress, value, caption, onMe
   );
 }
 
+/** Büyük kartta sayaç halkanın yanına (side), küçükte alta (footer) gider. */
+export const counterSlot = (size: 'small' | 'large', node: ReactNode): { side?: ReactNode; footer?: ReactNode } =>
+  (size === 'large' ? { side: node } : { footer: node });
+
 /** -/+ sayaç */
 export function Counter({ onMinus, onPlus, minusLabel, plusLabel }: {
   onMinus: () => void; onPlus: () => void; minusLabel: string; plusLabel: string;

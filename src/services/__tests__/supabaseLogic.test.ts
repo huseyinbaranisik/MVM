@@ -5,7 +5,7 @@ import { seedExercises } from '@/data/seedExercises';
 import { builtInExercises, exercisesForMuscles, fromUserRow, musclesOfRegion, regionsOf, sortForLibrary } from '../catalog';
 import { filterFoods, proteinTarget, suggestCalories, sumMacros } from '../nutrition';
 import { buildDayInputs, computeStreak, diffStreakDays, nextStreakReminder } from '../streakService';
-import { bestsByExercise } from '../workout';
+import { adjustRestState, bestsByExercise, exerciseStats, regionVolume } from '../workout';
 
 describe('katalog', () => {
   const list = builtInExercises();
@@ -107,5 +107,36 @@ describe('seri hatırlatması', () => {
   });
   it('ay sonunda bir sonraki aya geçer', () => {
     expect(nextStreakReminder(new Date(2026, 10, 30, 21, 0), '20:00', false)).toEqual(new Date(2026, 11, 1, 20, 0));
+  });
+});
+
+describe('dinlenme ±15', () => {
+  const now = 1_000_000;
+  it('azaltınca toplam sabit, yüzde düşer; art arda azaltma 1 sn altına inmez', () => {
+    let s = { endsAt: now + 90_000, total: 90 };
+    s = adjustRestState(s, -15, now);
+    expect(s).toEqual({ endsAt: now + 75_000, total: 90 });
+    for (let i = 0; i < 10; i++) s = adjustRestState(s, -15, now);
+    expect(s).toEqual({ endsAt: now + 1000, total: 90 });
+  });
+  it('eklemede kalan toplamı aşarsa toplam büyür', () => {
+    expect(adjustRestState({ endsAt: now + 90_000, total: 90 }, 15, now)).toEqual({ endsAt: now + 105_000, total: 105 });
+    expect(adjustRestState({ endsAt: now + 30_000, total: 90 }, 15, now)).toEqual({ endsAt: now + 45_000, total: 90 });
+  });
+});
+
+describe('antrenman özeti', () => {
+  const sets = [
+    { exercise_id: 'a', weight_kg: 50, reps: 10 },
+    { exercise_id: 'a', weight_kg: 55, reps: 8 },
+    { exercise_id: 'b', weight_kg: null, reps: 15 },
+  ];
+  it('hareket istatistikleri', () => {
+    const st = exerciseStats(sets);
+    expect(st.get('a')).toMatchObject({ sets: 2, reps: 18, volume: 940, best: { kg: 55, reps: 8 } });
+    expect(st.get('b')).toMatchObject({ volume: 0, best: { kg: 0, reps: 15 } });
+  });
+  it('bölge hacmi', () => {
+    expect(regionVolume(sets, (id) => (id === 'a' ? ['chest', 'chest', 'triceps'] : ['abs']))).toEqual([['chest', 940], ['triceps', 940]]);
   });
 });

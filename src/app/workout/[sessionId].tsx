@@ -3,6 +3,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BackHeader, ExerciseThumb } from '@/components/exercise';
@@ -227,18 +228,28 @@ function RestTimer({ now }: { now: number }) {
       stopRest();
     }
   }, [restEndsAt, left, stopRest]);
+  // ±15'e basınca halka kısa bir "pop" yapar ve telefon hafifçe titrer: değişiklik hissedilsin
+  const pop = useSharedValue(1);
+  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
+  const adjust = (d: number) => {
+    adjustRest(d);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    pop.set(withSequence(withTiming(d > 0 ? 1.12 : 0.9, { duration: 90 }), withSpring(1, { damping: 8 })));
+  };
   if (!restEndsAt || left <= 0) return null;
 
   return (
     <View style={[styles.rest, { paddingBottom: insets.bottom + spacing.md }]}>
-      <RingGauge size={84} stroke={7} progress={left / restTotal} color={colors.accent}>
-        <Text style={styles.restTime}>{mmss(Math.ceil(left))}</Text>
-      </RingGauge>
+      <Animated.View style={popStyle}>
+        <RingGauge size={84} stroke={7} progress={left / restTotal} color={colors.accent}>
+          <Text style={styles.restTime}>{mmss(Math.ceil(left))}</Text>
+        </RingGauge>
+      </Animated.View>
       <View style={styles.flex1}>
         <Text style={type.subtitle}>Dinlenme</Text>
         <View style={styles.restBtns}>
-          <PillButton label="−15" onPress={() => adjustRest(-15)} accessibilityLabel="15 saniye azalt" />
-          <PillButton label="+15" onPress={() => adjustRest(15)} accessibilityLabel="15 saniye ekle" />
+          <PillButton label="−15" onPress={() => adjust(-15)} accessibilityLabel="15 saniye azalt" />
+          <PillButton label="+15" onPress={() => adjust(15)} accessibilityLabel="15 saniye ekle" />
           <PillButton label="Atla" onPress={stopRest} />
         </View>
       </View>

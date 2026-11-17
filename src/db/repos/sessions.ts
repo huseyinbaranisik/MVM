@@ -105,3 +105,12 @@ export async function getWorkoutDates(from: string, to: string) {
   const rows = must(await supabase.from('workout_sessions').select('date').eq('status', 'done').gte('date', from).lte('date', to));
   return new Set(rows.map((r) => r.date as string));
 }
+
+/** Aynı şablonun bu oturumdan önceki son bitmiş oturumu (kıyas için). */
+export async function getPreviousTemplateSession(sessionId: number, templateId: number | null) {
+  if (!templateId) return null;
+  const prev = maybe(await supabase.from('workout_sessions').select('id, started_at, ended_at').eq('template_id', templateId)
+    .eq('status', 'done').lt('id', sessionId).order('id', { ascending: false }).limit(1).maybeSingle());
+  if (!prev) return null;
+  return { ...prev, sets: await getSessionSets(prev.id) };
+}

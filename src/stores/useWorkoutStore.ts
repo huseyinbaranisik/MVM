@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { cancelReminder, scheduleIn } from '@/services/notifications';
+import { adjustRestState } from '@/services/workout';
 
 const REST_NOTIFICATION = 'rest-timer';
 
@@ -23,8 +24,8 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
   adjustRest: (delta) => {
     const { restEndsAt, restTotal } = get();
     if (!restEndsAt) return;
-    const endsAt = Math.max(Date.now() + 1000, restEndsAt + delta * 1000);
-    set({ restEndsAt: endsAt, restTotal: Math.max(1, restTotal + delta) });
+    const { endsAt, total } = adjustRestState({ endsAt: restEndsAt, total: restTotal }, delta, Date.now());
+    set({ restEndsAt: endsAt, restTotal: total });
     scheduleIn(REST_NOTIFICATION, (endsAt - Date.now()) / 1000, 'Dinlenme bitti 💪', 'Sıradaki sete geç.').catch(() => {});
   },
   stopRest: () => {

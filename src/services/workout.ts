@@ -69,3 +69,37 @@ export const REP_VALUES = Array.from({ length: 16 }, (_, i) => i + 5);
 export function nearest<T extends number>(values: T[], v: number): T {
   return values.reduce((best, x) => (Math.abs(x - v) < Math.abs(best - v) ? x : best), values[0]);
 }
+
+/**
+ * Dinlenmeye süre ekleyip çıkarır. Toplam süre azaltmada sabit kalır (yoksa çubuğun yüzdesi değişmez);
+ * eklemede kalan süre toplamı aşarsa toplam büyür, çubuk %100'ü geçmez. Bitiş en erken 1 sn sonra.
+ */
+export function adjustRestState(s: { endsAt: number; total: number }, deltaSec: number, now: number) {
+  const endsAt = Math.max(now + 1000, s.endsAt + deltaSec * 1000);
+  return { endsAt, total: Math.max(s.total, Math.ceil((endsAt - now) / 1000)) };
+}
+
+/** Hareket bazında özet: set, toplam tekrar, hacim ve en iyi set (en ağır; eşitse çok tekrarlı). */
+export function exerciseStats(sets: (SetLike & { duration_sec?: number | null })[]) {
+  const out = new Map<string, { sets: number; reps: number; volume: number; best: { kg: number; reps: number } | null; seconds: number }>();
+  for (const s of sets) {
+    const e = out.get(s.exercise_id) ?? { sets: 0, reps: 0, volume: 0, best: null, seconds: 0 };
+    e.sets++;
+    e.reps += s.reps ?? 0;
+    e.seconds += s.duration_sec ?? 0;
+    e.volume += (s.weight_kg ?? 0) * (s.reps ?? 0);
+    const kg = s.weight_kg ?? 0;
+    if (s.reps && (!e.best || kg > e.best.kg || (kg === e.best.kg && s.reps > e.best.reps))) e.best = { kg, reps: s.reps };
+    out.set(s.exercise_id, e);
+  }
+  return out;
+}
+
+/** Hacmin bölgelere dağılımı: her hareketin hacmi birincil kaslarının bölgelerine (bölge başına bir kez) yazılır. */
+export function regionVolume(sets: SetLike[], primaryRegions: (exerciseId: string) => string[]) {
+  const out = new Map<string, number>();
+  for (const [id, st] of exerciseStats(sets)) {
+    for (const r of new Set(primaryRegions(id))) out.set(r, (out.get(r) ?? 0) + st.volume);
+  }
+  return [...out].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+}

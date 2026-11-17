@@ -14,6 +14,7 @@ import { colors, radius, spacing, type } from '@/theme';
 const NODE = 64;
 const CURRENT = 84;
 const STEP = 104; // duraklar arası dikey mesafe
+const MAX_PATH_LEVEL = 100;
 const BANNER = 64; // rank bandının kapladığı yükseklik
 
 const XP_SOURCES: [string, number][] = [
@@ -30,8 +31,8 @@ export default function LevelPath() {
   if (!lv) return <LoadingScreen blocks={[140, 400]} />;
 
   const rank = rankInfo(lv.level);
-  // mevcut rank'tan sonraki rank'ın sonuna kadar göster (en az 10 seviye ilerisi)
-  const last = Math.max(lv.level + 10, (RANKS.find((r) => r.from > lv.level + 5)?.from ?? lv.level + 15) - 1);
+  // yol 100. seviyeye kadar; 100'ü geçenlerde 10 seviye ilerisine kadar uzar
+  const last = Math.max(MAX_PATH_LEVEL, lv.level + 10);
   const cx = (width - spacing.lg * 2) / 2; // yol dikey: tüm duraklar ortada
   const ratio = lv.needed ? lv.intoLevel / lv.needed : 0;
 

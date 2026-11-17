@@ -442,3 +442,6 @@ MVM: Türkçe arayüzlü antrenman + günlük alışkanlık takip uygulaması.
 - [x] README güncellendi (Şekil 5 hâlâ eski dokuz temayı gösteriyor)
 - [ ] **G16 İngilizce dil desteği: yapılmadı.** Bir sonraki oturumun ilk işi. Ayrıca XP birikim grafiği (G11) ve tema/README görsellerinin yenilenmesi kaldı.
 - Not: Metro OneDrive klasöründe dosya değişikliğini kaçırıyor; emülatörde denerken `npx expo start --clear` ile yeniden başlat.
+- [x] v1.1.0 ve v1.2.0 GitHub'da yayınlandı. v1.2.0: Health Connect adımları (`src/services/healthConnect.ts`, `stepSync.ts`), ana ekran widget'ı (`src/widget/`, giriş `index.ts`; widget dosyalarında `'use no memo'` şart), hareket ilerleme grafiği. Widget'ın oturum açık hali ve Health Connect bağlantısı emülatörde denenmedi.
+- Not: emülatörde denemek için `gradlew assembleRelease -PreactNativeArchitectures=x86_64` ile ayrı test APK'sı derle; yayın APK'sı yalnızca arm64.
+- Kullanıcı öğünler, barkod, başarımlar, paylaşma kartı ve haftalık özet bildiriminden vazgeçti.

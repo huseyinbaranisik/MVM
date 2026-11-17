@@ -1,6 +1,6 @@
 import { Redirect, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { AppState, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { DaySelector } from '@/components/DaySelector';
@@ -24,6 +24,7 @@ import { useDb } from '@/db/useDb';
 import { formatLongTR, today } from '@/services/dates';
 import { DEFAULT_LAYOUT, toRows, type HomeCardId, type HomeCardSize } from '@/services/homeLayout';
 import { startStepTracking } from '@/services/steps';
+import { syncStepsFromHealthConnect } from '@/services/stepSync';
 import { useAppStore } from '@/stores/useAppStore';
 import { colors, radius, spacing, type } from '@/theme';
 
@@ -31,6 +32,7 @@ export default function TodayScreen() {
   const date = useAppStore((s) => s.selectedDate);
   const setDate = useAppStore((s) => s.setSelectedDate);
   const setStepSensor = useAppStore((s) => s.setStepSensor);
+  const healthTick = useAppStore((s) => s.healthTick);
   const header = useDb(async () => ({
     name: (await getSetting('profile')).name,
     onboarded: await getSetting('onboarded'),
@@ -40,17 +42,27 @@ export default function TodayScreen() {
   const level = useDb(getLevel, [], XP_TABLES)?.level;
   const [morningPrompt, setMorningPrompt] = useState(false);
 
-  // Canlı adım sayımı: uygulama açıkken atılan adımlar bugüne eklenir. Sensör/izin yoksa manuel giriş kalır.
+  // Adımlar: Health Connect bağlıysa telefonun arka planda saydığı adımlar (açılışta, uygulamaya dönünce ve dakikada bir) alınır;
+  // değilse uygulama açıkken telefon sensörü sayar. İkisi birlikte çalışmaz, yoksa adımlar iki kez sayılır.
   useEffect(() => {
     let stop: (() => void) | null = null;
     let cancelled = false;
-    startStepTracking((delta) => addTrackerValue('steps', today(), delta)).then((s) => {
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const appSub = AppState.addEventListener('change', (st) => { if (st === 'active') syncStepsFromHealthConnect(); });
+    syncStepsFromHealthConnect().then(async (health) => {
+      if (cancelled) return;
+      if (health) {
+        setStepSensor('health');
+        timer = setInterval(() => syncStepsFromHealthConnect(1), 60_000);
+        return;
+      }
+      const s = await startStepTracking((delta) => addTrackerValue('steps', today(), delta));
       if (cancelled) { s?.(); return; }
       stop = s;
       setStepSensor(s ? 'on' : 'off');
     });
-    return () => { cancelled = true; stop?.(); };
-  }, [setStepSensor]);
+    return () => { cancelled = true; stop?.(); appSub.remove(); if (timer) clearInterval(timer); };
+  }, [setStepSensor, healthTick]);
 
   // Sabah ilk açılışta "Dün gece nasıl uyudun?" (04:00–12:00, bugün kayıt yoksa, günde bir kez)
   useEffect(() => {

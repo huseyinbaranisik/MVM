@@ -9,6 +9,8 @@ import { SegmentedControl } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { addTrackerValue, getLatestMeasurement, getTrackerHistory, getTrackerSettings, getTrackerValue, updateTrackerSettings } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
+import { toast } from '@/components/ui/overlays';
+import { connectHealthConnect, disconnectHealthConnect, healthConnectAvailable } from '@/services/healthConnect';
 import { addDays } from '@/services/dates';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatSteps, kmToSteps, stepsToKm, stepUnitLabel, strideCm, type StepUnit } from '@/services/units';
@@ -19,6 +21,7 @@ const STEP_DECREMENT = 500;
 
 export function StepsCard({ date, size = 'small' }: { date: string; size?: 'small' | 'large' }) {
   const sensor = useAppStore((s) => s.stepSensor);
+  const bumpHealth = useAppStore((s) => s.bumpHealth);
   const data = useDb(async () => ({
     date,
     steps: await getTrackerValue('steps', date),
@@ -79,8 +82,17 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
         {data.s.unit_size != null ? (
           <SheetRow label="Boydan hesapla" onPress={() => updateTrackerSettings('steps', { unit_size: null })} />
         ) : null}
-        <SheetRow label="Telefon sensörü"
-          value={sensor === 'on' ? 'Açık (uygulama açıkken sayar)' : sensor === 'off' ? 'Yok · manuel giriş' : '…'} />
+        <SheetRow label="Adım kaynağı"
+          value={sensor === 'health' ? 'Health Connect' : sensor === 'on' ? 'Telefon sensörü' : sensor === 'off' ? 'Elle giriş' : '…'} />
+        {sensor === 'health' ? (
+          <SheetRow label="Health Connect bağlantısını kes" onPress={() => { disconnectHealthConnect(); bumpHealth(); close(); }} />
+        ) : (
+          <SheetRow label="Health Connect'e bağlan" onPress={async () => {
+            close();
+            if (!(await healthConnectAvailable())) { toast('Health Connect bu telefonda yok'); return; }
+            if (await connectHealthConnect()) { bumpHealth(); toast('Health Connect bağlandı'); } else toast('İzin verilmedi');
+          }} />
+        )}
         <SheetRow label="Geçmişi gör" onPress={() => { close(); router.push('/tracker/steps'); }} />
       </Sheet>
       <NumberPrompt

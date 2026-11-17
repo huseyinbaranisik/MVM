@@ -22,6 +22,14 @@ export async function addTrackerValue(type: TrackerType, date: string, delta: nu
   notify('daily_trackers');
 }
 
+/** Günlük değeri en az `value` yapar (Health Connect senkronu: uygulamada elle eklenen fazlası korunur). */
+export async function raiseTrackerValue(type: TrackerType, date: string, value: number) {
+  const cur = await getTrackerValue(type, date);
+  if (value <= cur) return false;
+  must(await supabase.from('daily_trackers').upsert({ type, date, value }, { onConflict: 'user_id,type,date' }));
+  return true;
+}
+
 export async function getTrackerSettings(type: TrackerType): Promise<TrackerSettings | null> {
   return maybe(await supabase.from('tracker_settings').select('type, goal, display_unit, unit_size').eq('type', type).maybeSingle());
 }

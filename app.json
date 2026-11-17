@@ -21,7 +21,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACTIVITY_RECOGNITION",
-        "SCHEDULE_EXACT_ALARM"
+        "SCHEDULE_EXACT_ALARM",
+        "android.permission.health.READ_STEPS"
       ]
     },
     "web": {
@@ -48,8 +49,28 @@
               "arm64-v8a"
             ],
             "enableMinifyInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "minSdkVersion": 26
           }
+        }
+      ],
+      "react-native-health-connect",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Today",
+              "label": "MVM Bugün",
+              "description": "Seri, günün planı, su ve adım",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "previewImage": "./assets/images/widget-preview.png",
+              "updatePeriodMillis": 1800000
+            }
+          ]
         }
       ]
     ],

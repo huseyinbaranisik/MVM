@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Icon } from '@/components/Icon';
 import { SignIn } from '@/components/SignIn';
 import { StreakSync } from '@/components/StreakSync';
+import { WidgetSync } from '@/components/WidgetSync';
 import { OverlayHost } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
 import { notify } from '@/db/bus';
@@ -88,6 +89,7 @@ export default function RootLayout() {
       <ThemeProvider value={navTheme}>
         <AuthGate>
             <StreakSync />
+            <WidgetSync />
             <Stack screenOptions={{ headerShown: false, animation: 'ios_from_right', contentStyle: { backgroundColor: colors.background } }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />

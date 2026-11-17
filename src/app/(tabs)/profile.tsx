@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
+import { Screen } from '@/components/Screen';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { confirm } from '@/components/ui/overlays';
 import { SegmentedControl } from '@/components/ui/PillButton';
@@ -74,14 +74,8 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Geri">
-          <Icon name="arrow_back" color={colors.textPrimary} />
-        </Pressable>
-        <Text style={type.title}>Profil</Text>
-      </View>
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+    <Screen>
+        <Text style={type.hero}>Profil</Text>
         <View style={styles.card}>
           <View style={styles.nameRow}>
             <View style={styles.avatar}><Text style={styles.avatarText}>{p.name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text></View>
@@ -177,7 +171,6 @@ export default function ProfileScreen() {
         </View>
 
         <SheetRow label="Çıkış yap" value={email} onPress={signOut} />
-      </ScrollView>
 
       <NumberPrompt visible={prompt === 'weight'} onClose={close} title="Bugünkü kilo" suffix="kg" initial={weight ?? undefined} min={20}
         onSubmit={(v) => saveMeasurement('weight', Math.round(v * 10) / 10, today())} />
@@ -187,7 +180,7 @@ export default function ProfileScreen() {
         onSubmit={(v) => saveProfile({ age: Math.round(v) })} />
       <NumberPrompt visible={prompt === 'target'} onClose={close} title="Hedef kilo" suffix="kg" initial={p.targetWeightKg ?? undefined} min={20}
         onSubmit={(v) => saveProfile({ targetWeightKg: Math.round(v * 10) / 10 })} />
-    </SafeAreaView>
+    </Screen>
   );
 }
 
@@ -212,9 +205,6 @@ function Tile({ label, value, hint, onPress }: { label: string; value: string; h
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
-  body: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md, overflow: 'hidden' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   avatar: {

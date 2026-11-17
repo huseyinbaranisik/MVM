@@ -11,6 +11,7 @@ export default function TabsLayout() {
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.background } }}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="program" />
+      <Tabs.Screen name="profile" />
       <Tabs.Screen name="library" />
       <Tabs.Screen name="stats" />
     </Tabs>

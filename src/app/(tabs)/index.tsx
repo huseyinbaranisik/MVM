@@ -67,7 +67,7 @@ export default function TodayScreen() {
     <Screen>
       <Appear index={0}>
       <View style={styles.header}>
-        <PressableScale style={styles.avatar} onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel="Profil">
+        <PressableScale style={styles.avatar} onPress={() => router.navigate('/profile')} accessibilityRole="button" accessibilityLabel="Profil">
           <Text style={styles.avatarText}>{name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text>
         </PressableScale>
         <View style={styles.flex}>

@@ -102,7 +102,7 @@ export function CalorieCard({ date }: { date: string }) {
           <SheetRow label="Önerilen hedef" value={`${fmtInt(suggested)} kcal`}
             onPress={() => { updateTrackerSettings('calories', { goal: suggested }); close(); }} />
         ) : (
-          <SheetRow label="Önerilen hedef" value="Profili doldur" onPress={() => { close(); router.push('/profile'); }} />
+          <SheetRow label="Önerilen hedef" value="Profili doldur" onPress={() => { close(); router.navigate('/profile'); }} />
         )}
         <SheetRow label="Bugünkü kayıtlar" value={String(data.logs.length)} onPress={() => setOpen('logs')} />
         <SheetRow label="Geçmişi gör" onPress={() => { close(); router.push('/tracker/calories'); }} />

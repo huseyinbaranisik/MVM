@@ -90,7 +90,6 @@ export default function RootLayout() {
             <StreakSync />
             <Stack screenOptions={{ headerShown: false, animation: 'ios_from_right', contentStyle: { backgroundColor: colors.background } }}>
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="quick-add" options={{ presentation: 'transparentModal', animation: 'none' }} />
               <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
               <Stack.Screen name="workout/summary/[sessionId]" options={{ animation: 'fade_from_bottom' }} />
             </Stack>

@@ -1,5 +1,6 @@
 import { notify, subscribe } from '@/db/bus';
 import { must, supabase } from '@/db/supabase';
+import { sessionHistory } from '@/services/workout';
 import {
   builtInExercises, exercisesForMuscles, fromUserRow, musclesOfRegion, regionsOf, sortForLibrary,
   type CatalogExercise, type UserExerciseRow,
@@ -124,16 +125,7 @@ export async function getExerciseHistory(exerciseId: string) {
   const rows = must(await supabase.from('session_sets')
     .select('weight_kg, reps, session_id, workout_sessions!inner(date, status)')
     .eq('exercise_id', exerciseId).eq('workout_sessions.status', 'done'));
-  const bySession = new Map<number, { date: string; maxKg: number; volume: number; sets: number }>();
-  for (const r of rows) {
-    const s = r.workout_sessions as unknown as { date: string };
-    const h = bySession.get(r.session_id) ?? { date: s.date, maxKg: 0, volume: 0, sets: 0 };
-    h.maxKg = Math.max(h.maxKg, r.weight_kg ?? 0);
-    h.volume += (r.weight_kg ?? 0) * (r.reps ?? 0);
-    h.sets++;
-    bySession.set(r.session_id, h);
-  }
-  return [...bySession.values()].sort((a, b) => a.date.localeCompare(b.date));
+  return sessionHistory(rows.map((r) => ({ ...r, date: (r.workout_sessions as unknown as { date: string }).date })));
 }
 
 export async function setFavorite(id: string, favorite: boolean) {

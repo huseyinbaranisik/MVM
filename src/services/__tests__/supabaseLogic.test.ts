@@ -5,7 +5,7 @@ import { seedExercises } from '@/data/seedExercises';
 import { builtInExercises, exercisesForMuscles, fromUserRow, matchesMuscles, musclesOfRegion, regionsOf, sortForLibrary } from '../catalog';
 import { filterFoods, proteinTarget, suggestCalories, sumMacros } from '../nutrition';
 import { buildDayInputs, computeStreak, diffStreakDays, nextStreakReminder } from '../streakService';
-import { adjustRestState, bestsByExercise, exerciseStats, regionVolume } from '../workout';
+import { adjustRestState, bestsByExercise, exerciseStats, regionVolume, sessionHistory } from '../workout';
 
 describe('katalog', () => {
   const list = builtInExercises();
@@ -156,5 +156,18 @@ describe('kas filtresi', () => {
     expect(matchesMuscles(bench, [])).toBe(true);
     expect(matchesMuscles(bench, [new Set(['chest_upper', 'chest_middle']), new Set(['triceps_long'])])).toBe(true);
     expect(matchesMuscles(bench, [new Set(['chest_middle']), new Set(['biceps_long'])])).toBe(false);
+  });
+});
+
+describe('hareket geçmişi', () => {
+  it('oturum bazında en ağır set, 1RM ve hacim; tarih sırası', () => {
+    const h = sessionHistory([
+      { session_id: 2, date: '2026-11-10', weight_kg: 60, reps: 5 },
+      { session_id: 1, date: '2026-11-03', weight_kg: 50, reps: 10 },
+      { session_id: 2, date: '2026-11-10', weight_kg: 55, reps: 8 },
+    ]);
+    expect(h.map((x) => x.date)).toEqual(['2026-11-03', '2026-11-10']);
+    expect(h[1]).toMatchObject({ maxKg: 60, sets: 2, volume: 740, best: { kg: 60, reps: 5 }, e1rm: 70 });
+    expect(h[0].e1rm).toBe(66.7);
   });
 });

@@ -7,14 +7,17 @@ import { LineChart } from 'react-native-gifted-charts';
 import { BodyMapPair } from '@/components/BodyMap';
 import { AddToProgramSheet, BackHeader, EQUIPMENT_TR, exerciseImageSource, FavoriteButton } from '@/components/exercise';
 import { toast } from '@/components/ui/overlays';
-import { PillButton } from '@/components/ui/PillButton';
+import { PillButton, SegmentedControl } from '@/components/ui/PillButton';
 import { LoadingScreen } from '@/components/ui/Skeleton';
 import { getExercise, getExerciseHistory } from '@/db/repos/exercises';
 import { useDb } from '@/db/useDb';
 import { fmtDec } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
 
+type Metric = 'maxKg' | 'e1rm' | 'volume';
+
 export default function ExerciseDetailScreen() {
+  const [metric, setMetric] = useState<Metric>('maxKg');
   const { id: raw } = useLocalSearchParams<{ id: string }>();
   const id = decodeURIComponent(raw);
   const { width } = useWindowDimensions();
@@ -32,7 +35,7 @@ export default function ExerciseDetailScreen() {
   const e = data.e;
   if (!e) return <BackHeader title="Hareket bulunamadı" />;
   const src = exerciseImageSource(e.image_key, e.photo_uri, frame);
-  const history = data.history.filter((h) => h.maxKg != null);
+  const history = data.history.filter((h) => h.maxKg > 0);
   const youtube = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${e.name_en ?? e.name_tr} egzersiz nasıl yapılır`)}`;
 
   return (
@@ -63,36 +66,62 @@ export default function ExerciseDetailScreen() {
           <PillButton label="Plana ekle" variant="primary" onPress={() => setAdding(true)} style={styles.flex1} />
         </View>
 
+        <Text style={type.title}>İlerleme</Text>
+        <View style={styles.card}>
+          {history.length ? (
+            <>
+              <View style={styles.records}>
+                <Record label="Rekor" value={`${fmtDec(Math.max(...history.map((h) => h.maxKg)))} kg`} />
+                <Record label="En iyi 1RM" value={`${fmtDec(Math.max(...history.map((h) => h.e1rm)))} kg`} />
+                <Record label="Oturum" value={String(history.length)} />
+              </View>
+              <View style={styles.row}>
+                <SegmentedControl<Metric> options={[{ value: 'maxKg', label: 'En ağır' }, { value: 'e1rm', label: '1RM' }, { value: 'volume', label: 'Hacim' }]}
+                  value={metric} onChange={setMetric} />
+              </View>
+              {history.length >= 2 ? (
+                <LineChart
+                  data={history.map((h) => ({ value: h[metric], label: h.date.slice(5).replace('-', '.') }))}
+                  width={width - spacing.lg * 4 - 40}
+                  height={160}
+                  color={colors.primaryLight}
+                  dataPointsColor={colors.accent}
+                  thickness={2}
+                  yAxisThickness={0}
+                  xAxisColor={colors.divider}
+                  rulesColor={colors.divider}
+                  yAxisTextStyle={styles.axis}
+                  xAxisLabelTextStyle={styles.axis}
+                  noOfSections={4}
+                  curved
+                />
+              ) : null}
+              {history.slice(-5).reverse().map((h) => (
+                <View key={h.date} style={styles.histRow}>
+                  <Text style={[type.body, styles.flex1]}>{h.date.slice(8)}.{h.date.slice(5, 7)}</Text>
+                  <Text style={type.caption}>{h.best ? `${fmtDec(h.best.kg)} × ${h.best.reps}` : '—'} · 1RM {fmtDec(h.e1rm)} · {h.sets} set</Text>
+                </View>
+              ))}
+            </>
+          ) : <Text style={type.caption}>Kayıt yok.</Text>}
+        </View>
+
         {e.description ? <Text style={type.body}>{e.description}</Text> : null}
         <Section title={e.instructionsAreEnglish ? 'Uygulama (İngilizce)' : 'Uygulama'} items={e.instructions} numbered />
         <Section title="Sık yapılan hatalar" items={e.mistakes} />
         <Section title="İpuçları" items={e.tips} />
 
-        <Text style={type.title}>Geçmiş</Text>
-        <View style={styles.card}>
-          {history.length >= 2 ? (
-            <LineChart
-              data={history.map((h) => ({ value: h.maxKg, label: h.date.slice(5).replace('-', '.') }))}
-              width={width - spacing.lg * 4 - 40}
-              height={160}
-              color={colors.primaryLight}
-              dataPointsColor={colors.accent}
-              thickness={2}
-              yAxisThickness={0}
-              xAxisColor={colors.divider}
-              rulesColor={colors.divider}
-              yAxisTextStyle={styles.axis}
-              xAxisLabelTextStyle={styles.axis}
-              noOfSections={4}
-              curved
-            />
-          ) : null}
-          {history.length ? history.slice(-5).reverse().map((h) => (
-            <Text key={h.date} style={type.body}>{h.date} · en ağır {fmtDec(h.maxKg)} kg · {h.sets} set</Text>
-          )) : <Text style={type.caption}>Henüz kayıt yok.</Text>}
-        </View>
       </ScrollView>
       <AddToProgramSheet exerciseId={adding ? e.id : null} onClose={(msg) => { setAdding(false); if (msg) toast(msg); }} />
+    </View>
+  );
+}
+
+function Record({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.flex1}>
+      <Text style={type.caption}>{label}</Text>
+      <Text style={styles.recordValue}>{value}</Text>
     </View>
   );
 }
@@ -113,6 +142,10 @@ function Section({ title, items, numbered }: { title: string; items: string[]; n
 }
 
 const styles = StyleSheet.create({
+  records: { flexDirection: 'row', gap: spacing.md },
+  recordValue: { fontSize: 18, fontWeight: '800', color: colors.textPrimary },
+  row: { flexDirection: 'row' },
+  histRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   flex: { flex: 1, backgroundColor: colors.background },
   flex1: { flex: 1 },
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl * 2 },

@@ -13,6 +13,24 @@ export const volume = (sets: SetLike[]) => sets.reduce((a, s) => a + (s.weight_k
 
 export const DUMBBELL_STEP_KG = 2;
 
+export interface SessionPoint { date: string; maxKg: number; e1rm: number; volume: number; sets: number; best: { kg: number; reps: number } | null }
+
+/** Hareketin oturum bazında geçmişi (tarih sırasıyla): en ağır set, tahmini 1RM, hacim. */
+export function sessionHistory(rows: { session_id: number; date: string; weight_kg: number | null; reps: number | null }[]): SessionPoint[] {
+  const by = new Map<number, SessionPoint>();
+  for (const r of rows) {
+    const h = by.get(r.session_id) ?? { date: r.date, maxKg: 0, e1rm: 0, volume: 0, sets: 0, best: null };
+    const kg = r.weight_kg ?? 0;
+    const reps = r.reps ?? 0;
+    h.sets++;
+    h.volume += kg * reps;
+    h.e1rm = Math.max(h.e1rm, Math.round(e1rm(kg, reps) * 10) / 10);
+    if (kg > h.maxKg || (kg === h.maxKg && reps > (h.best?.reps ?? 0))) { h.maxKg = kg; h.best = reps ? { kg, reps } : h.best; }
+    by.set(r.session_id, h);
+  }
+  return [...by.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
 /**
  * Progressive overload: önceki oturumda planlanan tüm setler tekrar aralığının üst sınırına ulaştıysa
  * ağırlık artırılmalı. Önerilen ağırlık = önceki en ağır + adım. Öneri yoksa null.

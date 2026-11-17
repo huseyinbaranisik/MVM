@@ -1,3 +1,5 @@
+'use no memo'; // widget kütüphanesi React Compiler dönüşümünü desteklemiyor
+
 import { useEffect } from 'react';
 
 import { subscribe } from '@/db/bus';

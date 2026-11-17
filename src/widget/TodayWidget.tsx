@@ -1,3 +1,5 @@
+'use no memo'; // widget kütüphanesi React Compiler dönüşümünü desteklemiyor
+
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
 
 import type { WidgetData } from '@/widget/data';

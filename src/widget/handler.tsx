@@ -1,3 +1,5 @@
+'use no memo'; // widget kütüphanesi React Compiler dönüşümünü desteklemiyor
+
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
 
 import { addTrackerValue } from '@/db/repos/trackers';

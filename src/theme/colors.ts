@@ -6,7 +6,7 @@ export type ThemeId =
   | 'karpuz' | 'domates' | 'mandalina' | 'deniz' | 'mocha' | 'kizilcik' | 'vanilya' | 'bal' | 'kiraz' | 'claret';
 
 /** Paletin ham renkleri: zemin, ana renk (dolgu), vurgu. */
-interface Palette { name: string; bg: string; primary: string; highlight: string; light: boolean }
+export interface Palette { name: string; bg: string; primary: string; highlight: string; light: boolean }
 
 export const DEFAULT_THEME: ThemeId = 'sarap';
 
@@ -103,21 +103,48 @@ export function derive(p: Palette): Colors {
   };
 }
 
-export const THEME_KEY = 'mvm.theme';
+/** HSL (derece, %, %) → #RRGGBB */
+export function hsl(h: number, s: number, l: number) {
+  const a = (s / 100) * Math.min(l / 100, 1 - l / 100);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = l / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(c * 255).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+}
 
-function savedTheme(): ThemeId {
+export const THEME_KEY = 'mvm.theme';
+export const CUSTOM_KEY = 'mvm.customTheme';
+
+/** Kullanıcının seçtiği 3 renk; zeminin parlaklığına göre açık/koyu tema olur. */
+export interface CustomColors { bg: string; primary: string; highlight: string }
+export const customPalette = (c: CustomColors): Palette => ({ name: 'Özel', ...c, light: lum(c.bg) > 0.3 });
+
+const HEX = /^#[0-9A-F]{6}$/i;
+export function loadCustomColors(): CustomColors | null {
+  try {
+    const c = JSON.parse(globalThis.localStorage?.getItem(CUSTOM_KEY) ?? 'null') as CustomColors | null;
+    return c && HEX.test(c.bg) && HEX.test(c.primary) && HEX.test(c.highlight) ? c : null;
+  } catch {
+    return null;
+  }
+}
+
+function savedTheme(): ThemeId | 'custom' {
   try {
     // renkler her şeyden önce yüklenir: localStorage'ı burada kur (supabase.ts'ten önce çalışabilir)
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- koşullu yükleme: Jest'te yerel modül yok
     if (process.env.NODE_ENV !== 'test') require('expo-sqlite/localStorage/install');
     const v = globalThis.localStorage?.getItem(THEME_KEY);
+    if (v === 'custom' && loadCustomColors()) return 'custom';
     return v && v in PALETTES ? (v as ThemeId) : DEFAULT_THEME; // eski 'bordo' da varsayılana düşer
   } catch {
     return DEFAULT_THEME; // testlerde/localStorage yokken varsayılan
   }
 }
 
-export const themeId: ThemeId = savedTheme();
-export const colors: Colors = derive(PALETTES[themeId]);
+export const themeId: ThemeId | 'custom' = savedTheme();
+export const colors: Colors = derive(themeId === 'custom' ? customPalette(loadCustomColors()!) : PALETTES[themeId]);
 
 export type ColorToken = Exclude<keyof Colors, 'muscleTones' | 'dark'>;

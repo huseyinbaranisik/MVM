@@ -1,4 +1,4 @@
-import { colors, contrast, derive, mix, PALETTES } from '@/theme/colors';
+import { colors, contrast, customPalette, derive, hsl, mix, PALETTES } from '@/theme/colors';
 
 describe('tema', () => {
   it('renk karışımı', () => {
@@ -18,5 +18,16 @@ describe('tema', () => {
       expect(contrast(c.textPrimary, c.background)).toBeGreaterThanOrEqual(4.5);
       expect(contrast(c.onPrimary, c.primary)).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+describe('özel tema', () => {
+  it('HSL dönüşümü ve özel paletten geçerli renkler', () => {
+    expect(hsl(0, 100, 50)).toBe('#FF0000');
+    expect(hsl(120, 100, 25)).toBe('#008000');
+    expect(customPalette({ bg: '#F7F4EE', primary: '#7A1F32', highlight: '#2E86C1' }).light).toBe(true);
+    expect(customPalette({ bg: '#0E0C0B', primary: '#7A1F32', highlight: '#F7F4EE' }).light).toBe(false);
+    const c = derive(customPalette({ bg: '#0E0C0B', primary: '#2E86C1', highlight: '#F2C14E' }));
+    expect(/^#[0-9A-F]{6}$/i.test(c.textPrimary) && /^#[0-9A-F]{6}$/i.test(c.onPrimary)).toBe(true);
   });
 });

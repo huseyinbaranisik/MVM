@@ -13,7 +13,8 @@ import { supabase } from '@/db/supabase';
 import { useDb } from '@/db/useDb';
 import { play, setSoundsEnabled, soundsEnabled } from '@/services/sounds';
 import { colors, radius, spacing, type } from '@/theme';
-import { PALETTES, themeId, type ThemeId } from '@/theme/colors';
+import { CustomThemeSheet } from '@/components/CustomThemeSheet';
+import { loadCustomColors, PALETTES, themeId, type ThemeId } from '@/theme/colors';
 import { setTheme } from '@/theme/select';
 
 const THEMES = (Object.entries(PALETTES) as [ThemeId, (typeof PALETTES)[ThemeId]][])
@@ -28,7 +29,11 @@ export default function SettingsScreen() {
   const [themesOpen, setThemesOpen] = useState(false);
   const [prompt, setPrompt] = useState<'heavy' | 'normal' | null>(null);
   const [sounds, setSounds] = useState(soundsEnabled);
-  const current = THEMES.find((t) => t.id === themeId) ?? THEMES[0];
+  const [customOpen, setCustomOpen] = useState(false);
+  const custom = loadCustomColors();
+  const current = themeId === 'custom' && custom
+    ? { id: 'custom', name: 'Özel', swatch: [custom.bg, custom.primary, custom.highlight] }
+    : THEMES.find((t) => t.id === themeId) ?? THEMES[0];
   const rest = data?.rest ?? { heavy: 120, normal: 75 };
 
   const signOut = async () => {
@@ -60,6 +65,15 @@ export default function SettingsScreen() {
             <Text style={type.caption}>{current.name}</Text>
             <Icon name={themesOpen ? 'expand_less' : 'expand_more'} color={colors.textSecondary} />
           </PressableScale>
+          {themesOpen ? (
+            <PressableScale style={styles.themeRow} onPress={() => setCustomOpen(true)} accessibilityRole="button" accessibilityLabel="Özel tema">
+              {custom ? <Swatches colors={[custom.bg, custom.primary, custom.highlight]} /> : (
+                <View style={[styles.swatches, styles.customIcon]}><Icon name="palette" size={22} color={colors.textPrimary} /></View>
+              )}
+              <Text style={[type.body, styles.flex]}>Özel</Text>
+              <Icon name="chevron_right" color={colors.textSecondary} />
+            </PressableScale>
+          ) : null}
           {themesOpen ? THEMES.filter((t) => t.id !== themeId).map((t) => (
             <PressableScale key={t.id} style={styles.themeRow} onPress={() => setTheme(t.id)} accessibilityRole="button" accessibilityLabel={t.name}>
               <Swatches colors={t.swatch} />
@@ -97,6 +111,7 @@ export default function SettingsScreen() {
           <SheetRow label="Çıkış yap" value={data?.email} onPress={signOut} />
         </View>
       </ScrollView>
+      <CustomThemeSheet visible={customOpen} onClose={() => setCustomOpen(false)} />
 
       <NumberPrompt visible={prompt != null} onClose={() => setPrompt(null)} suffix="sn" min={10} quick={[60, 90, 120, 180]}
         title={prompt === 'heavy' ? 'Dinlenme (ağır set)' : 'Dinlenme (normal set)'} initial={prompt ? rest[prompt] : undefined}
@@ -123,4 +138,5 @@ const styles = StyleSheet.create({
   themeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 52 },
   swatches: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: radius.pill, backgroundColor: colors.neutral },
   swatch: { width: 22, height: 22, borderRadius: 11 },
+  customIcon: { width: 82, alignItems: 'center' },
 });

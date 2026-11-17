@@ -1,1 +1,1 @@
-tsc rc=0
+exit 0

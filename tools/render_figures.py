@@ -1,14 +1,12 @@
-"""README figures for MVM, rendered from real screenshots and a real emulator recording in assets/src/.
+"""README figures for MVM, rendered from real emulator screenshots and a real recording in assets/src/.
 
 usage (from the repo root):
   uv run --with pillow --with imageio-ffmpeg python tools/render_figures.py
 
-Writes assets/hero.png, assets/demo.gif, assets/terminal.png, assets/clip-*.gif, assets/themes.png, assets/dialogs.png.
-Colours are the app's default "Bordo & Bej" theme (src/theme/colors.ts).
+Writes assets/hero.png, assets/demo.gif, assets/screens.png, assets/widget.png (if the widget captures exist)
+and assets/terminal.png. Colours come from the app's logo and its default "Şarap" theme.
 """
 import os
-import subprocess
-import tempfile
 
 import imageio_ffmpeg
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -18,238 +16,218 @@ SRC = os.path.join(ROOT, "assets", "src")
 OUT = os.path.join(ROOT, "assets")
 FONTS = os.path.join(ROOT, "tools", "fonts")
 
-# src/theme/colors.ts (Bordo & Bej)
 BG = (14, 12, 11)
-SURFACE = (26, 23, 22)
-ELEVATED = (36, 31, 29)
-PRIMARY = (122, 31, 43)
-PRIMARY_LIGHT = (163, 53, 69)
-ACCENT = (232, 220, 196)
-ACCENT_MUTED = (184, 170, 144)
+PANEL = (27, 23, 22)
+BEZEL = (34, 30, 29)
+WINE_TOP, WINE_BOTTOM = (122, 31, 50), (58, 12, 22)
+MARK = (246, 238, 226)
 TEXT = (243, 237, 226)
-TEXT_2 = (156, 146, 134)
-DIVIDER = (46, 40, 38)
-SUCCESS = (110, 139, 91)
+TEXT_2 = (160, 150, 140)
+ACCENT = (201, 86, 106)
+DIVIDER = (48, 42, 40)
 
 
-def font(name, size, weight=None):
+def font(size, weight=600, name="Manrope.ttf"):
     f = ImageFont.truetype(os.path.join(FONTS, name), size)
-    if weight is not None:
+    if name == "Manrope.ttf":
         f.set_variation_by_axes([weight])
     return f
 
 
-TITLE = lambda s: font("ArchivoBlack-Regular.ttf", s)
-BODY = lambda s, w=500: font("Manrope.ttf", s, w)
-MONO = lambda s: font("IBMPlexMono-Regular.ttf", s)
-MONO_B = lambda s: font("IBMPlexMono-SemiBold.ttf", s)
+MONO = lambda s: ImageFont.truetype(os.path.join(FONTS, "IBMPlexMono-Regular.ttf"), s)
+MONO_B = lambda s: ImageFont.truetype(os.path.join(FONTS, "IBMPlexMono-SemiBold.ttf"), s)
 
 
 def rounded_mask(size, r):
-    m = Image.new("L", size, 0)
-    ImageDraw.Draw(m).rounded_rectangle((0, 0, size[0] - 1, size[1] - 1), r, fill=255)
-    return m
+    m = Image.new("L", (size[0] * 2, size[1] * 2), 0)
+    ImageDraw.Draw(m).rounded_rectangle((0, 0, size[0] * 2 - 1, size[1] * 2 - 1), r * 2, fill=255)
+    return m.resize(size, Image.LANCZOS)
 
 
-def shadow(canvas, box, r, blur=40, alpha=150, offset=(0, 24)):
+def shadow(canvas, box, r, blur=36, alpha=170, offset=(0, 22)):
     layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     x0, y0, x1, y1 = box
     ImageDraw.Draw(layer).rounded_rectangle((x0 + offset[0], y0 + offset[1], x1 + offset[0], y1 + offset[1]), r, fill=(0, 0, 0, alpha))
     canvas.alpha_composite(layer.filter(ImageFilter.GaussianBlur(blur)))
 
 
-def phone(screen, width):
-    """Real screenshot inside a simple phone frame (bezel + rounded corners)."""
-    pad = max(10, width // 28)
-    sw = width - 2 * pad
-    sh = round(screen.height * sw / screen.width)
-    shot = screen.convert("RGB").resize((sw, sh), Image.LANCZOS)
-    frame = Image.new("RGBA", (width, sh + 2 * pad), (0, 0, 0, 0))
-    d = ImageDraw.Draw(frame)
-    r = width // 9
-    d.rounded_rectangle((0, 0, width - 1, sh + 2 * pad - 1), r, fill=(24, 21, 20), outline=(58, 51, 48), width=3)
-    frame.paste(shot, (pad, pad), rounded_mask((sw, sh), r - pad))
-    return frame
-
-
-def glow(canvas, center, radius, color, alpha):
+def glow(canvas, center, radius, color, alpha=90):
     layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     cx, cy = center
     ImageDraw.Draw(layer).ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=color + (alpha,))
-    canvas.alpha_composite(layer.filter(ImageFilter.GaussianBlur(radius // 2)))
+    canvas.alpha_composite(layer.filter(ImageFilter.GaussianBlur(radius * 0.6)))
 
 
-def chip(d, xy, text, fg, f):
-    x, y = xy
-    w = d.textlength(text, font=f)
-    d.rounded_rectangle((x, y, x + w + 44, y + 64), 18, fill=SURFACE, outline=DIVIDER, width=2)
-    d.text((x + 22, y + 32), text, font=f, fill=fg, anchor="lm")
-    return x + w + 44
+def logo(size):
+    """The app logo: a single-stroke "M" on a wine gradient tile (same geometry as src/components/Logo.tsx)."""
+    ss = 4
+    s = size * ss
+    tile = Image.new("RGBA", (s, s))
+    d = ImageDraw.Draw(tile)
+    for y in range(s):
+        t = y / (s - 1)
+        d.line([(0, y), (s, y)], fill=tuple(round(a + (b - a) * t) for a, b in zip(WINE_TOP, WINE_BOTTOM)) + (255,))
+    k = s / 100
+    pts = [(x * k, y * k) for x, y in [(24, 72), (24, 30), (50, 56), (76, 30), (76, 72)]]
+    w = 13 * k
+    d.line(pts, fill=MARK, width=round(w), joint="curve")
+    for x, y in pts:
+        d.ellipse((x - w / 2, y - w / 2, x + w / 2, y + w / 2), fill=MARK)
+    tile.putalpha(rounded_mask((s, s), int(26 * k)))
+    return tile.resize((size, size), Image.LANCZOS)
 
 
-def check(d, x, y, s, color, width=4):
-    """✓ drawn as strokes (IBM Plex Mono has no tick glyph at this weight)."""
-    d.line([(x, y + s * 0.55), (x + s * 0.38, y + s * 0.9), (x + s, y + s * 0.1)], fill=color, width=width, joint="curve")
+def phone(shot, height, bezel=14, radius=56):
+    """A real screenshot in a plain phone frame."""
+    shot = shot.convert("RGBA")
+    w = round(shot.width * height / shot.height)
+    screen = shot.resize((w, height), Image.LANCZOS)
+    frame = Image.new("RGBA", (w + bezel * 2, height + bezel * 2), (0, 0, 0, 0))
+    ImageDraw.Draw(frame).rounded_rectangle((0, 0, frame.width - 1, frame.height - 1), radius + bezel, fill=BEZEL)
+    frame.paste(screen, (bezel, bezel), rounded_mask(screen.size, radius))
+    return frame
 
 
-# ---------------------------------------------------------------- hero
+def chip(draw, x, y, label, f):
+    tw = draw.textlength(label, font=f)
+    draw.rounded_rectangle((x, y, x + tw + 36, y + 46), 23, fill=PANEL, outline=DIVIDER, width=2)
+    draw.text((x + 18, y + 23), label, font=f, fill=TEXT, anchor="lm")
+    return x + tw + 36 + 12
+
+
+def src(name):
+    return Image.open(os.path.join(SRC, name))
+
+
 def hero():
     W, H = 1800, 920
     c = Image.new("RGBA", (W, H), BG + (255,))
-    glow(c, (1380, 470), 360, PRIMARY, 90)
-    glow(c, (250, 160), 260, PRIMARY, 40)
+    glow(c, (330, 260), 420, WINE_TOP, 70)
+    glow(c, (1350, 640), 380, WINE_TOP, 55)
     d = ImageDraw.Draw(c)
 
-    d.text((110, 110), "MVM", font=TITLE(220), fill=ACCENT)
-    d.text((116, 370), "Workouts and daily habits", font=BODY(54, 800), fill=TEXT)
-    for i, line in enumerate([
-        "A weekly program, a live set logger and rest timer,",
-        "water, steps, sleep and calories on one screen,",
-        "a streak that keeps it going. Turkish UI, 9 themes.",
-    ]):
-        d.text((116, 470 + i * 50), line, font=BODY(34, 500), fill=TEXT_2)
+    c.alpha_composite(logo(132), (110, 150))
+    d.text((110, 318), "MVM", font=font(132, 800), fill=TEXT)
+    d.text((114, 478), "Workouts, habits and daily tracking", font=font(40, 700), fill=TEXT)
+    body = font(28, 500)
+    lines = ["Plan the week, log every set, and keep water, steps,",
+             "sleep, calories and a daily streak on one home screen.",
+             "Android app in Turkish, built with Expo."]
+    for i, line in enumerate(lines):
+        d.text((114, 548 + i * 42), line, font=body, fill=TEXT_2)
+    x = 114
+    for label in ["Expo SDK 58", "React Native", "TypeScript", "Supabase", "Home widget"]:
+        x = chip(d, x, 700, label, font(22, 600))
 
-    x = 116
-    for text, fg in [("Expo SDK 58", ACCENT), ("React Native", ACCENT), ("TypeScript", ACCENT),
-                     ("Supabase", (124, 196, 140))]:
-        x = chip(d, (x, 636), text, fg, BODY(28, 700)) + 16
-
-    # result card: numbers from assets/src/checks-*.txt
-    card = (116, 740, 660, 864)
-    shadow(c, card, 22, blur=20, alpha=120, offset=(0, 10))
-    d = ImageDraw.Draw(c)
-    d.rounded_rectangle(card, 22, fill=SURFACE, outline=DIVIDER, width=2)
-    d.text((146, 766), "JEST · TSC · LINT", font=BODY(22, 800), fill=PRIMARY_LIGHT)
-    d.text((146, 798), "48 / 48", font=TITLE(40), fill=ACCENT)
-    d.text((350, 800), "tests pass, no type\nor lint errors", font=BODY(23, 600), fill=TEXT_2, spacing=6)
-
-    shot = Image.open(os.path.join(SRC, "home-bordo.png"))
-    ph = phone(shot, 400)
-    px, py = 1230, (H - ph.height) // 2
-    shadow(c, (px, py, px + ph.width, py + ph.height), 56)
-    c.alpha_composite(ph, (px, py))
-    c.convert("RGB").save(os.path.join(OUT, "hero.png"), optimize=True)
+    back = phone(src("v14-level.png"), 640)
+    front = phone(src("v14-home.png"), 720)
+    bx, by = 1080, 70
+    fx, fy = 1340, 150
+    shadow(c, (bx, by, bx + back.width, by + back.height), 70)
+    c.alpha_composite(back, (bx, by))
+    shadow(c, (fx, fy, fx + front.width, fy + front.height), 70)
+    c.alpha_composite(front, (fx, fy))
+    c.convert("RGB").save(os.path.join(OUT, "hero.png"))
 
 
-# ---------------------------------------------------------------- video helpers
-def video_frames(start, end, fps, speed=1.0):
-    """Frames of assets/src/demo.mp4 between start and end (seconds), sped up by `speed`."""
-    ff = imageio_ffmpeg.get_ffmpeg_exe()
-    tmp = tempfile.mkdtemp()
-    subprocess.run([ff, "-loglevel", "error", "-ss", str(start), "-to", str(end), "-i", os.path.join(SRC, "demo.mp4"),
-                    "-vf", f"setpts=PTS/{speed},fps={fps}", os.path.join(tmp, "f%04d.png")], check=True)
-    return [Image.open(os.path.join(tmp, f)).convert("RGB") for f in sorted(os.listdir(tmp))]
-
-
-def save_gif(frames, path, fps, hold_last=1.0, colors=128):
-    pal = frames[len(frames) // 2].quantize(colors=colors, method=Image.Quantize.MEDIANCUT)
-    q = [f.quantize(palette=pal, dither=Image.Dither.NONE) for f in frames]
-    durations = [round(1000 / fps)] * len(q)
-    durations[-1] = int(hold_last * 1000)
-    q[0].save(path, save_all=True, append_images=q[1:], duration=durations, loop=0, optimize=True, disposal=1)
-
-
-# ---------------------------------------------------------------- demo gif (Fig. 2)
 def demo():
-    fps = 6
-    frames = video_frames(0, 54, fps, speed=1.5)
-    W, H = 420, 860
-    out = []
-    for f in frames:
-        c = Image.new("RGBA", (W, H), BG + (255,))  # flat: GIF palette bands gradients
-        ph = phone(f, 360)
-        c.alpha_composite(ph, ((W - ph.width) // 2, (H - ph.height) // 2))
-        out.append(c.convert("RGB"))
-    save_gif(out, os.path.join(OUT, "demo.gif"), fps, hold_last=1.5)
+    """Fig. 2: the real recording, sped up 1.6×, in the phone frame on a flat background (flat for the GIF palette)."""
+    reader = imageio_ffmpeg.read_frames(os.path.join(SRC, "demo-v14.mp4"))
+    meta = next(reader)
+    sw, sh = meta["size"]
+    fps_in = meta["fps"]
+    step = fps_in * 1.6 / 8  # 8 fps out, 1.6× speed
+    frames, i, nxt = [], 0, 0.0
+    for raw in reader:
+        if i >= nxt:
+            img = Image.frombytes("RGB", (sw, sh), raw)
+            framed = phone(img, 620, bezel=10, radius=36)
+            canvas = Image.new("RGB", (framed.width + 60, framed.height + 60), BG)
+            canvas.paste(framed, (30, 30), framed)
+            frames.append(canvas.convert("P", palette=Image.ADAPTIVE, colors=96))
+            nxt += step
+        i += 1
+    durations = [125] * (len(frames) - 1) + [1200]
+    frames[0].save(os.path.join(OUT, "demo.gif"), save_all=True, append_images=frames[1:], duration=durations, loop=0, optimize=True)
 
 
-# ---------------------------------------------------------------- clips (Fig. 4)
-def clips():
-    for name, (a, b) in {"home": (2, 11), "program": (11, 16.5), "library": (17, 27), "theme": (44, 54)}.items():
-        frames = [f.resize((240, 533), Image.LANCZOS) for f in video_frames(a, b, 6)]
-        save_gif(frames, os.path.join(OUT, f"clip-{name}.gif"), 6, hold_last=1.0, colors=96)
-
-
-# ---------------------------------------------------------------- terminal (Fig. 3)
-def terminal():
-    def lines_of(name):
-        with open(os.path.join(SRC, name), encoding="utf-8") as fh:
-            return [l.rstrip() for l in fh if l.strip()]
-
-    jest = [l for l in lines_of("checks-jest.txt") if l.split(":")[0] in ("Test Suites", "Tests", "Snapshots", "Ran all test suites.") or l.startswith("Ran all")]
-    lint = [l for l in lines_of("checks-lint.txt") if not l.startswith("lint rc")]
-    rows = [("cmd", "$ npx tsc --noEmit"), ("ok", "no type errors (exit 0)"),
-            ("cmd", "$ npx expo lint")] + [("out", l) for l in lint] + [("ok", "no lint problems (exit 0)"),
-            ("cmd", "$ npx jest")] + [("out", l) for l in jest] + [("ok", "all suites passed (exit 0)")]
-
-    W = 1700
-    lh, top = 44, 110
-    H = top + lh * len(rows) + 50
-    c = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(c)
-    d.rounded_rectangle((0, 0, W - 1, H - 1), 26, fill=(20, 17, 16))
-    d.rounded_rectangle((0, 0, W - 1, 64), 26, fill=SURFACE)
-    d.rectangle((0, 40, W - 1, 64), fill=SURFACE)
-    for i, col in enumerate([(236, 95, 87), (229, 187, 72), (98, 196, 92)]):
-        d.ellipse((28 + i * 34, 20, 50 + i * 34, 42), fill=col)
-    d.text((W // 2, 32), "MVM · checks", font=BODY(26, 700), fill=TEXT_2, anchor="mm")
-    for i, (kind, text) in enumerate(rows):
-        y = top + i * lh
-        if kind == "cmd":
-            d.text((40, y), text, font=MONO_B(30), fill=ACCENT, anchor="lm")
-        elif kind == "ok":
-            check(d, 40, y - 12, 24, SUCCESS)
-            d.text((80, y), text, font=MONO(30), fill=(150, 196, 122), anchor="lm")
-        else:
-            d.text((40, y), text, font=MONO(30), fill=TEXT_2, anchor="lm")
-    c.save(os.path.join(OUT, "terminal.png"), optimize=True)
-
-
-# ---------------------------------------------------------------- themes and dialogs (Fig. 5, 6)
-THEMES = [("bordo", "Bordo & Bej"), ("gece", "Gece & Kiremit"), ("sarap", "Şarap"),
-          ("erik", "Erik & Bal"), ("karpuz", "Karpuz"), ("domates", "Domates"),
-          ("mandalina", "Mandalina"), ("deniz", "Deniz"), ("mocha", "Mocha")]
-
-
-def grid(items, cols, phone_w, crop_h, path):
-    gap, label = 36, 56
-    cell_h = None
-    tiles = []
-    for name, title in items:
-        shot = Image.open(os.path.join(SRC, f"{name}.png"))
-        if crop_h:
-            shot = shot.crop((0, 0, shot.width, crop_h))
-        ph = phone(shot, phone_w)
-        tiles.append((ph, title))
-        cell_h = ph.height
-    rows = (len(tiles) + cols - 1) // cols
-    W = cols * phone_w + (cols + 1) * gap
-    H = rows * (cell_h + label) + (rows + 1) * gap
+def screens():
+    """Fig. 3: four screens with captions."""
+    items = [("v14-library.png", "Region body map"), ("v14-level.png", "Level path"),
+             ("v14-stats.png", "Statistics"), ("v14-custom-theme.png", "Custom theme")]
+    phones = [phone(src(n), 760, bezel=12, radius=46) for n, _ in items]
+    gap = 40
+    W = sum(p.width for p in phones) + gap * (len(phones) + 1)
+    H = 760 + 24 + 140
     c = Image.new("RGBA", (W, H), BG + (255,))
     d = ImageDraw.Draw(c)
-    for i, (ph, title) in enumerate(tiles):
-        x = gap + (i % cols) * (phone_w + gap)
-        y = gap + (i // cols) * (cell_h + label + gap)
-        c.alpha_composite(ph, (x, y))
-        d.text((x + phone_w // 2, y + cell_h + 30), title, font=BODY(30, 700), fill=TEXT, anchor="mm")
-    c.convert("RGB").save(path, optimize=True)
+    x = gap
+    for p, (_, cap) in zip(phones, items):
+        shadow(c, (x, 30, x + p.width, 30 + p.height), 58, blur=24, alpha=150, offset=(0, 14))
+        c.alpha_composite(p, (x, 30))
+        d.text((x + p.width / 2, 30 + p.height + 50), cap, font=font(30, 700), fill=TEXT, anchor="mm")
+        x += p.width + gap
+    c.convert("RGB").save(os.path.join(OUT, "screens.png"))
 
 
-def themes():
-    grid([(f"theme-{k}", t) for k, t in THEMES], 3, 300, 860, os.path.join(OUT, "themes.png"))
+def widget():
+    """Fig. 4: the home-screen widget at 3×1, 3×2 and 4×2, cropped from emulator screenshots."""
+    names = [("v14-widget-3x1.png", "3×1"), ("v14-widget-3x2.png", "3×2"), ("v14-widget-4x2.png", "4×2")]
+    names = [(n, cap) for n, cap in names if os.path.exists(os.path.join(SRC, n))]
+    if not names:
+        print("widget captures missing, skipping widget.png")
+        return
+    ims = [src(n).convert("RGBA") for n, _ in names]
+    scale = 0.62
+    ims = [im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS) for im in ims]
+    gap = 60
+    W = sum(im.width for im in ims) + gap * (len(ims) + 1)
+    H = max(im.height for im in ims) + 160
+    c = Image.new("RGBA", (W, H), BG + (255,))
+    d = ImageDraw.Draw(c)
+    x = gap
+    for im, (_, cap) in zip(ims, names):
+        y = H - 110 - im.height
+        c.alpha_composite(im, (x, y))
+        d.text((x + im.width / 2, H - 60), cap, font=font(30, 700), fill=TEXT_2, anchor="mm")
+        x += im.width + gap
+    c.convert("RGB").save(os.path.join(OUT, "widget.png"))
 
 
-def dialogs():
-    grid([("confirm", "Confirm"), ("time", "Time picker"), ("number", "Number input"),
-          ("picker-closed", "Theme picker"), ("picker-open", "Theme picker, open")], 5, 260, None,
-         os.path.join(OUT, "dialogs.png"))
+def terminal():
+    """Fig. 5: the real output of the checks (assets/src/checks-*.txt)."""
+    def lines(name):
+        with open(os.path.join(SRC, name), encoding="utf-8") as f:
+            return [l.rstrip() for l in f if l.strip()]
+    blocks = [("npx tsc --noEmit", lines("checks-tsc.txt")),
+              ("npx expo lint", lines("checks-lint.txt")),
+              ("npx jest", lines("checks-jest.txt"))]
+    W, lh = 1800, 40
+    n = sum(len(b) + 2 for _, b in blocks)
+    H = 110 + n * lh + 40
+    c = Image.new("RGBA", (W, H), BG + (255,))
+    d = ImageDraw.Draw(c)
+    d.rounded_rectangle((30, 20, W - 30, H - 20), 22, fill=PANEL, outline=DIVIDER, width=2)
+    for i, col in enumerate([(201, 86, 106), (201, 162, 90), (110, 139, 91)]):
+        d.ellipse((66 + i * 34, 48, 86 + i * 34, 68), fill=col)
+    d.text((W / 2, 58), "MVM — checks", font=font(24, 600), fill=TEXT_2, anchor="mm")
+    y = 110
+    for cmd, out in blocks:
+        d.text((70, y), "$", font=MONO_B(28), fill=ACCENT)
+        d.text((104, y), cmd, font=MONO_B(28), fill=TEXT)
+        y += lh
+        for l in out:
+            col = (130, 170, 110) if ("passed" in l or l == "exit 0") else TEXT_2
+            d.text((104, y), l, font=MONO(26), fill=col)
+            y += lh
+        y += lh
+    c.convert("RGB").save(os.path.join(OUT, "terminal.png"))
 
 
 if __name__ == "__main__":
     hero()
+    screens()
+    widget()
     terminal()
-    themes()
-    dialogs()
     demo()
-    clips()
-    print("figures ->", OUT)
+    print("ok")

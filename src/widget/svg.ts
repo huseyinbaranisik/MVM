@@ -41,3 +41,12 @@ export const ICONS = {
 };
 export const iconSvg = (d: string, color: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="${d}" fill="${color}"/></svg>`;
+
+/** Yatay ilerleme çubuğu (0..1). */
+export function barSvg(ratio: number, color: string, track: string, w: number, h: number) {
+  const p = Math.max(0, Math.min(1, ratio));
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
+    + `<rect width="${w}" height="${h}" rx="${h / 2}" fill="${track}"/>`
+    + (p > 0 ? `<rect width="${Math.max(h, w * p).toFixed(1)}" height="${h}" rx="${h / 2}" fill="${color}"/>` : '')
+    + '</svg>';
+}

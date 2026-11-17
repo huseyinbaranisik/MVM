@@ -3,7 +3,7 @@
 import { FlexWidget, OverlapWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 
 import type { WidgetData, WidgetPlan } from '@/widget/data';
-import { ICONS, iconSvg, mannequinSvg, ringSvg } from '@/widget/svg';
+import { barSvg, ICONS, iconSvg, mannequinSvg, ringSvg } from '@/widget/svg';
 import { colors, mix } from '@/theme/colors';
 
 type Hex = `#${string}`;
@@ -46,8 +46,8 @@ export function TodayWidget({ data, size }: { data: WidgetData; size?: WidgetSiz
 
   // halka çapı: sağ alanın genişliğine ve yüksekliğine sığacak şekilde (2×2 ızgara; tek satırda 2 yan yana)
   const rightW = W - pad * 2 - leftW - 8 - (L === 'row' ? 34 : 0);
-  const capH = L === 'row' ? 0 : 13;
-  const cell = L === 'row' ? Math.min(bodyH, rightW / 2 - 6) : Math.min((bodyH - 18) / 2 - capH, rightW / 2 - 10);
+  const capH = L === 'row' ? 0 : 20; // alt yazı + boşluk
+  const cell = L === 'row' ? Math.min(bodyH - 4, rightW / 2 - 6) : Math.min((bodyH - 18) / 2 - capH, rightW / 2 - 12);
   const ring = Math.max(26, Math.floor(cell));
 
   const streak = (
@@ -80,7 +80,7 @@ export function TodayWidget({ data, size }: { data: WidgetData; size?: WidgetSiz
           </FlexWidget>
         )}
       </FlexWidget>
-      <Xp data={data} layout={L} height={xpH} />
+      <Xp data={data} layout={L} height={xpH} width={W - pad * 2} />
     </FlexWidget>
   );
 }
@@ -118,20 +118,21 @@ function Plan({ plan, width, height, layout }: { plan: WidgetPlan; width: number
     );
   }
 
-  const mq = mannequinSvg(plan.regions, colors.primaryLight, mix(colors.surface, colors.textPrimary, 0.18), mix(colors.surface, colors.textPrimary, 0.1));
+  const mq = mannequinSvg(plan.regions, mix(colors.primaryLight, '#FFFFFF', 0.3), mix(colors.surface, colors.textPrimary, 0.18), mix(colors.surface, colors.textPrimary, 0.1));
   if (layout === 'mid') {
     // ad üstte, manken altta (yan yana sığmıyor)
     const mh = Math.max(16, height - 8 - 18 - 4);
     return (
       <FlexWidget style={{ ...tile, width, height, flexGap: 4 }}>
         {name(13)}
-        <SvgWidget svg={mq.svg} style={{ height: mh, width: Math.round(mh * mq.aspect) }} />
+        <SvgWidget svg={mq.svg} style={{ height: mh, width: Math.min(Math.round(mh * mq.aspect), width - 16) }} />
       </FlexWidget>
     );
   }
   // tek satır ve geniş: yazı solda (kısalır), manken sağda sabit genişlikte
-  const mh = Math.max(14, height - (layout === 'row' ? 6 : 12));
-  const mw = Math.round(mh * mq.aspect);
+  // manken en fazla döşemenin üçte biri kadar yer kaplar: adın sığması öncelikli
+  const mw = Math.round(Math.min((height - (layout === 'row' ? 6 : 12)) * mq.aspect, width * 0.32));
+  const mh = Math.round(mw / mq.aspect);
   return (
     <FlexWidget style={{ ...tile, width, height, flexDirection: 'row', alignItems: 'center', flexGap: 6 }}>
       <FlexWidget style={{ flex: 1 }}>{name(layout === 'row' ? 12 : 14)}{sub}</FlexWidget>
@@ -160,20 +161,17 @@ function Ring({ r, size, layout }: { r: RingItem; size: number; layout: Layout }
   );
 }
 
-function Xp({ data, layout, height }: { data: WidgetData; layout: Layout; height: number }) {
+function Xp({ data, layout, height, width }: { data: WidgetData; layout: Layout; height: number; width: number }) {
   const ratio = data.xpNeeded ? data.xpInto / data.xpNeeded : 0;
+  const left = layout === 'row' ? `Sv ${data.level}` : `Sv ${data.level} · ${data.rank}`;
+  const right = layout === 'row' ? '' : layout === 'large' ? `${data.xpInto} / ${data.xpNeeded} XP` : `${data.xpInto}/${data.xpNeeded}`;
+  // shortcut: yazı genişliği karakter başına ~6.6 dp tahmini; çubuk taşarsa bu katsayıyı büyüt
+  const barW = Math.max(30, Math.round(width - (left.length + right.length) * 6.6 - (right ? 16 : 8)));
   return (
     <FlexWidget style={{ flexDirection: 'row', width: 'match_parent', height, alignItems: 'center', flexGap: 8, marginTop: 6 }}>
-      <TextWidget text={layout === 'row' ? `Sv ${data.level}` : `Sv ${data.level} · ${data.rank}`}
-        style={{ fontSize: 11, fontWeight: '700', color: c(colors.textSecondary) }} />
-      <FlexWidget style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: c(TRACK), flexDirection: 'row' }}>
-        <FlexWidget style={{ flex: Math.max(0.02, ratio), height: 6, borderRadius: 3, backgroundColor: c(colors.primaryLight) }} />
-        <FlexWidget style={{ flex: Math.max(0.0001, 1 - ratio), height: 6 }} />
-      </FlexWidget>
-      {layout !== 'row' ? (
-        <TextWidget text={layout === 'large' ? `${data.xpInto} / ${data.xpNeeded} XP` : `${data.xpInto}/${data.xpNeeded}`}
-          style={{ fontSize: 11, fontWeight: '700', color: c(colors.textSecondary) }} />
-      ) : null}
+      <TextWidget text={left} style={{ fontSize: 11, fontWeight: '700', color: c(colors.textSecondary) }} />
+      <SvgWidget svg={barSvg(ratio, mix(colors.primaryLight, '#FFFFFF', 0.15), TRACK, barW, 6)} style={{ width: barW, height: 6 }} />
+      {right ? <TextWidget text={right} style={{ fontSize: 11, fontWeight: '700', color: c(colors.textSecondary) }} /> : null}
     </FlexWidget>
   );
 }

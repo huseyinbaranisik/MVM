@@ -4,9 +4,10 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BackHeader } from '@/components/exercise';
 import { Icon } from '@/components/Icon';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
-import { confirm } from '@/components/ui/overlays';
+import { confirm, toast } from '@/components/ui/overlays';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { SheetRow } from '@/components/ui/Sheet';
+import { deleteMyAccount, exportMyData } from '@/db/repos/privacy';
 import { getSetting, setSetting } from '@/db/repos/settings';
 import { supabase } from '@/db/supabase';
 import { useDb } from '@/db/useDb';
@@ -30,6 +31,18 @@ export default function SettingsScreen() {
 
   const signOut = async () => {
     if (await confirm({ title: 'Çıkış yapılsın mı?', confirmLabel: 'Çıkış yap' })) await supabase.auth.signOut();
+  };
+
+  const exportData = async () => {
+    try { await exportMyData(); } catch { toast('Veriler dışa aktarılamadı'); }
+  };
+  const removeAccount = async () => {
+    const ok = await confirm({
+      title: 'Hesap silinsin mi?', message: 'Tüm antrenman, takip ve profil verilerin kalıcı olarak silinir. Bu geri alınamaz.',
+      confirmLabel: 'Kalıcı olarak sil', destructive: true,
+    });
+    if (!ok) return;
+    try { await deleteMyAccount(); } catch { toast('Hesap silinemedi'); }
   };
 
   return (
@@ -63,6 +76,12 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <SheetRow label="Sabah uyku sorusu" value={data?.morning ? 'Açık' : 'Kapalı'}
             onPress={() => setSetting('morningSleepPrompt', !data?.morning)} />
+        </View>
+
+        <Text style={styles.section}>Gizlilik</Text>
+        <View style={styles.card}>
+          <SheetRow label="Verilerimi dışa aktar" value="JSON" onPress={exportData} />
+          <SheetRow label="Hesabı sil" onPress={removeAccount} />
         </View>
 
         <Text style={styles.section}>Hesap</Text>

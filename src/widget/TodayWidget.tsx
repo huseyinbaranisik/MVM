@@ -16,7 +16,7 @@ const TRACK = mix(colors.background, colors.textPrimary, 0.14);
 /** Widget boyutu (dp): 3x1 tek satır, 3x2 orta, 4x2 geniş. */
 export type WidgetSize = { width: number; height: number };
 type Layout = 'row' | 'mid' | 'large';
-const layoutOf = (s?: WidgetSize): Layout => (!s ? 'mid' : s.height < 100 ? 'row' : s.width < 260 ? 'mid' : 'large');
+const layoutOf = (s?: WidgetSize): Layout => (!s ? 'mid' : s.height < 100 ? 'row' : s.width < 320 ? 'mid' : 'large');
 
 /** Solda günün programları, sağda gösterge halkaları, sağ üstte seri, altta XP. Su halkası bardak ekler. */
 export function TodayWidget({ data, size }: { data: WidgetData; size?: WidgetSize }) {

@@ -5,7 +5,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { PillButton } from '@/components/ui/PillButton';
 import { Sheet } from '@/components/ui/Sheet';
 import { colors, radius, spacing, type } from '@/theme';
-import { customPalette, derive, hsl, loadCustomColors, PALETTES, themeId, type CustomColors } from '@/theme/colors';
+import { customPalette, derive, loadCustomColors, PALETTES, themeId, type CustomColors } from '@/theme/colors';
 import { setCustomTheme } from '@/theme/select';
 
 type Slot = keyof CustomColors;
@@ -13,14 +13,22 @@ const SLOTS: { key: Slot; label: string }[] = [
   { key: 'bg', label: 'Arka plan' }, { key: 'primary', label: 'Birincil' }, { key: 'highlight', label: 'Vurgu' },
 ];
 
-const HUES = 16;
-// Çemberdeki hazır renkler: dıştan içe canlı, koyu, açık halkalar; ortada siyah ve beyaz
-const RINGS = [
-  { r0: 0.7, r1: 1, s: 72, l: 50 },
-  { r0: 0.45, r1: 0.7, s: 55, l: 24 },
-  { r0: 0.22, r1: 0.45, s: 70, l: 80 },
-].map((ring) => ({ ...ring, colors: Array.from({ length: HUES }, (_, i) => hsl((i * 360) / HUES, ring.s, ring.l)) }));
-const CENTER = ['#0E0C0B', '#F7F4EE'];
+// Renk çemberi: 12'den saat yönünde 10 renk ailesi; her ailede dıştan içe koyudan açığa 5 ton, ortada beyaz
+const FAMILIES = [
+  ['#5BA33B', '#9CC63B', '#C3D83C', '#DDE54A', '#F3EA45'], // sarı-yeşil
+  ['#0F5E2E', '#13803C', '#1F9E48', '#3DBA59', '#7BD38A'], // yeşil
+  ['#1A8FD0', '#22A7C4', '#4FB4E4', '#8CCBEE', '#BFE3F6'], // camgöbeği
+  ['#7E2A86', '#5E3592', '#2B2F72', '#2F45A6', '#5C7FD0'], // mor-lacivert
+  ['#9C1755', '#C92B68', '#E43C87', '#EA4D9C', '#F29BC0'], // pembe
+  ['#B5122B', '#E02424', '#F05A28', '#F7941D', '#FBB441'], // kırmızı-turuncu
+  ['#8E1B1F', '#C93434', '#E0683D', '#F2A83A', '#F8D26A'], // vişne-altın
+  ['#8C8C8C', '#A9A9A9', '#C4C4C4', '#DADADA', '#ECECEC'], // gri
+  ['#0E0E0E', '#262626', '#404040', '#5E5E5E', '#7C7C7C'], // siyah
+  ['#3F2414', '#5E3720', '#7E5232', '#A07A55', '#C8A97F'], // kahve
+];
+const RING = [1, 0.84, 0.68, 0.52, 0.36, 0.2]; // halka sınırları (dış → iç); 0.2 altı beyaz merkez
+const WHITE = '#FFFFFF';
+const SPAN = (2 * Math.PI) / FAMILIES.length;
 
 /** Halka dilimi (merkez c, iç/dış yarıçap, açı aralığı) için SVG path. */
 function sector(c: number, r0: number, r1: number, a0: number, a1: number) {
@@ -49,10 +57,10 @@ export function CustomThemeSheet({ visible, onClose }: { visible: boolean; onClo
     const dy = y - half;
     const d = Math.hypot(dx, dy) / (half - 2);
     if (d > 1) return;
-    if (d < 0.22) { pick(CENTER[dx < 0 ? 0 : 1]); return; }
-    const ring = RINGS.find((r) => d >= r.r0 && d <= r.r1);
+    if (d < RING[5]) { pick(WHITE); return; }
+    const ring = RING.findIndex((r, i) => i < 5 && d <= r && d > RING[i + 1]);
     const turn = (Math.atan2(dy, dx) + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
-    if (ring) pick(ring.colors[Math.round((turn / (2 * Math.PI)) * HUES) % HUES]);
+    if (ring >= 0) pick(FAMILIES[Math.floor(turn / SPAN) % FAMILIES.length][ring]);
   };
 
   return (
@@ -74,19 +82,20 @@ export function CustomThemeSheet({ visible, onClose }: { visible: boolean; onClo
         <Pressable onPress={(e) => pickAt(e.nativeEvent.locationX, e.nativeEvent.locationY)} accessibilityRole="adjustable"
           accessibilityLabel="Renk çemberi">
         <Svg width={wheel} height={wheel} pointerEvents="none">
-          {RINGS.flatMap((ring, ri) => ring.colors.map((hex, i) => {
-            const a0 = ((i - 0.5) / HUES) * 2 * Math.PI - Math.PI / 2;
-            const a1 = ((i + 0.5) / HUES) * 2 * Math.PI - Math.PI / 2;
-            const on = c[slot] === hex;
+          {FAMILIES.flatMap((fam, fi) => fam.map((hex, ri) => {
+            const a0 = fi * SPAN - Math.PI / 2;
             return (
-              <Path key={`${ri}-${i}`} d={sector(half, ring.r0 * (half - 2), ring.r1 * (half - 2), a0, a1)} fill={hex}
-                stroke={on ? colors.textPrimary : colors.surface} strokeWidth={on ? 3 : 1} />
+              <Path key={`${fi}-${ri}`} d={sector(half, RING[ri + 1] * (half - 2), RING[ri] * (half - 2), a0, a0 + SPAN)} fill={hex}
+                stroke={WHITE} strokeWidth={1.2} />
             );
           }))}
-          {CENTER.map((hex, i) => (
-            <Path key={hex} d={sector(half, 0.001, 0.22 * (half - 2), Math.PI / 2 + i * Math.PI, Math.PI * 1.5 + i * Math.PI)} fill={hex}
-              stroke={c[slot] === hex ? colors.textPrimary : colors.surface} strokeWidth={c[slot] === hex ? 3 : 1} />
-          ))}
+          <Circle cx={half} cy={half} r={RING[5] * (half - 2)} fill={WHITE} stroke={colors.divider} strokeWidth={1} />
+          {/* seçili renk: çerçevesi en üstte */}
+          {FAMILIES.flatMap((fam, fi) => fam.map((hex, ri) => (c[slot] === hex ? (
+            <Path key="sel" d={sector(half, RING[ri + 1] * (half - 2), RING[ri] * (half - 2), fi * SPAN - Math.PI / 2, (fi + 1) * SPAN - Math.PI / 2)}
+              fill="none" stroke={colors.textPrimary} strokeWidth={3} />
+          ) : null)))}
+          {c[slot] === WHITE ? <Circle cx={half} cy={half} r={RING[5] * (half - 2)} fill="none" stroke={colors.textPrimary} strokeWidth={3} /> : null}
           <Circle cx={half} cy={half} r={half - 1} fill="none" stroke={colors.divider} strokeWidth={1} />
         </Svg>
         </Pressable>

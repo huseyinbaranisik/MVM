@@ -47,7 +47,14 @@ export async function getTemplateExercises(templateId: number): Promise<Template
   });
 }
 
+/** Kullanıcı başına en fazla şablon (sunucuda da tetikleyiciyle uygulanır). */
+export const MAX_TEMPLATES = 10;
+export const TEMPLATE_LIMIT_MSG = `En fazla ${MAX_TEMPLATES} program oluşturabilirsin`;
+
 export async function createTemplate(name: string): Promise<number> {
+  const { count, error } = await supabase.from('workout_templates').select('id', { count: 'exact', head: true });
+  if (error) throw error;
+  if ((count ?? 0) >= MAX_TEMPLATES) throw new Error(TEMPLATE_LIMIT_MSG);
   const r = must(await supabase.from('workout_templates').insert({ name }).select('id').single());
   notify('workout_templates');
   return r.id;

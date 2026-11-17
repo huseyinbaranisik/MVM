@@ -11,6 +11,7 @@ import { deleteMyAccount, exportMyData } from '@/db/repos/privacy';
 import { getSetting, setSetting } from '@/db/repos/settings';
 import { supabase } from '@/db/supabase';
 import { useDb } from '@/db/useDb';
+import { play, setSoundsEnabled, soundsEnabled } from '@/services/sounds';
 import { colors, radius, spacing, type } from '@/theme';
 import { PALETTES, themeId, type ThemeId } from '@/theme/colors';
 import { setTheme } from '@/theme/select';
@@ -26,6 +27,7 @@ export default function SettingsScreen() {
   }), [], ['settings']);
   const [themesOpen, setThemesOpen] = useState(false);
   const [prompt, setPrompt] = useState<'heavy' | 'normal' | null>(null);
+  const [sounds, setSounds] = useState(soundsEnabled);
   const current = THEMES.find((t) => t.id === themeId) ?? THEMES[0];
   const rest = data?.rest ?? { heavy: 120, normal: 75 };
 
@@ -70,6 +72,12 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <SheetRow label="Dinlenme (ağır set)" value={`${rest.heavy} sn`} onPress={() => setPrompt('heavy')} />
           <SheetRow label="Dinlenme (normal set)" value={`${rest.normal} sn`} onPress={() => setPrompt('normal')} />
+        </View>
+
+        <Text style={styles.section}>Ses</Text>
+        <View style={styles.card}>
+          <SheetRow label="Ses efektleri" value={sounds ? 'Açık' : 'Kapalı'}
+            onPress={() => { setSoundsEnabled(!sounds); setSounds(!sounds); if (!sounds) play('check'); }} />
         </View>
 
         <Text style={styles.section}>Uyku</Text>

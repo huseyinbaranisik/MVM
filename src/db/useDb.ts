@@ -32,3 +32,23 @@ export function useDb<T>(query: () => Promise<T>, deps: unknown[], tables: reado
   }, [key, ...deps]);
   return data;
 }
+
+/**
+ * Sunucu yanıtını beklemeden gösterilen değer (dokunuş anında ekrana yansır).
+ * Veri yeniden çekilince ya da yazma hata verince kendiliğinden gerçek değere döner.
+ */
+export function useOptimistic<T>(data: T | undefined) {
+  const [o, setO] = useState<{ base: T | undefined; value: T } | null>(null);
+  const shown = o && o.base === data ? o.value : data;
+  const apply = async (value: T, write: () => Promise<unknown>) => {
+    setO({ base: data, value });
+    try {
+      await write();
+    } catch (e) {
+      console.warn('Yazma başarısız', e);
+      setO(null);
+      toast('Kaydedilemedi, bağlantını kontrol et.');
+    }
+  };
+  return [shown, apply] as const;
+}

@@ -19,6 +19,7 @@ import { getSetting } from '@/db/repos/settings';
 import { getTemplateExercises, summary, type TemplateExercise } from '@/db/repos/templates';
 import { useDb } from '@/db/useDb';
 import { today } from '@/services/dates';
+import { play } from '@/services/sounds';
 import { fmtDec, parseNumber } from '@/services/units';
 import { mmss, overloadSuggestion } from '@/services/workout';
 import { useWorkoutStore } from '@/stores/useWorkoutStore';
@@ -110,6 +111,7 @@ export default function ActiveWorkout() {
     if (!(await confirm({ title: 'Antrenmanı bitir', message: `${done.length}/${totalSets} set tamamlandı.`, confirmLabel: 'Bitir' }))) return;
     useWorkoutStore.getState().stopRest();
     await endSession(sessionId, 'done');
+    play('complete');
     router.replace(`/workout/summary/${sessionId}`);
   };
 

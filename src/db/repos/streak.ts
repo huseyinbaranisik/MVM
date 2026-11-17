@@ -13,7 +13,9 @@ export const STREAK_INPUT_TABLES = new Set(['workout_sessions', 'habit_logs', 'h
  * shortcut: geçmiş günler bugünkü haftalık plan ve bugünkü adım hedefiyle değerlendirilir; plan geçmişi tutulmuyor.
  */
 export async function evaluateStreak(todayStr: DateStr = today()) {
-  const [start, rule] = await Promise.all([getSetting('startDate'), getSetting('streakRule')]);
+  const [start, rule, rewards] = await Promise.all([getSetting('startDate'), getSetting('streakRule'), getSetting('levelRewards')]);
+  const grants = new Map<string, number>();
+  for (const g of rewards?.grants ?? []) grants.set(g.date, (grants.get(g.date) ?? 0) + g.count);
   const from = diffDays(todayStr, start) >= 0 ? start : todayStr;
 
   const [plan, sessions, goal, steps, habits, logs, prevDays, state, badges] = await Promise.all([
@@ -36,7 +38,7 @@ export async function evaluateStreak(todayStr: DateStr = today()) {
     habits: must(habits),
     logs: new Set(must(logs).map((l) => `${l.habit_id}|${l.date}`)),
   });
-  const r = computeStreak(inputs, from, todayStr, rule);
+  const r = computeStreak(inputs, from, todayStr, rule, grants);
   // rozetler arayüzde gizli; tablo ileride ayrıntılı başarım sistemi için yazılmaya devam ediyor
   const earned = new Set(must(badges).map((b) => b.milestone as number));
   const fresh = r.milestones.filter((m) => !earned.has(m));
@@ -44,7 +46,9 @@ export async function evaluateStreak(todayStr: DateStr = today()) {
   // Sadece değişenleri yaz: her yazma ekranları yeniler.
   const { changed, removed } = diffStreakDays(new Map(must(prevDays).map((d) => [d.date as string, d.status as StreakStatus])), r.days);
   const stateChanged = !state || state.current !== r.current || state.longest !== r.longest || state.freezes_available !== r.freezesAvailable;
-  if (!changed.length && !removed.length && !fresh.length && !stateChanged) return { ...r, fresh };
+  // yeni donan gün: daha önce donmuş görünmeyen gün artık dondurmayla korunuyor
+  const newlyFrozen = changed.filter((d) => d.status === 'frozen').length;
+  if (!changed.length && !removed.length && !fresh.length && !stateChanged) return { ...r, fresh, newlyFrozen };
 
   await Promise.all([
     stateChanged && supabase.from('streak_state')
@@ -55,7 +59,7 @@ export async function evaluateStreak(todayStr: DateStr = today()) {
     fresh.length && supabase.from('badges').upsert(fresh.map((milestone) => ({ milestone })), { onConflict: 'user_id,milestone', ignoreDuplicates: true }).then(must),
   ]);
   notify('streak_state', 'streak_days', 'badges');
-  return { ...r, fresh };
+  return { ...r, fresh, newlyFrozen };
 }
 
 export async function getStreakState(): Promise<{ current: number; longest: number; freezes_available: number } | null> {

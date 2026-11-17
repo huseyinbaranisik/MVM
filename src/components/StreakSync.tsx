@@ -3,21 +3,29 @@ import { AppState } from 'react-native';
 
 import { toast } from '@/components/ui/overlays';
 import { subscribe } from '@/db/bus';
-import { getSetting } from '@/db/repos/settings';
+import { getSetting, setSetting } from '@/db/repos/settings';
 import { evaluateStreak, STREAK_INPUT_TABLES } from '@/db/repos/streak';
 import { getLevel, XP_TABLES } from '@/db/repos/xp';
 import { cancelReminder, scheduleAt } from '@/services/notifications';
+import { today } from '@/services/dates';
 import { nextStreakReminder } from '@/services/streakService';
+import { play } from '@/services/sounds';
+import { FREEZES_PER_LEVEL } from '@/services/xp';
 
 const REMINDER_ID = 'streak-reminder';
-const LEVEL_KEY = 'mvm.lastLevel';
-
-/** Seviye arttıysa kutlar; ilk açılışta mevcut seviyeyi sessizce kaydeder. */
+/**
+ * Seviye arttıysa kutlar ve her yeni seviye için dondurma hakkı verir (ayarlara yazılır, seri hesabı okur).
+ * İlk çalışmada mevcut seviye sessizce kaydedilir: geçmiş seviyeler için toplu hak verilmez.
+ */
 async function checkLevelUp() {
   const { level } = await getLevel();
-  const last = Number(localStorage.getItem(LEVEL_KEY) ?? 0);
-  if (last && level > last) toast(`⭐ Seviye ${level}!`);
-  if (level !== last) localStorage.setItem(LEVEL_KEY, String(level));
+  const rewards = await getSetting('levelRewards');
+  if (!rewards) { await setSetting('levelRewards', { level, grants: [] }); return; }
+  if (level <= rewards.level) return;
+  const count = (level - rewards.level) * FREEZES_PER_LEVEL;
+  await setSetting('levelRewards', { level, grants: [...rewards.grants, { date: today(), count }] });
+  play('levelup');
+  toast(`Seviye ${level}! +${count} seri dondurma`);
 }
 
 /** Görünmez: açılışta, uygulamaya dönünce ve seriyi etkileyen her yazmada seriyi yeniden hesaplar. */
@@ -32,6 +40,7 @@ export function StreakSync() {
         do {
           again = false;
           const r = await evaluateStreak();
+          if (r.newlyFrozen) toast(`Seri dondurma kullanıldı, ${r.current} günlük serin korundu`);
           const time = (await getSetting('notifications')).streakReminder;
           if (!time) await cancelReminder(REMINDER_ID);
           else {

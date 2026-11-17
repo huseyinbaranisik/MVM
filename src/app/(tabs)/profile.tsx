@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import { LineChart } from 'react-native-gifted-charts';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
@@ -15,7 +14,7 @@ import { PressableScale } from '@/components/ui/PressableScale';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { LoadingScreen } from '@/components/ui/Skeleton';
 import { pickAndUploadAvatar, removeAvatar } from '@/db/repos/avatar';
-import { deleteMeasurement, getMeasurements, saveMeasurement } from '@/db/repos/measurements';
+import { getMeasurements, saveMeasurement } from '@/db/repos/measurements';
 import { getSetting, setSetting, type Settings } from '@/db/repos/settings';
 import { getStreakState } from '@/db/repos/streak';
 import { useDb } from '@/db/useDb';
@@ -27,7 +26,6 @@ import { colors, radius, spacing, type } from '@/theme';
 type Prompt = 'weight' | 'height' | 'age' | 'target' | null;
 
 export default function ProfileScreen() {
-  const { width } = useWindowDimensions();
   const data = useDb(async () => ({
     profile: await getSetting('profile'),
     weights: await getMeasurements('weight'),
@@ -43,12 +41,8 @@ export default function ProfileScreen() {
   const p = data.profile;
   const weight = data.weights.at(-1)?.value ?? null;
   const height = data.heights.at(-1)?.value ?? null;
-  const firstWeight = data.weights[0]?.value ?? null;
   const index = weight && height ? bmi(weight, height) : null;
-  const recent = data.weights.slice(-30);
-  // grafik alt sınırı: son kayıtlar ve hedefin biraz altı, böylece çizgi ekrana yayılır
-  const offset = recent.length ? Math.floor(Math.min(...recent.map((w) => w.value), p.targetWeightKg ?? Infinity) - 2) : 0;
-  const summary = [p.age ? `${p.age} yaş` : null, p.sex === 'male' ? 'Erkek' : p.sex === 'female' ? 'Kadın' : null,
+  const summary = [p.age ? `${p.age} yaşında` : null, p.sex === 'male' ? 'Erkek' : p.sex === 'female' ? 'Kadın' : null,
     height ? `${Math.round(height)} cm` : null].filter(Boolean).join(' · ');
   const close = () => setPrompt(null);
   const ask = (k: Prompt) => { setInfo(false); setPrompt(k); };
@@ -56,9 +50,6 @@ export default function ProfileScreen() {
   const saveName = () => {
     if (name != null && name.trim()) saveProfile({ name: name.trim() });
     setName(null);
-  };
-  const removeWeight = async (id: number, label: string) => {
-    if (await confirm({ title: 'Kayıt silinsin mi?', message: label, confirmLabel: 'Sil', destructive: true })) await deleteMeasurement(id);
   };
   const choosePhoto = async () => {
     setPhoto(false);
@@ -89,7 +80,9 @@ export default function ProfileScreen() {
             <Icon name="edit" color={colors.textSecondary} size={22} />
           </Pressable>
         </View>
-        <LevelBar />
+        <PressableScale onPress={() => router.push('/level')} accessibilityRole="button" accessibilityLabel="Seviye yolu">
+          <LevelBar />
+        </PressableScale>
       </View>
 
       <PressableScale style={[styles.card, styles.streakRow]} onPress={() => router.push('/streak')} accessibilityRole="button" accessibilityLabel="Seri ayrıntıları">
@@ -102,45 +95,11 @@ export default function ProfileScreen() {
       <MiniCalendar />
 
       <View style={styles.tiles}>
-        <Tile label="Kilo" value={weight ? `${fmtDec(weight)} kg` : 'Ekle'} onPress={() => setPrompt('weight')} />
-        <Tile label="Boy" value={height ? `${Math.round(height)} cm` : 'Ekle'} onPress={() => setPrompt('height')} />
+        <Tile label="Kilo" value={weight ? `${fmtDec(weight)}` : 'Ekle'} hint={weight ? 'kg' : undefined}
+          onPress={() => (weight ? router.navigate('/stats') : setPrompt('weight'))} />
+        <Tile label="Hedef" value={p.targetWeightKg ? fmtDec(p.targetWeightKg) : 'Belirle'} hint={p.targetWeightKg ? 'kg' : undefined}
+          onPress={() => setPrompt('target')} />
         <Tile label="BMI" value={index ? fmtDec(index) : '—'} hint={index ? bmiLabel(index) : undefined} />
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.rowBetween}>
-          <Text style={type.subtitle}>Kilo</Text>
-          <Text style={type.caption}>
-            {weight != null && firstWeight != null && data.weights.length > 1
-              ? `Başlangıçtan ${weight - firstWeight > 0 ? '+' : ''}${fmtDec(weight - firstWeight)} kg` : ''}
-          </Text>
-        </View>
-        {data.weights.length >= 2 ? (
-          <LineChart
-            data={recent.map((w) => ({ value: w.value, label: w.date.slice(5).replace('-', '.') }))}
-            width={width - spacing.lg * 4 - 40}
-            height={160}
-            color={colors.primaryLight}
-            dataPointsColor={colors.accent}
-            thickness={2}
-            yAxisThickness={0}
-            xAxisColor={colors.divider}
-            rulesColor={colors.divider}
-            yAxisTextStyle={styles.axis}
-            xAxisLabelTextStyle={styles.axis}
-            noOfSections={4}
-            yAxisOffset={offset}
-            showReferenceLine1={p.targetWeightKg != null}
-            referenceLine1Position={(p.targetWeightKg ?? 0) - offset}
-            referenceLine1Config={{ color: colors.accent, dashWidth: 6, dashGap: 4, thickness: 1 }}
-            curved
-          />
-        ) : null}
-        <SheetRow label="Hedef kilo" value={p.targetWeightKg ? `${fmtDec(p.targetWeightKg)} kg` : 'Belirle'} onPress={() => setPrompt('target')} />
-        {data.weights.slice(-5).reverse().map((w) => {
-          const label = `${w.date} · ${fmtDec(w.value)} kg`;
-          return <SheetRow key={w.id} label={label} onPress={() => removeWeight(w.id, label)} />;
-        })}
       </View>
 
       <View style={styles.card}>
@@ -199,13 +158,19 @@ function LinkRow({ icon, label, onPress }: { icon: 'dashboard_customize' | 'sett
 }
 
 function Tile({ label, value, hint, onPress }: { label: string; value: string; hint?: string; onPress?: () => void }) {
-  return (
-    <PressableScale style={styles.tile} onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`${label}: ${value}`}>
+  const body = (
+    <>
       <Text style={type.caption}>{label}</Text>
       <Text style={type.title} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
       {hint ? <Text style={type.caption} numberOfLines={1}>{hint}</Text> : null}
-    </PressableScale>
+    </>
+  );
+  return (
+    <>
+      {onPress ? (
+        <PressableScale style={styles.tile} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${label}: ${value}`}>{body}</PressableScale>
+      ) : <View style={styles.tile} accessibilityLabel={`${label}: ${value}`}>{body}</View>}
+    </>
   );
 }
 

@@ -8,7 +8,7 @@ import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { SegmentedControl } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { addTrackerValue, getLatestMeasurement, getTrackerHistory, getTrackerSettings, getTrackerValue, updateTrackerSettings } from '@/db/repos/trackers';
-import { useDb } from '@/db/useDb';
+import { useDb, useOptimistic } from '@/db/useDb';
 import { toast } from '@/components/ui/overlays';
 import { connectHealthConnect, disconnectHealthConnect, healthConnectAvailable } from '@/services/healthConnect';
 import { addDays } from '@/services/dates';
@@ -30,19 +30,21 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
     heightCm: await getLatestMeasurement('height'),
   }), [date], ['daily_trackers', 'tracker_settings', 'body_measurements']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'stride' | 'add' | null>(null);
+  const [stepsShown, applySteps] = useOptimistic(data?.steps);
 
   if (!data?.s) return <Skeleton height={300} style={styles.placeholder} />;
   const unit = data.s.display_unit as StepUnit;
   const stride = strideCm(data.s.unit_size, data.heightCm);
   const fmt = (n: number) => formatSteps(n, unit, stride);
   const close = () => setOpen(null);
+  const steps = stepsShown ?? data.steps;
   const weekVals = [...data.week.values()];
   const avg = weekVals.length ? weekVals.reduce((a, v) => a + v, 0) / 7 : 0;
   const hit = weekVals.filter((v) => v >= data.s!.goal).length;
   const counter = (
     <Counter
       minusLabel={`${STEP_DECREMENT} adım çıkar`} plusLabel="Adım ekle"
-      onMinus={() => addTrackerValue('steps', date, -STEP_DECREMENT)}
+      onMinus={() => applySteps(Math.max(0, steps - STEP_DECREMENT), () => addTrackerValue('steps', date, -STEP_DECREMENT))}
       onPlus={() => setOpen('add')}
     />
   );
@@ -54,8 +56,8 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
       <TrackerCard
         resetKey={data.date}
         title="Adım" icon="directions_walk" color={colors.primaryLight}
-        progress={data.steps / data.s.goal}
-        value={fmt(data.steps)}
+        progress={steps / data.s.goal}
+        value={fmt(steps)}
         caption={`/ ${fmt(data.s.goal)} ${stepUnitLabel(unit)}`}
         onMenu={() => setOpen('menu')}
         layout={size === 'large' ? 'wide' : 'square'}
@@ -107,7 +109,7 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
       <NumberPrompt
         visible={open === 'add'} onClose={close} title="Adım ekle"
         suffix="adım" quick={[500, 1000, 2000]}
-        onSubmit={(v) => addTrackerValue('steps', date, Math.round(v))}
+        onSubmit={(v) => applySteps(steps + Math.round(v), () => addTrackerValue('steps', date, Math.round(v)))}
       />
     </>
   );

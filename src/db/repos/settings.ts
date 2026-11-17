@@ -19,6 +19,8 @@ export interface Settings {
   startDate: string;
   onboarded: boolean;
   homeLayout: HomeItem[];
+  /** Seviye ödülü dondurma hakları: en son ödüllendirilen seviye ve verildikleri günler (geri alınmaz). */
+  levelRewards: { level: number; grants: { date: string; count: number }[] } | null;
 }
 
 /** Kayıt yoksa kullanılan değerler. startDate ilk girişte (bootstrap) kalıcı yazılır. */
@@ -33,6 +35,7 @@ export const DEFAULT_SETTINGS: Settings = {
   startDate: today(),
   onboarded: false,
   homeLayout: DEFAULT_LAYOUT,
+  levelRewards: null,
 };
 
 export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K]> {

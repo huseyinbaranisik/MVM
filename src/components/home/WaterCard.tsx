@@ -8,7 +8,8 @@ import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { SegmentedControl } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { addTrackerValue, getTrackerHistory, getTrackerSettings, getTrackerValue, updateTrackerSettings } from '@/db/repos/trackers';
-import { useDb } from '@/db/useDb';
+import { useDb, useOptimistic } from '@/db/useDb';
+import { play } from '@/services/sounds';
 import { addDays } from '@/services/dates';
 import { formatWater, waterFromDisplay, waterToDisplay, waterUnitLabel, type WaterUnit } from '@/services/units';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -20,20 +21,22 @@ export function WaterCard({ date, size = 'small' }: { date: string; size?: 'smal
     week: new Map((await getTrackerHistory('water', addDays(date, -6), date)).map((r) => [r.date, r.value])),
   }), [date], ['daily_trackers', 'tracker_settings']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'glass' | null>(null);
+  const [mlShown, applyMl] = useOptimistic(data?.ml);
 
   if (!data?.s) return <Skeleton height={300} style={styles.placeholder} />;
   const unit = data.s.display_unit as WaterUnit;
   const glass = data.s.unit_size ?? 250;
   const fmt = (ml: number) => formatWater(ml, unit, glass);
   const close = () => setOpen(null);
+  const ml = mlShown ?? data.ml;
   const weekVals = [...data.week.values()];
   const avg = weekVals.length ? weekVals.reduce((a, v) => a + v, 0) / 7 : 0;
   const hit = weekVals.filter((v) => v >= data.s!.goal).length;
   const counter = (
     <Counter
       minusLabel="Bir bardak çıkar" plusLabel="Bir bardak ekle"
-      onMinus={() => addTrackerValue('water', date, -glass)}
-      onPlus={() => addTrackerValue('water', date, glass)}
+      onMinus={() => applyMl(Math.max(0, ml - glass), () => addTrackerValue('water', date, -glass))}
+      onPlus={() => { play('pop'); applyMl(ml + glass, () => addTrackerValue('water', date, glass)); }}
     />
   );
 
@@ -42,8 +45,8 @@ export function WaterCard({ date, size = 'small' }: { date: string; size?: 'smal
       <TrackerCard
         resetKey={data.date}
         title="Su" icon="water_drop" color={colors.accent}
-        progress={data.ml / data.s.goal}
-        value={fmt(data.ml)}
+        progress={ml / data.s.goal}
+        value={fmt(ml)}
         caption={`/ ${fmt(data.s.goal)} ${waterUnitLabel(unit)}`}
         onMenu={() => setOpen('menu')}
         layout={size === 'large' ? 'wide' : 'square'}

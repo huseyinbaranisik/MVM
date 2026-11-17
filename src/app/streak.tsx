@@ -6,7 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { LevelBar } from '@/components/LevelCard';
 import { pickTime, toast } from '@/components/ui/overlays';
-import { SegmentedControl } from '@/components/ui/PillButton';
 import { SheetRow } from '@/components/ui/Sheet';
 import { LoadingScreen } from '@/components/ui/Skeleton';
 import { getSetting, setSetting } from '@/db/repos/settings';
@@ -14,7 +13,7 @@ import { getStreakDays, getStreakState } from '@/db/repos/streak';
 import { useDb } from '@/db/useDb';
 import { addDays, MONTHS_TR, today, weekday, WEEKDAYS_SHORT_TR } from '@/services/dates';
 import { ensurePermission } from '@/services/notifications';
-import { MAX_FREEZES, type StreakRule } from '@/services/streakService';
+import { MAX_FREEZES } from '@/services/streakService';
 import { colors, radius, spacing, type } from '@/theme';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -31,12 +30,10 @@ export default function StreakScreen() {
   const data = useDb(async () => ({
     state: await getStreakState(),
     days: await getStreakDays(first, last),
-    rule: await getSetting('streakRule'),
     notif: await getSetting('notifications'),
   }), [first, last], ['streak_state', 'streak_days', 'settings']);
 
   if (!data?.state) return <LoadingScreen blocks={[120, 320, 90]} />;
-  const rule = data.rule;
   const notif = data.notif;
   const setReminder = async () => {
     const t = await pickTime(notif.streakReminder ?? '20:00');
@@ -65,7 +62,9 @@ export default function StreakScreen() {
           <Stat icon="emoji_events" color={colors.warning} label="En uzun" value={`${data.state.longest} gün`} />
           <Stat icon="ac_unit" color={colors.ice} label="Dondurma hakkı" value={`${data.state.freezes_available} / ${MAX_FREEZES}`} />
         </View>
-        <View style={styles.level}><LevelBar /></View>
+        <Pressable style={styles.level} onPress={() => router.push('/level')} accessibilityRole="button" accessibilityLabel="Seviye yolu">
+          <LevelBar />
+        </Pressable>
 
         <View style={styles.card}>
           <View style={styles.monthRow}>
@@ -97,17 +96,6 @@ export default function StreakScreen() {
             <Legend color={DAY_COLOR.completed} label="Tamamlandı" />
             <Legend color={DAY_COLOR.frozen} label="Donduruldu" />
             <Legend color={DAY_COLOR.missed} label="Kaçırıldı" />
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={type.subtitle}>Dinlenme günü</Text>
-          <View style={styles.segment}>
-            <SegmentedControl<StreakRule['restDayMode']>
-              options={[{ value: 'stepsOrChecklist', label: 'Adım veya liste' }, { value: 'steps', label: 'Adım' }, { value: 'checklist', label: 'Liste' }]}
-              value={rule.restDayMode}
-              onChange={(v) => setSetting('streakRule', { ...rule, restDayMode: v })}
-            />
           </View>
         </View>
 
@@ -162,5 +150,4 @@ const styles = StyleSheet.create({
   legend: { flexDirection: 'row', gap: spacing.lg, flexWrap: 'wrap' },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   swatch: { width: 12, height: 12, borderRadius: 6, borderWidth: 1, borderColor: colors.divider },
-  segment: { flexDirection: 'row', gap: spacing.sm },
 });

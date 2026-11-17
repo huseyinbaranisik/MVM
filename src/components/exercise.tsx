@@ -91,7 +91,9 @@ export function AddToProgramSheet({ exerciseId, onClose }: { exerciseId: string 
       {templates.map((t) => (
         <SheetRow key={t.id} label={t.name} value={`${t.exerciseCount} hareket`} onPress={() => add(t.id, t.name)} />
       ))}
-      <SheetRow label="+ Yeni şablon" onPress={async () => add(await createTemplate('Yeni antrenman'), 'Yeni antrenman')} />
+      <SheetRow label="+ Yeni şablon" onPress={async () => {
+        try { await add(await createTemplate('Yeni antrenman'), 'Yeni antrenman'); } catch (e) { onClose(e instanceof Error ? e.message : 'Şablon oluşturulamadı'); }
+      }} />
     </Sheet>
   );
 }

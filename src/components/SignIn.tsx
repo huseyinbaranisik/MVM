@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   body: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.lg },
   brand: { alignItems: 'center', gap: spacing.md, marginBottom: spacing.md },
   logo: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  row: { flexDirection: 'row' },
+  row: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.lg },
   field: { gap: spacing.xs },
   inputBox: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 56, borderRadius: radius.md,

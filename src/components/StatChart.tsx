@@ -9,8 +9,9 @@ import { colors, radius, spacing, type } from '@/theme';
 const label = (d: string) => `${Number(d.slice(8))}.${Number(d.slice(5, 7))}`;
 
 /** Başlık, son/ortalama/değişim ve çizgi (ya da çubuk) grafiği olan istatistik kartı. */
-export function StatChart({ title, unit, points, color, goal, bars, digits = 0, right }: {
+export function StatChart({ title, unit, points, color, goal, bars, digits = 0, right, height = 140, children }: {
   title: string; unit: string; points: Point[]; color: string; goal?: number | null; bars?: boolean; digits?: number; right?: ReactNode;
+  height?: number; children?: ReactNode;
 }) {
   const { width } = useWindowDimensions();
   // çubukta hepsi sıfırsa kayıt yok say
@@ -37,20 +38,22 @@ export function StatChart({ title, unit, points, color, goal, bars, digits = 0, 
             <Num label="Ortalama" value={`${fmt(sum.avg)} ${unit}`} />
             {!bars ? <Num label="Değişim" value={`${sum.change > 0 ? '+' : ''}${fmt(sum.change)} ${unit}`} /> : null}
           </View>
-          {points.length >= 2 ? (bars ? (
-            <BarChart data={data} width={chartWidth} height={140} frontColor={color} barWidth={Math.max(6, Math.min(22, chartWidth / points.length - 6))}
+          {points.length >= 2 || (points.length && goal != null && !bars) ? (bars ? (
+            <BarChart data={data} width={chartWidth} height={height} frontColor={color} barWidth={Math.max(6, Math.min(22, chartWidth / points.length - 6))}
               spacing={Math.max(3, Math.min(14, chartWidth / points.length / 3))} yAxisThickness={0} xAxisColor={colors.divider}
               rulesColor={colors.divider} yAxisTextStyle={styles.axis} xAxisLabelTextStyle={styles.axis} noOfSections={3} barBorderRadius={4} />
           ) : (
-            <LineChart data={data} width={chartWidth} height={140} color={color} dataPointsColor={color} thickness={2}
+            <LineChart data={data} width={chartWidth} height={height} color={color} dataPointsColor={color} thickness={2}
               spacing={Math.max(8, chartWidth / Math.max(1, points.length - 1))} initialSpacing={8} hideDataPoints={points.length > 31}
               yAxisThickness={0} xAxisColor={colors.divider} rulesColor={colors.divider} yAxisTextStyle={styles.axis}
               xAxisLabelTextStyle={styles.axis} noOfSections={3} yAxisOffset={offset} curved
-              showReferenceLine1={goal != null} referenceLine1Position={(goal ?? 0) - offset}
-              referenceLine1Config={{ color: colors.accent, dashWidth: 6, dashGap: 4, thickness: 1 }} />
+              showReferenceLine1={goal != null} referenceLine1Position={goal ?? 0}
+              referenceLine1Config={{ color: colors.accent, type: 'solid', thickness: 2, labelText: goal != null ? `Hedef ${fmt(goal)}` : undefined,
+                labelTextStyle: styles.goalLabel }} />
           )) : null}
         </>
       ) : <Text style={type.caption}>Kayıt yok.</Text>}
+      {children}
     </View>
   );
 }
@@ -72,4 +75,5 @@ const styles = StyleSheet.create({
   num: { flex: 1, gap: 2 },
   numValue: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
   axis: { color: colors.textSecondary, fontSize: 10 },
+  goalLabel: { color: colors.accent, fontSize: 10, fontWeight: '700', marginTop: -14 },
 });

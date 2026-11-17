@@ -15,7 +15,7 @@ export interface StreakRule {
 
 export const DEFAULT_RULE: StreakRule = { restDayMode: 'stepsOrChecklist', checklistThreshold: 0.5 };
 export const MILESTONES = [3, 7, 14, 30, 50, 100, 365] as const;
-export const MAX_FREEZES = 2;
+export const MAX_FREEZES = 3;
 export const DAYS_PER_FREEZE = 7;
 
 export interface DayInput {
@@ -54,6 +54,8 @@ export function computeStreak(
   start: DateStr,
   todayStr: DateStr,
   rule: StreakRule = DEFAULT_RULE,
+  /** tarih → o gün kazanılan ek dondurma hakkı (seviye ödülleri) */
+  grants: ReadonlyMap<DateStr, number> = new Map(),
 ): StreakResult {
   const byDate = new Map(inputs.map((d) => [d.date, d]));
   const days: StreakResult['days'] = [];
@@ -64,6 +66,8 @@ export function computeStreak(
   let todayCompleted = false;
 
   for (let date = start; diffDays(todayStr, date) >= 0; date = addDays(date, 1)) {
+    const g = grants.get(date);
+    if (g) freezes = Math.min(MAX_FREEZES, freezes + g);
     const input = byDate.get(date);
     const done = input ? isDayComplete(input, rule) : false;
 

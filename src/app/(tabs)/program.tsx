@@ -8,7 +8,8 @@ import { TemplateMiniMap } from '@/components/TemplateMiniMap';
 import { PillButton } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
 import { addDayItem, dayItemName, getWeekPlan, removeDayItem, type DayItem } from '@/db/repos/schedule';
-import { createTemplate, getTemplates } from '@/db/repos/templates';
+import { toast } from '@/components/ui/overlays';
+import { createTemplate, getTemplates, MAX_TEMPLATES } from '@/db/repos/templates';
 import { useDb } from '@/db/useDb';
 import { today, weekday, WEEKDAYS_SHORT_TR, WEEKDAYS_TR } from '@/services/dates';
 import { colors, radius, spacing, type } from '@/theme';
@@ -22,7 +23,11 @@ export default function ProgramScreen() {
   const has = (kind: DayItem['kind'], templateId: number | null = null) => dayItems.some((i) => i.kind === kind && i.templateId === templateId);
 
   const newTemplate = async (assignTo?: number) => {
-    const id = await createTemplate('Yeni antrenman');
+    let id: number;
+    try { id = await createTemplate('Yeni antrenman'); } catch (e) {
+      toast(e instanceof Error ? e.message : 'Şablon oluşturulamadı');
+      return;
+    }
     if (assignTo != null) await addDayItem(assignTo, 'workout', id);
     setAssigning(null);
     router.push(`/template/${id}`);
@@ -54,7 +59,8 @@ export default function ProgramScreen() {
 
       <View style={styles.titleRow}>
         <Text style={[type.title, styles.flex]}>Şablonlar</Text>
-        <PillButton label="+ Yeni" onPress={() => newTemplate()} />
+        <Text style={type.caption}>{data?.templates.length ?? 0}/{MAX_TEMPLATES}</Text>
+        <PillButton label="+ Yeni" onPress={() => newTemplate()} disabled={(data?.templates.length ?? 0) >= MAX_TEMPLATES} />
       </View>
       <View style={styles.card}>
         {data?.templates.map((t) => (

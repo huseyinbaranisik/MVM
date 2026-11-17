@@ -80,9 +80,20 @@ describe('computeStreak', () => {
     expect(r.freezesAvailable).toBe(0);
   });
 
-  it('en fazla 2 hak birikir', () => {
-    const r = computeStreak(doneRun('2026-11-01', 28), '2026-11-01', '2026-11-28');
-    expect(r.freezesAvailable).toBe(2);
+  it('en fazla 3 hak birikir', () => {
+    const r = computeStreak(doneRun('2026-11-01', 35), '2026-11-01', '2026-12-05');
+    expect(r.freezesAvailable).toBe(3);
+  });
+
+  it('seviye ödülü hakkı o günden itibaren kaçırılan günü korur', () => {
+    const inputs = [...doneRun('2026-11-01', 2), ...doneRun('2026-11-04', 1)];
+    const grants = new Map([['2026-11-02', 1]]);
+    const r = computeStreak(inputs, '2026-11-01', '2026-11-04', undefined, grants);
+    expect(r.days.find((d) => d.date === '2026-11-03')?.status).toBe('frozen');
+    expect(r.current).toBe(3);
+    // ödül kaçırılan günden sonra gelirse korumaz
+    const late = computeStreak(inputs, '2026-11-01', '2026-11-04', undefined, new Map([['2026-11-04', 1]]));
+    expect(late.current).toBe(1);
   });
 
   it('hakkından fazla kaçırılan gün seriyi kırar', () => {

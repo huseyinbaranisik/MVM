@@ -7,7 +7,8 @@ import { confirm } from '@/components/ui/overlays';
 import { PillButton } from '@/components/ui/PillButton';
 import { Sheet } from '@/components/ui/Sheet';
 import { ALL_DAYS, archiveHabit, getHabitsForDate, saveHabit, setHabitDone, type Habit } from '@/db/repos/habits';
-import { useDb } from '@/db/useDb';
+import { useDb, useOptimistic } from '@/db/useDb';
+import { play } from '@/services/sounds';
 import { WEEKDAYS_SHORT_TR } from '@/services/dates';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, radius, spacing, type } from '@/theme';
@@ -32,9 +33,11 @@ function HabitIcon({ icon, done }: { icon: string; done?: boolean }) {
 }
 
 export function Checklist({ date }: { date: string }) {
-  const loaded = useDb(() => getHabitsForDate(date), [date], ['habits', 'habit_logs']);
+  const fetched = useDb(() => getHabitsForDate(date), [date], ['habits', 'habit_logs']);
+  const [loaded, applyHabits] = useOptimistic(fetched);
   const habits = loaded ?? [];
   const [editing, setEditing] = useState<Partial<Habit> | null>(null);
+  const [removing, setRemoving] = useState(false);
   const done = habits.filter((h) => h.done).length;
 
   return (
@@ -42,6 +45,12 @@ export function Checklist({ date }: { date: string }) {
       <View style={styles.header}>
         <Text style={[type.title, styles.flex]}>Bugün</Text>
         <Text style={styles.count}>{done}/{habits.length}</Text>
+        {habits.length ? (
+          <Pressable onPress={() => setRemoving(!removing)} style={[styles.addBtn, styles.editBtn, removing && styles.editOn]} hitSlop={8}
+            accessibilityRole="button" accessibilityState={{ selected: removing }} accessibilityLabel="Görevleri düzenle">
+            <Icon name={removing ? 'check' : 'edit'} size={20} color={removing ? colors.onPrimary : colors.textPrimary} />
+          </Pressable>
+        ) : null}
         <Pressable onPress={() => setEditing({})} style={styles.addBtn} hitSlop={8}
           accessibilityRole="button" accessibilityLabel="Alışkanlık ekle">
           <Icon name="add" size={22} color={colors.onPrimary} />
@@ -55,8 +64,10 @@ export function Checklist({ date }: { date: string }) {
             <Pressable
               key={h.id}
               onPress={() => {
+                if (removing) { setEditing(h); return; }
                 Haptics.selectionAsync().catch(() => {});
-                setHabitDone(h.id, date, !h.done);
+                if (!h.done) play('check');
+                applyHabits(habits.map((x) => (x.id === h.id ? { ...x, done: h.done ? 0 : 1 } : x)), () => setHabitDone(h.id, date, !h.done));
               }}
               onLongPress={() => setEditing(h)}
               style={styles.row}
@@ -66,9 +77,16 @@ export function Checklist({ date }: { date: string }) {
               accessibilityHint="Düzenlemek için basılı tut">
               <HabitIcon icon={h.icon} done={!!h.done} />
               <Text style={[type.body, styles.flex, h.done ? styles.doneText : null]}>{h.name}</Text>
-              <View style={[styles.check, h.done ? styles.checkOn : null]}>
-                {h.done ? <Icon name="check" size={18} color={colors.onPrimary} /> : null}
-              </View>
+              {removing ? (
+                <Pressable onPress={() => removeHabit(h)} hitSlop={10} style={styles.remove}
+                  accessibilityRole="button" accessibilityLabel={`${h.name} kaldır`}>
+                  <Icon name="remove_circle" size={26} color={colors.warning} />
+                </Pressable>
+              ) : (
+                <View style={[styles.check, h.done ? styles.checkOn : null]}>
+                  {h.done ? <Icon name="check" size={18} color={colors.onPrimary} /> : null}
+                </View>
+              )}
             </Pressable>
           ))}
         </View>
@@ -76,6 +94,12 @@ export function Checklist({ date }: { date: string }) {
       <HabitSheet habit={editing} onClose={() => setEditing(null)} />
     </View>
   );
+}
+
+async function removeHabit(h: Pick<Habit, 'id' | 'name'>) {
+  if (!(await confirm({ title: 'Silinsin mi?', message: `"${h.name}" listeden kaldırılacak. Geçmiş kayıtlar istatistiklerde kalır.`, confirmLabel: 'Sil', destructive: true }))) return false;
+  await archiveHabit(h.id);
+  return true;
 }
 
 function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose: () => void }) {
@@ -123,9 +147,7 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
         onPress={async () => { await saveHabit({ id: habitId, name: name.trim(), icon, weekdays: days }); onClose(); }} />
       {habit?.id ? (
         <PillButton label="Sil" onPress={async () => {
-          if (!(await confirm({ title: 'Silinsin mi?', message: `"${habit.name}" listeden kaldırılacak. Geçmiş kayıtlar istatistiklerde kalır.`, confirmLabel: 'Sil', destructive: true }))) return;
-          if (habitId) await archiveHabit(habitId);
-          onClose();
+          if (habitId && await removeHabit({ id: habitId, name: habit.name ?? '' })) onClose();
         }} />
       ) : null}
     </Sheet>
@@ -136,6 +158,9 @@ const styles = StyleSheet.create({
   section: { gap: spacing.md },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   flex: { flex: 1 },
+  editBtn: { backgroundColor: colors.surface },
+  editOn: { backgroundColor: colors.primary },
+  remove: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   count: { fontSize: 16, fontWeight: '700', color: colors.accentMuted },
   addBtn: {
     width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',

@@ -5,13 +5,13 @@ import Svg, { ClipPath, Defs, Path, Rect } from 'react-native-svg';
 
 import type { Crop } from '@/data/bodyFocus';
 import { body } from '@/data/bodyPaths';
+import { bodyRegions } from '@/data/bodyRegions';
 import { muscles, regions, type Side } from '@/data/muscleMap';
 import { colors } from '@/theme';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const MIN_HIT = 44;
 const STROKE_PX = 1.2; // parça modunda kaslar arası ayırıcı çizgi kalınlığı
-const FUSE_PX = 4; // bölge modunda aynı bölgenin parçaları arasındaki boşluğu kapatan, aynı tonda kontur
 
 const muscleRegion = new Map(muscles.map((m) => [m.id, m.regionId]));
 
@@ -45,15 +45,13 @@ export function BodyMap({ side, mode, width, primary = [], secondary = [], onPre
   const vb = crop ?? data.viewBox;
   const scale = width / vb.w;
 
+  // vurgu düzeyi birim (bölge modunda bölge, parça modunda kas) id'sine göre
   const level = useMemo(() => {
-    const p = new Set(primary);
-    const s = new Set(secondary);
-    const regionLevel = new Map<string, number>();
-    if (mode === 'region') {
-      for (const id of s) regionLevel.set(muscleRegion.get(id)!, 1);
-      for (const id of p) regionLevel.set(muscleRegion.get(id)!, 2);
-    }
-    return (id: string) => (mode === 'region' ? regionLevel.get(muscleRegion.get(id)!) ?? 0 : p.has(id) ? 2 : s.has(id) ? 1 : 0);
+    const m = new Map<string, number>();
+    const unit = (id: string) => (mode === 'region' ? muscleRegion.get(id)! : id);
+    for (const id of secondary) m.set(unit(id), 1);
+    for (const id of primary) m.set(unit(id), 2);
+    return (u: string) => m.get(u) ?? 0;
   }, [primary, secondary, mode]);
 
   const unitOf = (id: string) => (mode === 'region' ? muscleRegion.get(id)! : id);
@@ -84,21 +82,21 @@ export function BodyMap({ side, mode, width, primary = [], secondary = [], onPre
             width={Math.max(b.w, b.size)} height={Math.max(b.h, b.size)}
             fill={colors.background} fillOpacity={0} onPress={() => onPress?.(unitOf(b.id))} />
         ))}
-        {data.muscles.map((m, i) => {
-          const tone = mode === 'region' ? regionTone.get(muscleRegion.get(m.id)!)! : partTone.get(m.id)!;
-          return (
-            <MusclePath key={i} id={m.id} d={m.d} clipId={m.clip ? `${side}-clip-${i}` : undefined} tone={tone}
-              level={level(m.id)} seamless={mode === 'region'} strokeWidth={(mode === 'region' ? FUSE_PX : STROKE_PX) / scale}
-              unit={unitOf(m.id)} onPress={onPress ? handlePress : undefined} />
-          );
-        })}
+        {/* bölge modu: her bölge önceden birleştirilmiş tek şekil (scripts/build-body-regions.py) */}
+        {mode === 'region' ? bodyRegions[side].map((r) => (
+          <MusclePath key={r.id} id={r.id} d={r.d} tone={regionTone.get(r.id)!} level={level(r.id)}
+            strokeWidth={STROKE_PX / scale} unit={r.id} onPress={onPress ? handlePress : undefined} />
+        )) : data.muscles.map((m, i) => (
+          <MusclePath key={i} id={m.id} d={m.d} clipId={m.clip ? `${side}-clip-${i}` : undefined} tone={partTone.get(m.id)!}
+            level={level(m.id)} strokeWidth={STROKE_PX / scale} unit={m.id} onPress={onPress ? handlePress : undefined} />
+        ))}
       </Svg>
     </View>
   );
 }
 
 type MuscleProps = {
-  id: string; unit: string; d: string; clipId?: string; tone: string; level: number; seamless: boolean; strokeWidth: number;
+  id: string; unit: string; d: string; clipId?: string; tone: string; level: number; strokeWidth: number;
   onPress?: (unit: string) => void;
 };
 
@@ -108,15 +106,15 @@ type MuscleProps = {
  */
 const MusclePath = memo(function MusclePath(props: MuscleProps) {
   if (props.level > 0) return <ActiveMuscle {...props} />;
-  const { id, unit, d, clipId, tone, seamless, strokeWidth, onPress } = props;
+  const { id, unit, d, clipId, tone, strokeWidth, onPress } = props;
   return (
     <Path d={d} clipPath={clipId ? `url(#${clipId})` : undefined} fill={tone}
-      stroke={seamless ? tone : colors.background} strokeWidth={strokeWidth} strokeLinejoin="round"
+      stroke={colors.background} strokeWidth={strokeWidth} strokeLinejoin="round"
       onPress={onPress ? () => onPress(unit) : undefined} accessibilityLabel={id} />
   );
 });
 
-function ActiveMuscle({ id, unit, d, clipId, tone, level, seamless, strokeWidth, onPress }: MuscleProps) {
+function ActiveMuscle({ id, unit, d, clipId, tone, level, strokeWidth, onPress }: MuscleProps) {
   const flash = useSharedValue(1);
   useEffect(() => {
     if (level > 0) flash.value = withSequence(withTiming(0.35, { duration: 90 }), withTiming(1, { duration: 260 }));
@@ -132,7 +130,7 @@ function ActiveMuscle({ id, unit, d, clipId, tone, level, seamless, strokeWidth,
         d={d}
         clipPath={clipPath}
         fill={fill}
-        stroke={seamless ? (level > 0 ? colors.primaryLight : tone) : colors.background}
+        stroke={colors.background}
         strokeWidth={strokeWidth}
         strokeLinejoin="round"
         animatedProps={animatedProps}

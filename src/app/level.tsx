@@ -15,14 +15,13 @@ const NODE = 64;
 const CURRENT = 84;
 const STEP = 104; // duraklar arası dikey mesafe
 const BANNER = 64; // rank bandının kapladığı yükseklik
-const SWING = [0, 0.55, 0.85, 0.55, 0, -0.55, -0.85, -0.55]; // zikzak: genişliğin yarısına oranla yatay kayma
 
 const XP_SOURCES: [string, number][] = [
   ['Antrenman', XP_RULES.workout], ['Set', XP_RULES.set], ['Su hedefi', XP_RULES.waterDay],
   ['Adım hedefi', XP_RULES.stepDay], ['Görev', XP_RULES.habit], ['Seri günü', XP_RULES.streakDay],
 ];
 
-/** Seviye yolu: aşağıdan yukarı uzanan düz çizgili yol; her seviye bir durak, rank başlarında bant, ödüller durakta. */
+/** Seviye yolu: aşağıdan yukarı dik uzanan yol; her seviye bir durak, rank başlarında bant, ödüller durakta. */
 export default function LevelPath() {
   const lv = useDb(getLevel, [], XP_TABLES);
   const { width, height } = useWindowDimensions();
@@ -33,7 +32,7 @@ export default function LevelPath() {
   const rank = rankInfo(lv.level);
   // mevcut rank'tan sonraki rank'ın sonuna kadar göster (en az 10 seviye ilerisi)
   const last = Math.max(lv.level + 10, (RANKS.find((r) => r.from > lv.level + 5)?.from ?? lv.level + 15) - 1);
-  const half = (width - spacing.lg * 2) / 2 - NODE / 2 - 8;
+  const cx = (width - spacing.lg * 2) / 2; // yol dikey: tüm duraklar ortada
   const ratio = lv.needed ? lv.intoLevel / lv.needed : 0;
 
   // Yol aşağıdan yukarı: önce alttan ölçülür (yb), sonra üstten koordinata çevrilir. Her rank başlangıcının altında bir bant.
@@ -47,7 +46,7 @@ export default function LevelPath() {
       banners.push({ r, to: Math.min(last, (next ?? Infinity) - 1), yb });
       yb += BANNER;
     }
-    nodes.push({ l, x: half + SWING[(l - 1) % SWING.length] * half + NODE / 2 + 8, yb: yb + CURRENT / 2 });
+    nodes.push({ l, x: cx, yb: yb + CURRENT / 2 });
     yb += STEP;
   }
   const H = yb - STEP + CURRENT + 24;
@@ -164,12 +163,11 @@ const styles = StyleSheet.create({
   stop: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   node: {
     width: NODE - 8, height: NODE - 8, borderRadius: (NODE - 8) / 2, alignItems: 'center', justifyContent: 'center',
-    borderBottomWidth: 5, borderBottomColor: 'rgba(0,0,0,0.25)',
   },
   nodeCurrent: { width: CURRENT - 22, height: CURRENT - 22, borderRadius: (CURRENT - 22) / 2 },
   nodeRank: { borderRadius: radius.md },
   levelNum: {
-    position: 'absolute', bottom: -18, fontSize: 12, fontWeight: '800', color: colors.textSecondary,
+    position: 'absolute', left: '100%', marginLeft: 12, fontSize: 15, fontWeight: '800', color: colors.textSecondary,
   },
   levelNumOn: { color: colors.textPrimary },
 });

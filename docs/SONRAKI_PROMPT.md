@@ -436,5 +436,9 @@ MVM: Türkçe arayüzlü antrenman + günlük alışkanlık takip uygulaması.
 - [x] G13 kalori birim/kategori (migration 20261117094432; `food_logs.grams` adı APK uyumu için değişmedi)
 - [x] G14 kütüphane: manken↔çip senkronu, bölge/parça çipleri, çoklu seçim (VE), açılır parça listesi, filtreyi sıfırla
 - [x] G15 emoji
-- [ ] G16 İngilizce, G17 giriş ekranı, G18 gizlilik, G19 APK boyutu, G20 teslim
+- [x] G17 giriş/kayıt ekranı (`src/components/SignIn.tsx`, doğrulamalar `src/services/auth.ts`). Emülatörde görsel olarak denenmedi: test hesabından çıkış/giriş gerekiyor.
+- [x] G18 gizlilik: Ayarlar → Verilerimi dışa aktar (JSON, denendi), Hesabı sil (`delete_my_account` RPC, migration 20261117095829; denenmedi). Oturum expo-sqlite localStorage'da kaldı (SecureStore 2 KB sınırı Supabase oturumuna yetmiyor). Supabase panelinde "Leaked password protection" kapalı: kullanıcı açmalı.
+- [x] G19 APK: yalnızca arm64-v8a, R8 + kaynak budama (expo-build-properties), görseller WebP (32→11 MB), sürüm 1.1.0
+- [x] README güncellendi (Şekil 5 hâlâ eski dokuz temayı gösteriyor)
+- [ ] **G16 İngilizce dil desteği: yapılmadı.** Bir sonraki oturumun ilk işi. Ayrıca XP birikim grafiği (G11) ve tema/README görsellerinin yenilenmesi kaldı.
 - Not: Metro OneDrive klasöründe dosya değişikliğini kaçırıyor; emülatörde denerken `npx expo start --clear` ile yeniden başlat.

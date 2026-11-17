@@ -35,18 +35,20 @@ MVM is a personal mobile app that keeps a strength-training program and the smal
 ## What it does
 
 <table>
-  <tr><td><b>Weekly program</b></td><td>Each weekday gets a workout template, a walking day or a rest day. Templates hold sets, rep ranges, timed holds, rest, per-side work and supersets; exercises are reordered by dragging.</td></tr>
-  <tr><td><b>Live workout</b></td><td>Previous values next to every set, a scroll wheel for kg and reps, a rest timer with a notification, a stopwatch for timed exercises, a progressive-overload hint, and a summary with volume and personal records. Past days are locked: yesterday's workout cannot be filled in today.</td></tr>
-  <tr><td><b>Exercise library</b></td><td>About 260 exercises, browsed through a tappable body map by region or single muscle, with search, equipment filters, favourites and your own exercises with a photo.</td></tr>
+  <tr><td><b>Weekly program</b></td><td>Each weekday gets one or more items (workout templates, a walk) or a rest day; a new account starts with an empty week. Templates hold sets, rep ranges, timed holds, rest, per-side work and supersets; exercises are reordered by dragging.</td></tr>
+  <tr><td><b>Live workout</b></td><td>Previous values next to every set, a scroll wheel for kg and reps, a rest timer with a notification, a stopwatch for timed exercises, a progressive-overload hint, and a summary with duration, volume (with a comparison to the last session of the same template), volume per muscle group, the best set per exercise and personal records. Rest ±15 s shortens the bar proportionally. Past days are locked: yesterday's workout cannot be filled in today.</td></tr>
+  <tr><td><b>Exercise library</b></td><td>About 260 exercises. Tapping the body map selects the region or single muscle below and colours it; several muscles can be selected at once to find exercises that train all of them. Search, equipment filters, favourites and your own exercises with a photo. "Add to plan" adds an exercise to a template.</td></tr>
   <tr><td><b>Daily trackers</b></td><td>Water and steps as rings, sleep with bed time, wake time and quality, a bedtime reminder, and a 2-week / 1-month history chart for each.</td></tr>
-  <tr><td><b>Calories</b></td><td>A built-in food list with values per 100 g (USDA FoodData Central), logging by grams, macros, your own foods, recently eaten foods first, and a calorie and protein goal suggested from your profile (Mifflin-St Jeor).</td></tr>
-  <tr><td><b>Streak</b></td><td>A workout day counts when the workout is finished; a rest day counts with the step goal or the habit checklist. Freezes, a monthly calendar, badges and an evening reminder if the day is not done yet.</td></tr>
-  <tr><td><b>Profile</b></td><td>Weight and height log, BMI, a weight chart with a target line, and the theme picker.</td></tr>
+  <tr><td><b>Calories</b></td><td>A built-in food list with values per 100 g or 100 ml (USDA FoodData Central), grouped into categories, logging by grams or millilitres, macros, your own foods, recently eaten foods first, and a calorie and protein goal suggested from your profile (Mifflin-St Jeor).</td></tr>
+  <tr><td><b>Streak</b></td><td>A workout day counts when the workout is finished; a rest day counts with the step goal or the habit checklist. Freezes, a monthly calendar and an evening reminder if the day is not done yet.</td></tr>
+  <tr><td><b>XP and level</b></td><td>Sets, habits, water and step goals and streak days give XP; levels and ranks (Çaylak → Efsane) are shown on the profile, the streak screen and the home avatar.</td></tr>
+  <tr><td><b>Profile</b></td><td>Photo, a one-line summary with an edit panel, a monthly activity calendar, weight and height log with BMI and a weight chart, a home-screen layout editor (order, size, show/hide cards) and Settings (theme, rest times, data export, account deletion).</td></tr>
+  <tr><td><b>Statistics</b></td><td>Weight, height, water, steps, calories and sleep as line charts, weekly workouts and volume as bars, over 7 days, 30 days, 90 days or a year.</td></tr>
 </table>
 
 ## Themes
 
-Nine themes, chosen under Profile → Tema. Each one is three colours; every other colour in the app (surfaces, dividers, text, muscle-map tones) is derived from those three.
+Fifteen themes, chosen under Profile → Ayarlar → Tema (the figure below shows the earlier nine). Each one is three colours; every other colour in the app (surfaces, dividers, text, muscle-map tones) is derived from those three.
 
 <p align="center"><img src="assets/themes.png" alt="Fig. 5: the home screen in all nine themes" width="720"></p>
 
@@ -119,7 +121,7 @@ Release APK: `npx expo prebuild --platform android`, then `gradlew.bat assembleR
 > On Windows the native build fails when the project path contains non-ASCII characters (for example `Masaüstü`), and the Ninja 1.10.2 that ships with the Android SDK's CMake 3.22.1 cannot handle the long codegen paths. Build from an ASCII path such as `C:\dev\mvm`, and point `cmake.dir` in `android/local.properties` to a CMake copy whose `bin/ninja.exe` is Ninja 1.12 or newer.
 
 > [!NOTE]
-> The app needs a connection: every screen reads from Supabase, and without one it shows a "server unreachable" screen. Steps are counted only while the app is open; background counting would need Health Connect and a development build. The Statistics tab is still a placeholder. The theme choice is stored on the device, not in the account.
+> The app needs a connection: every screen reads from Supabase, and without one it shows a "server unreachable" screen. Steps are counted only while the app is open; background counting would need Health Connect and a development build. The theme choice is stored on the device, not in the account.
 
 ## Credits
 
@@ -145,18 +147,20 @@ MVM, bir kuvvet antrenmanı programını ve çevresindeki küçük günlük alı
 ### Ne yapıyor?
 
 <table>
-  <tr><td><b>Haftalık program</b></td><td>Her güne bir antrenman şablonu, yürüyüş ya da dinlenme atanır. Şablonlarda set, tekrar aralığı, süreli hareket, dinlenme, tek taraf ve süperset ayarları var; hareketler sürükleyerek sıralanır.</td></tr>
-  <tr><td><b>Canlı antrenman</b></td><td>Her setin yanında önceki değerler, kg ve tekrar için kaydırmalı seçici, bildirimli dinlenme sayacı, süreli hareketler için kronometre, progressive overload önerisi, hacim ve kişisel rekor özeti. Geçmiş günler kilitli: dünün antrenmanı bugün doldurulamaz.</td></tr>
-  <tr><td><b>Hareket kütüphanesi</b></td><td>Yaklaşık 260 hareket; dokunulabilir vücut haritasından bölgeye ya da tek kasa göre, arama, ekipman filtresi, favoriler ve fotoğraflı kendi hareketin.</td></tr>
+  <tr><td><b>Haftalık program</b></td><td>Her güne bir ya da birden fazla öğe (antrenman şablonu, yürüyüş) ya da dinlenme atanır; yeni hesap boş haftayla başlar. Şablonlarda set, tekrar aralığı, süreli hareket, dinlenme, tek taraf ve süperset ayarları var; hareketler sürükleyerek sıralanır.</td></tr>
+  <tr><td><b>Canlı antrenman</b></td><td>Her setin yanında önceki değerler, kg ve tekrar için kaydırmalı seçici, bildirimli dinlenme sayacı, süreli hareketler için kronometre, progressive overload önerisi, süre, hacim (aynı şablonun önceki oturumuyla kıyas), kas grubuna göre hacim, hareket başına en iyi set ve kişisel rekorlarla özet. Dinlenmede ±15 sn çubuğu orantılı kısaltır. Geçmiş günler kilitli: dünün antrenmanı bugün doldurulamaz.</td></tr>
+  <tr><td><b>Hareket kütüphanesi</b></td><td>Yaklaşık 260 hareket. Vücut haritasına dokununca bölge ya da kas aşağıda seçilir ve renklenir; birden fazla kas seçilince hepsini çalıştıran hareketler listelenir. Arama, ekipman filtresi, favoriler, fotoğraflı kendi hareketin ve "Plana ekle".</td></tr>
   <tr><td><b>Günlük takip</b></td><td>Su ve adım halkaları; yatış, kalkış ve kaliteyle uyku; yatma hatırlatıcısı; her biri için 2 haftalık / 1 aylık geçmiş grafiği.</td></tr>
-  <tr><td><b>Kalori</b></td><td>100 g başına değerleriyle hazır yiyecek listesi (USDA FoodData Central), gramla kayıt, makrolar, kendi yiyeceğin, son yenenler en üstte, profilden kalori ve protein hedefi önerisi (Mifflin-St Jeor).</td></tr>
-  <tr><td><b>Seri</b></td><td>Antrenman günü antrenman bitince, dinlenme günü adım hedefi ya da alışkanlık listesiyle tamamlanır. Dondurma hakkı, aylık takvim, rozetler ve gün bitmediyse akşam hatırlatması.</td></tr>
-  <tr><td><b>Profil</b></td><td>Kilo ve boy kaydı, BMI, hedef çizgili kilo grafiği ve tema seçici.</td></tr>
+  <tr><td><b>Kalori</b></td><td>100 g ya da 100 ml başına değerleriyle, kategorili hazır yiyecek listesi (USDA FoodData Central), gram ya da mililitreyle kayıt, makrolar, kendi yiyeceğin, son yenenler en üstte, profilden kalori ve protein hedefi önerisi (Mifflin-St Jeor).</td></tr>
+  <tr><td><b>Seri</b></td><td>Antrenman günü antrenman bitince, dinlenme günü adım hedefi ya da alışkanlık listesiyle tamamlanır. Dondurma hakkı, aylık takvim ve gün bitmediyse akşam hatırlatması.</td></tr>
+  <tr><td><b>XP ve seviye</b></td><td>Setler, alışkanlıklar, su ve adım hedefleri ve seri günleri XP kazandırır; seviye ve rank (Çaylak → Efsane) profilde, seri ekranında ve ana ekrandaki avatarda.</td></tr>
+  <tr><td><b>Profil</b></td><td>Fotoğraf, düzenleme panelli tek satır özet, aylık etkinlik takvimi, BMI ve grafikle kilo/boy kaydı, ana ekran düzeni (kart sırası, boyutu, göster/gizle) ve Ayarlar (tema, dinlenme süreleri, veriyi dışa aktarma, hesabı silme).</td></tr>
+  <tr><td><b>İstatistik</b></td><td>Kilo, boy, su, adım, kalori ve uyku çizgi grafikleri; haftalık antrenman ve hacim çubukları; 7 gün, 30 gün, 90 gün ya da 1 yıl.</td></tr>
 </table>
 
 ### Temalar
 
-Profil → Tema altından seçilen dokuz tema (Şekil 5): Bordo & Bej (varsayılan), Gece & Kiremit, Şarap, Erik & Bal, Karpuz, Domates, Mandalina, Deniz, Mocha. Her tema üç renk; uygulamadaki diğer bütün renkler (yüzeyler, çizgiler, metin, kas haritası tonları) bu üçünden türetilir. Erik & Bal ve Mocha iki renkli paletlerdi; uyumlu üçüncü renk (gül kurusu `#A8456B`, karamel `#D08C60`) eklendi.
+Profil → Ayarlar → Tema altından seçilen on beş tema: Şarap (varsayılan), Gece & Kiremit, Erik & Bal, Orman & Mor, Balkabağı, Karpuz, Domates, Mandalina, Deniz, Mocha, Kızılcık, Vanilya, Bal & Gül, Kiraz, Nane & Bordo. Şekil 5 önceki dokuz temayı gösteriyor. Her tema üç renk; uygulamadaki diğer bütün renkler (yüzeyler, çizgiler, metin, kas haritası tonları) bu üçünden türetilir. Erik & Bal ve Mocha iki renkli paletlerdi; uyumlu üçüncü renk (gül kurusu `#A8456B`, karamel `#D08C60`) eklendi.
 
 Uygulama telefonun hazır uyarı kutusunu ve saat seçicisini kullanmıyor. Onay penceresi, saat tekerleği, sayı girişi ve kısa bildirimler uygulamanın kendi bileşenleri; bu yüzden temaya uyuyorlar (Şekil 6).
 
@@ -207,7 +211,7 @@ Sürüm APK'sı: `npx expo prebuild --platform android`, ardından `android/` i�
 > Windows'ta proje yolunda ASCII dışı karakter varsa (ör. `Masaüstü`) yerel derleme başarısız olur. Android SDK'daki CMake 3.22.1 ile gelen Ninja 1.10.2 de uzun codegen yollarını kaldıramaz. `C:\dev\mvm` gibi ASCII bir yoldan derle ve `android/local.properties` içindeki `cmake.dir` değerini, `bin/ninja.exe` dosyası Ninja 1.12 ya da üstü olan bir CMake kopyasına yönlendir.
 
 > [!NOTE]
-> Uygulama bağlantı ister: her ekran Supabase'den okur, bağlantı yoksa "sunucuya ulaşılamadı" ekranı çıkar. Adımlar yalnızca uygulama açıkken sayılır; arka planda saymak Health Connect ve development build gerektirir. İstatistik sekmesi henüz yer tutucu. Tema seçimi hesapta değil, cihazda saklanır.
+> Uygulama bağlantı ister: her ekran Supabase'den okur, bağlantı yoksa "sunucuya ulaşılamadı" ekranı çıkar. Adımlar yalnızca uygulama açıkken sayılır; arka planda saymak Health Connect ve development build gerektirir. Tema seçimi hesapta değil, cihazda saklanır.
 
 ### Emeği geçenler
 

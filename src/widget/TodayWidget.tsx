@@ -1,88 +1,185 @@
 'use no memo'; // widget kütüphanesi React Compiler dönüşümünü desteklemiyor
 
-import { FlexWidget, TextWidget } from 'react-native-android-widget';
+import { FlexWidget, OverlapWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 
-import type { WidgetData } from '@/widget/data';
-import { colors } from '@/theme';
+import type { WidgetData, WidgetPlan } from '@/widget/data';
+import { ICONS, iconSvg, mannequinSvg, ringSvg } from '@/widget/svg';
+import { colors, mix } from '@/theme/colors';
 
 type Hex = `#${string}`;
 const c = (v: string) => v as Hex;
-const fmt = (n: number) => n.toLocaleString('tr-TR', { maximumFractionDigits: 1 });
-const steps = (n: number) => n.toLocaleString('tr-TR');
+const n1 = (n: number) => n.toLocaleString('tr-TR', { maximumFractionDigits: 1 });
+const int = (n: number) => Math.round(n).toLocaleString('tr-TR');
+const short = (n: number) => (n >= 1000 ? `${n1(n / 1000)}b` : String(Math.round(n)));
+const TRACK = mix(colors.background, colors.textPrimary, 0.14);
 
-/** Widget boyutu (dp): 3x1 tek satır, 3x2 kompakt, 4x2 tam. */
+/** Widget boyutu (dp): 3x1 tek satır, 3x2 orta, 4x2 geniş. */
 export type WidgetSize = { width: number; height: number };
-const layoutOf = (s?: WidgetSize) => (!s ? 'medium' : s.height < 100 ? 'row' : s.width < 260 ? 'medium' : 'large');
+type Layout = 'row' | 'mid' | 'large';
+const layoutOf = (s?: WidgetSize): Layout => (!s ? 'mid' : s.height < 100 ? 'row' : s.width < 260 ? 'mid' : 'large');
 
-/** Ana ekran widget'ı: seri, seviye, (genişse) günün planı, su (+ bardak) ve adım. Boşluğa dokununca uygulama açılır. */
+/** Solda günün programları, sağda gösterge halkaları, sağ üstte seri, altta XP. Su halkası bardak ekler. */
 export function TodayWidget({ data, size }: { data: WidgetData; size?: WidgetSize }) {
-  const layout = layoutOf(size);
+  const L = layoutOf(size);
   if (!data.signedIn) {
     return (
       <FlexWidget clickAction="OPEN_APP" style={{ ...box, justifyContent: 'center', alignItems: 'center' }}>
-        <TextWidget text="MVM" style={{ fontSize: layout === 'row' ? 16 : 20, fontWeight: '800', color: c(colors.textPrimary) }} />
-        {layout !== 'row' ? <TextWidget text="Giriş yap" style={{ fontSize: 13, color: c(colors.textSecondary) }} /> : null}
+        <TextWidget text="MVM" style={{ fontSize: L === 'row' ? 16 : 20, fontWeight: '800', color: c(colors.textPrimary) }} />
+        {L !== 'row' ? <TextWidget text="Giriş yap" style={{ fontSize: 13, color: c(colors.textSecondary) }} /> : null}
       </FlexWidget>
     );
   }
 
-  const plus = (d: number) => (
-    <FlexWidget clickAction="ADD_WATER"
-      style={{ width: d, height: d, borderRadius: d / 2, backgroundColor: c(colors.primary), justifyContent: 'center', alignItems: 'center' }}>
-      <TextWidget text="+" style={{ fontSize: d * 0.55, fontWeight: '800', color: c(colors.onPrimary) }} />
+  const W = size?.width ?? 300;
+  const H = size?.height ?? 180;
+  const pad = 10;
+  const xpH = L === 'row' ? 12 : 16;
+  const bodyH = H - pad * 2 - xpH - 6; // programlar + halkalar alanı
+  const leftW = Math.round((W - pad * 2) * (L === 'large' ? 0.46 : 0.45));
+  const rings = [
+    { key: 'Su', ratio: data.waterGoal ? data.water / data.waterGoal : 0, color: colors.ice, value: n1(data.water), cap: `Su ${n1(data.water)}/${n1(data.waterGoal)}`, water: true },
+    { key: 'Adım', ratio: data.stepGoal ? data.steps / data.stepGoal : 0, color: colors.success, value: short(data.steps), cap: `${int(data.steps)} adım` },
+    { key: 'Kalori', ratio: data.kcalGoal ? data.kcal / data.kcalGoal : 0, color: colors.warning, value: short(data.kcal), cap: `${int(data.kcal)} kcal` },
+    { key: 'Uyku', ratio: data.sleepMin != null && data.sleepGoal ? data.sleepMin / data.sleepGoal : 0, color: colors.primaryLight,
+      value: data.sleepMin != null ? `${n1(data.sleepMin / 60)}s` : '–', cap: data.sleepMin != null ? `Uyku ${n1(data.sleepMin / 60)} sa` : 'Uyku' },
+  ].slice(0, L === 'row' ? 2 : 4);
+
+  // halka çapı: sağ alanın genişliğine ve yüksekliğine sığacak şekilde (2×2 ızgara; tek satırda 2 yan yana)
+  const rightW = W - pad * 2 - leftW - 8 - (L === 'row' ? 34 : 0);
+  const capH = L === 'row' ? 0 : 13;
+  const cell = L === 'row' ? Math.min(bodyH, rightW / 2 - 6) : Math.min((bodyH - 18) / 2 - capH, rightW / 2 - 10);
+  const ring = Math.max(26, Math.floor(cell));
+
+  const streak = (
+    <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', flexGap: 2 }}>
+      <SvgWidget svg={iconSvg(ICONS.fire, colors.warning)} style={{ width: 15, height: 15 }} />
+      <TextWidget text={L === 'large' ? `${data.streak} gün` : String(data.streak)}
+        style={{ fontSize: L === 'row' ? 12 : 13, fontWeight: '800', color: c(colors.textPrimary) }} />
     </FlexWidget>
   );
 
-  if (layout === 'row') {
-    // 3x1: tek satır — seri, su (+), adım
+  return (
+    <FlexWidget clickAction="OPEN_APP" style={{ ...box, padding: pad }}>
+      <FlexWidget style={{ flexDirection: 'row', width: 'match_parent', height: bodyH, flexGap: 8 }}>
+        <Plans plans={data.plans} width={leftW} height={bodyH} layout={L} />
+        {L === 'row' ? (
+          <>
+            <FlexWidget style={{ flex: 1, height: 'match_parent', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
+              {rings.map((r) => <Ring key={r.key} r={r} size={ring} layout={L} />)}
+            </FlexWidget>
+            <FlexWidget style={{ width: 30, height: 'match_parent', alignItems: 'flex-end' }}>{streak}</FlexWidget>
+          </>
+        ) : (
+          <FlexWidget style={{ flex: 1, height: 'match_parent' }}>
+            <FlexWidget style={{ width: 'match_parent', height: 18, alignItems: 'flex-end' }}>{streak}</FlexWidget>
+            {[0, 2].map((i) => (
+              <FlexWidget key={i} style={{ flex: 1, width: 'match_parent', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
+                {rings.slice(i, i + 2).map((r) => <Ring key={r.key} r={r} size={ring} layout={L} />)}
+              </FlexWidget>
+            ))}
+          </FlexWidget>
+        )}
+      </FlexWidget>
+      <Xp data={data} layout={L} height={xpH} />
+    </FlexWidget>
+  );
+}
+
+function Plans({ plans, width, height, layout }: { plans: WidgetPlan[]; width: number; height: number; layout: Layout }) {
+  if (!plans.length) {
     return (
-      <FlexWidget clickAction="OPEN_APP" style={{ ...box, padding: 8, flexDirection: 'row', alignItems: 'center', flexGap: 10 }}>
-        <TextWidget text={`Seri ${data.streak}`} style={{ fontSize: 15, fontWeight: '800', color: c(colors.textPrimary) }} />
-        <FlexWidget style={{ flex: 1, flexDirection: 'row', alignItems: 'center', flexGap: 6 }}>
-          <TextWidget text={`Su ${fmt(data.water)}/${fmt(data.waterGoal)}`} maxLines={1}
-            style={{ fontSize: 13, fontWeight: '700', color: c(colors.textPrimary) }} />
-          {plus(28)}
-        </FlexWidget>
-        <TextWidget text={`${steps(data.steps)} adım`} maxLines={1} style={{ fontSize: 13, fontWeight: '700', color: c(colors.textPrimary) }} />
+      <FlexWidget style={{ ...tile, width, height: 'match_parent', justifyContent: 'center' }}>
+        <TextWidget text="Plan yok" style={{ fontSize: 13, fontWeight: '700', color: c(colors.textSecondary) }} />
+      </FlexWidget>
+    );
+  }
+  const gap = 6;
+  const h = Math.floor((height - gap * (plans.length - 1)) / plans.length);
+  return (
+    <FlexWidget style={{ width, height: 'match_parent', flexGap: gap }}>
+      {plans.map((p, i) => <Plan key={i} plan={p} width={width} height={h} layout={layout} />)}
+    </FlexWidget>
+  );
+}
+
+function Plan({ plan, width, height, layout }: { plan: WidgetPlan; width: number; height: number; layout: Layout }) {
+  const name = (size: number) => (
+    <TextWidget text={plan.name} maxLines={1} truncate="END" style={{ fontSize: size, fontWeight: '800', color: c(colors.textPrimary) }} />
+  );
+  const sub = layout === 'large' && plan.sub
+    ? <TextWidget text={plan.sub} maxLines={1} truncate="END" style={{ fontSize: 11, color: c(colors.textSecondary) }} /> : null;
+
+  if (plan.kind !== 'workout') {
+    return (
+      <FlexWidget style={{ ...tile, width, height, flexDirection: 'row', alignItems: 'center', flexGap: 6 }}>
+        {layout !== 'row' ? <SvgWidget svg={iconSvg(plan.kind === 'walk' ? ICONS.walk : ICONS.moon, colors.primaryLight)} style={{ width: 18, height: 18 }} /> : null}
+        <FlexWidget style={{ flex: 1 }}>{name(layout === 'row' ? 12 : 13)}{sub}</FlexWidget>
       </FlexWidget>
     );
   }
 
-  const large = layout === 'large';
+  const mq = mannequinSvg(plan.regions, colors.primaryLight, mix(colors.surface, colors.textPrimary, 0.18), mix(colors.surface, colors.textPrimary, 0.1));
+  if (layout === 'mid') {
+    // ad üstte, manken altta (yan yana sığmıyor)
+    const mh = Math.max(16, height - 8 - 18 - 4);
+    return (
+      <FlexWidget style={{ ...tile, width, height, flexGap: 4 }}>
+        {name(13)}
+        <SvgWidget svg={mq.svg} style={{ height: mh, width: Math.round(mh * mq.aspect) }} />
+      </FlexWidget>
+    );
+  }
+  // tek satır ve geniş: yazı solda (kısalır), manken sağda sabit genişlikte
+  const mh = Math.max(14, height - (layout === 'row' ? 6 : 12));
+  const mw = Math.round(mh * mq.aspect);
   return (
-    <FlexWidget clickAction="OPEN_APP" style={{ ...box, padding: large ? 12 : 10 }}>
-      <FlexWidget style={{ flexDirection: 'row', width: 'match_parent', alignItems: 'center' }}>
-        <TextWidget text={large ? `Seri ${data.streak} gün` : `Seri ${data.streak}`}
-          style={{ fontSize: 15, fontWeight: '800', color: c(colors.textPrimary) }} />
-        <FlexWidget style={{ flex: 1 }} />
-        <FlexWidget style={{ backgroundColor: c(colors.primary), borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 }}>
-          <TextWidget text={`Sv ${data.level}`} style={{ fontSize: 12, fontWeight: '800', color: c(colors.onPrimary) }} />
+    <FlexWidget style={{ ...tile, width, height, flexDirection: 'row', alignItems: 'center', flexGap: 6 }}>
+      <FlexWidget style={{ flex: 1 }}>{name(layout === 'row' ? 12 : 14)}{sub}</FlexWidget>
+      <SvgWidget svg={mq.svg} style={{ height: mh, width: mw }} />
+    </FlexWidget>
+  );
+}
+
+type RingItem = { key: string; ratio: number; color: string; value: string; cap: string; water?: boolean };
+function Ring({ r, size, layout }: { r: RingItem; size: number; layout: Layout }) {
+  const stroke = Math.max(3, Math.round(size * 0.12));
+  const label = layout === 'large' ? (r.key === 'Su' ? r.value : `%${Math.round(Math.min(1, r.ratio) * 100)}`) : r.value;
+  return (
+    <FlexWidget clickAction={r.water ? 'ADD_WATER' : 'OPEN_APP'} style={{ alignItems: 'center' }}>
+      <OverlapWidget style={{ width: size, height: size }}>
+        <SvgWidget svg={ringSvg(r.ratio, r.color, TRACK, size, stroke)} style={{ width: size, height: size }} />
+        <FlexWidget style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+          <TextWidget text={label} maxLines={1}
+            style={{ fontSize: Math.max(9, Math.min(13, Math.floor((size - stroke * 2) / Math.max(3, label.length) * 1.5))), fontWeight: '800', color: c(colors.textPrimary) }} />
         </FlexWidget>
-      </FlexWidget>
-      {large ? (
-        <TextWidget text={data.plan} maxLines={1} truncate="END" style={{ fontSize: 13, color: c(colors.textSecondary), marginTop: 4 }} />
+      </OverlapWidget>
+      {layout !== 'row' ? (
+        <TextWidget text={layout === 'large' ? r.cap : r.key} maxLines={1} style={{ fontSize: 10, color: c(colors.textSecondary), marginTop: 2 }} />
       ) : null}
-      <FlexWidget style={{ flexDirection: 'row', width: 'match_parent', marginTop: large ? 8 : 6, flexGap: 6, flex: 1 }}>
-        <FlexWidget style={{ ...tile, flexDirection: 'row', alignItems: 'center' }}>
-          <FlexWidget style={{ flex: 1 }}>
-            <TextWidget text="Su" style={label} />
-            <TextWidget text={large ? `${fmt(data.water)} / ${fmt(data.waterGoal)}` : fmt(data.water)} style={value} />
-          </FlexWidget>
-          {plus(large ? 36 : 30)}
-        </FlexWidget>
-        <FlexWidget style={{ ...tile, justifyContent: 'center' }}>
-          <TextWidget text="Adım" style={label} />
-          <TextWidget text={large ? `${steps(data.steps)} / ${steps(data.stepGoal)}` : steps(data.steps)} style={value} />
-        </FlexWidget>
+    </FlexWidget>
+  );
+}
+
+function Xp({ data, layout, height }: { data: WidgetData; layout: Layout; height: number }) {
+  const ratio = data.xpNeeded ? data.xpInto / data.xpNeeded : 0;
+  return (
+    <FlexWidget style={{ flexDirection: 'row', width: 'match_parent', height, alignItems: 'center', flexGap: 8, marginTop: 6 }}>
+      <TextWidget text={layout === 'row' ? `Sv ${data.level}` : `Sv ${data.level} · ${data.rank}`}
+        style={{ fontSize: 11, fontWeight: '700', color: c(colors.textSecondary) }} />
+      <FlexWidget style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: c(TRACK), flexDirection: 'row' }}>
+        <FlexWidget style={{ flex: Math.max(0.02, ratio), height: 6, borderRadius: 3, backgroundColor: c(colors.primaryLight) }} />
+        <FlexWidget style={{ flex: Math.max(0.0001, 1 - ratio), height: 6 }} />
       </FlexWidget>
+      {layout !== 'row' ? (
+        <TextWidget text={layout === 'large' ? `${data.xpInto} / ${data.xpNeeded} XP` : `${data.xpInto}/${data.xpNeeded}`}
+          style={{ fontSize: 11, fontWeight: '700', color: c(colors.textSecondary) }} />
+      ) : null}
     </FlexWidget>
   );
 }
 
 const box = {
-  width: 'match_parent' as const, height: 'match_parent' as const, padding: 12, borderRadius: 20,
+  width: 'match_parent' as const, height: 'match_parent' as const, borderRadius: 22,
   backgroundColor: c(colors.background), borderWidth: 1, borderColor: c(colors.divider),
 };
-const tile = { flex: 1, height: 'match_parent' as const, backgroundColor: c(colors.surface), borderRadius: 14, padding: 8 };
-const label = { fontSize: 11, color: c(colors.textSecondary) };
-const value = { fontSize: 15, fontWeight: '800' as const, color: c(colors.textPrimary) };
+const tile = { backgroundColor: c(colors.surface), borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, justifyContent: 'center' as const };

@@ -1,17 +1,19 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Counter, counterSlot, TrackerCard } from '@/components/TrackerCard';
+import { WeekBars } from '@/components/WeekBars';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { SegmentedControl } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
-import { addTrackerValue, getLatestMeasurement, getTrackerSettings, getTrackerValue, updateTrackerSettings } from '@/db/repos/trackers';
+import { addTrackerValue, getLatestMeasurement, getTrackerHistory, getTrackerSettings, getTrackerValue, updateTrackerSettings } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
+import { addDays } from '@/services/dates';
 import { useAppStore } from '@/stores/useAppStore';
 import { formatSteps, kmToSteps, stepsToKm, stepUnitLabel, strideCm, type StepUnit } from '@/services/units';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, type } from '@/theme';
 
 const STEP_DECREMENT = 500;
 
@@ -20,6 +22,7 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
   const data = useDb(async () => ({
     date,
     steps: await getTrackerValue('steps', date),
+    week: new Map((await getTrackerHistory('steps', addDays(date, -6), date)).map((r) => [r.date, r.value])),
     s: await getTrackerSettings('steps'),
     heightCm: await getLatestMeasurement('height'),
   }), [date], ['daily_trackers', 'tracker_settings', 'body_measurements']);
@@ -30,6 +33,16 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
   const stride = strideCm(data.s.unit_size, data.heightCm);
   const fmt = (n: number) => formatSteps(n, unit, stride);
   const close = () => setOpen(null);
+  const weekVals = [...data.week.values()];
+  const avg = weekVals.length ? weekVals.reduce((a, v) => a + v, 0) / 7 : 0;
+  const hit = weekVals.filter((v) => v >= data.s!.goal).length;
+  const counter = (
+    <Counter
+      minusLabel={`${STEP_DECREMENT} adım çıkar`} plusLabel="Adım ekle"
+      onMinus={() => addTrackerValue('steps', date, -STEP_DECREMENT)}
+      onPlus={() => setOpen('add')}
+    />
+  );
   const strideLabel = data.s.unit_size != null ? `Elle · ${stride} cm`
     : data.heightCm ? `Boydan · ${stride} cm` : `Varsayılan · ${stride} cm`;
 
@@ -43,13 +56,15 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
         caption={`/ ${fmt(data.s.goal)} ${stepUnitLabel(unit)}`}
         onMenu={() => setOpen('menu')}
         layout={size === 'large' ? 'wide' : 'square'}
-        {...counterSlot(size, (
-          <Counter
-            minusLabel={`${STEP_DECREMENT} adım çıkar`} plusLabel="Adım ekle"
-            onMinus={() => addTrackerValue('steps', date, -STEP_DECREMENT)}
-            onPlus={() => setOpen('add')}
-          />
-        )) }
+        {...(size === 'large' ? {
+          side: (
+            <>
+              {counter}
+              <WeekBars date={date} values={data.week} goal={data.s.goal} />
+            </>
+          ),
+          footer: <Text style={type.caption}>Haftalık ort. {fmt(avg)} {stepUnitLabel(unit)} · Hedef {hit}/7 gün</Text>,
+        } : counterSlot(size, counter))}
       />
       <Sheet visible={open === 'menu'} onClose={close} title="Adım">
         <SheetRow label="Hedefi değiştir" value={`${fmt(data.s.goal)} ${stepUnitLabel(unit)}`} onPress={() => setOpen('goal')} />

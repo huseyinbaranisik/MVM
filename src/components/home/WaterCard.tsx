@@ -1,20 +1,23 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Counter, counterSlot, TrackerCard } from '@/components/TrackerCard';
+import { WeekBars } from '@/components/WeekBars';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { SegmentedControl } from '@/components/ui/PillButton';
 import { Sheet, SheetRow } from '@/components/ui/Sheet';
-import { addTrackerValue, getTrackerSettings, getTrackerValue, updateTrackerSettings } from '@/db/repos/trackers';
+import { addTrackerValue, getTrackerHistory, getTrackerSettings, getTrackerValue, updateTrackerSettings } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
+import { addDays } from '@/services/dates';
 import { formatWater, waterFromDisplay, waterToDisplay, waterUnitLabel, type WaterUnit } from '@/services/units';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, type } from '@/theme';
 
 export function WaterCard({ date, size = 'small' }: { date: string; size?: 'small' | 'large' }) {
   const data = useDb(async () => ({
     date, ml: await getTrackerValue('water', date), s: await getTrackerSettings('water'),
+    week: new Map((await getTrackerHistory('water', addDays(date, -6), date)).map((r) => [r.date, r.value])),
   }), [date], ['daily_trackers', 'tracker_settings']);
   const [open, setOpen] = useState<'menu' | 'goal' | 'glass' | null>(null);
 
@@ -23,6 +26,16 @@ export function WaterCard({ date, size = 'small' }: { date: string; size?: 'smal
   const glass = data.s.unit_size ?? 250;
   const fmt = (ml: number) => formatWater(ml, unit, glass);
   const close = () => setOpen(null);
+  const weekVals = [...data.week.values()];
+  const avg = weekVals.length ? weekVals.reduce((a, v) => a + v, 0) / 7 : 0;
+  const hit = weekVals.filter((v) => v >= data.s!.goal).length;
+  const counter = (
+    <Counter
+      minusLabel="Bir bardak çıkar" plusLabel="Bir bardak ekle"
+      onMinus={() => addTrackerValue('water', date, -glass)}
+      onPlus={() => addTrackerValue('water', date, glass)}
+    />
+  );
 
   return (
     <>
@@ -34,13 +47,15 @@ export function WaterCard({ date, size = 'small' }: { date: string; size?: 'smal
         caption={`/ ${fmt(data.s.goal)} ${waterUnitLabel(unit)}`}
         onMenu={() => setOpen('menu')}
         layout={size === 'large' ? 'wide' : 'square'}
-        {...counterSlot(size, (
-          <Counter
-            minusLabel="Bir bardak çıkar" plusLabel="Bir bardak ekle"
-            onMinus={() => addTrackerValue('water', date, -glass)}
-            onPlus={() => addTrackerValue('water', date, glass)}
-          />
-        )) }
+        {...(size === 'large' ? {
+          side: (
+            <>
+              {counter}
+              <WeekBars date={date} values={data.week} goal={data.s.goal} />
+            </>
+          ),
+          footer: <Text style={type.caption}>Haftalık ort. {fmt(avg)} {waterUnitLabel(unit)} · Hedef {hit}/7 gün</Text>,
+        } : counterSlot(size, counter))}
       />
       <Sheet visible={open === 'menu'} onClose={close} title="Su">
         <SheetRow label="Hedefi değiştir" value={`${fmt(data.s.goal)} ${waterUnitLabel(unit)}`} onPress={() => setOpen('goal')} />

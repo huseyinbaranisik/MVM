@@ -18,7 +18,7 @@ export function WidgetSync() {
           import('@/widget/data'), import('@/widget/TodayWidget'), import('@/widget/handler'),
         ]);
         const data = await getWidgetData();
-        await requestWidgetUpdate({ widgetName: WIDGET_NAME, renderWidget: () => <TodayWidget data={data} /> });
+        await requestWidgetUpdate({ widgetName: WIDGET_NAME, renderWidget: (info) => <TodayWidget data={data} size={info} /> });
       } catch {
         // widget modülü yok ya da widget eklenmemiş
       }

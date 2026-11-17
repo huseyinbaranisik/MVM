@@ -2,10 +2,12 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider, type ErrorBoundaryProps 
 import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
 import { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Icon } from '@/components/Icon';
+import { BRAND, Logo } from '@/components/Logo';
 import { SignIn } from '@/components/SignIn';
 import { StreakSync } from '@/components/StreakSync';
 import { WidgetSync } from '@/components/WidgetSync';
@@ -22,10 +24,22 @@ const navTheme = {
   colors: { ...(colors.dark ? DarkTheme : DefaultTheme).colors, background: colors.background, card: colors.background, primary: colors.primaryLight, text: colors.textPrimary, border: colors.divider },
 };
 
+/** Açılış/yükleme ekranı: yerel açılış ekranıyla aynı zeminde nefes alan logo ve kayan çizgi. */
 function Loading() {
+  const pulse = useSharedValue(0);
+  const bar = useSharedValue(0);
+  useEffect(() => {
+    pulse.set(withRepeat(withSequence(withTiming(1, { duration: 700, easing: Easing.inOut(Easing.quad) }),
+      withTiming(0, { duration: 700, easing: Easing.inOut(Easing.quad) })), -1));
+    bar.set(withRepeat(withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.cubic) }), -1));
+  }, [pulse, bar]);
+  const logo = useAnimatedStyle(() => ({ transform: [{ scale: 1 + pulse.get() * 0.06 }] }));
+  const slide = useAnimatedStyle(() => ({ transform: [{ translateX: -48 + bar.get() * 144 }] }));
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
-      <ActivityIndicator color={colors.accent} />
+    <View style={styles.loading} accessibilityLabel="Yükleniyor">
+      <Animated.View style={logo}><Logo size={120} /></Animated.View>
+      <Text style={styles.word}>MVM</Text>
+      <View style={styles.track}><Animated.View style={[styles.slider, slide]} /></View>
     </View>
   );
 }
@@ -104,6 +118,10 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  loading: { flex: 1, backgroundColor: BRAND.bg, alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
+  word: { color: BRAND.mark, fontSize: 22, fontWeight: '800', letterSpacing: 6 },
+  track: { width: 96, height: 4, borderRadius: 2, backgroundColor: 'rgba(246,238,226,0.15)', overflow: 'hidden', marginTop: spacing.md },
+  slider: { width: 48, height: 4, borderRadius: 2, backgroundColor: BRAND.top },
   error: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, padding: spacing.xxl },
   center: { textAlign: 'center' },
 });

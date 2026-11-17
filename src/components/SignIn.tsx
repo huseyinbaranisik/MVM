@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInpu
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
+import { Logo } from '@/components/Logo';
 import { toast } from '@/components/ui/overlays';
 import { PillButton, SegmentedControl } from '@/components/ui/PillButton';
 import { supabase } from '@/db/supabase';
@@ -62,7 +63,7 @@ export function SignIn() {
       <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           <View style={styles.brand}>
-            <View style={styles.logo}><Icon name="fitness_center" size={40} color={colors.onPrimary} /></View>
+            <Logo size={88} color={colors.primary} mark={colors.onPrimary} />
             <Text style={type.hero}>MVM</Text>
           </View>
 
@@ -134,7 +135,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   body: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, gap: spacing.lg },
   brand: { alignItems: 'center', gap: spacing.md, marginBottom: spacing.md },
-  logo: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.lg },
   field: { gap: spacing.xs },
   inputBox: {

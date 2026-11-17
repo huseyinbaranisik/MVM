@@ -7,9 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "mvmapp",
     "userInterfaceStyle": "dark",
-    "ios": {
-      "icon": "./assets/expo.icon"
-    },
+    "ios": {},
     "android": {
       "package": "com.mvm.app",
       "adaptiveIcon": {
@@ -36,7 +34,7 @@
         {
           "backgroundColor": "#0E0C0B",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 120
         }
       ],
       "expo-sqlite",
@@ -63,10 +61,13 @@
               "name": "Today",
               "label": "MVM Bugün",
               "description": "Seri, günün planı, su ve adım",
-              "minWidth": "250dp",
-              "minHeight": "110dp",
-              "targetCellWidth": 4,
+              "minWidth": "180dp",
+              "minHeight": "40dp",
+              "targetCellWidth": 3,
               "targetCellHeight": 2,
+              "maxResizeWidth": "320dp",
+              "maxResizeHeight": "140dp",
+              "resizeMode": "horizontal|vertical",
               "previewImage": "./assets/images/widget-preview.png",
               "updatePeriodMillis": 1800000
             }

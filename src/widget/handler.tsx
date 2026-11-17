@@ -17,7 +17,7 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
       const d = await getWidgetData();
       if (d.signedIn) await addTrackerValue('water', today(), d.glassMl);
     }
-    props.renderWidget(<TodayWidget data={await getWidgetData()} />);
+    props.renderWidget(<TodayWidget data={await getWidgetData()} size={props.widgetInfo} />);
   } catch (e) {
     console.warn('Widget güncellenemedi', e);
   }

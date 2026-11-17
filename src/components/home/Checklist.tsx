@@ -14,10 +14,22 @@ import { colors, radius, spacing, type } from '@/theme';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
 
-const HABIT_ICONS: IconName[] = [
-  'check_circle', 'no_food', 'egg', 'self_improvement', 'directions_walk', 'water_drop',
-  'bedtime', 'menu_book', 'fitness_center', 'spa', 'smoke_free', 'nutrition', 'medication', 'sunny',
+/** Alışkanlık simgeleri: emoji. Eski kayıtlarda Material Symbols adı olabilir (HabitIcon ikisini de çizer). */
+const EMOJI_GROUPS: { label: string; items: string[] }[] = [
+  { label: 'Spor', items: ['🏋️', '🏃', '🚶', '🚴', '🏊', '🧘', '🤸', '⚽', '🏀', '🥊', '🧗', '⛹️'] },
+  { label: 'Sağlık', items: ['💧', '😴', '💊', '🦷', '🧴', '🚭', '🩺', '❤️'] },
+  { label: 'Beslenme', items: ['🥗', '🍎', '🥦', '🥚', '🍗', '🥛', '🚫', '🍬', '☕', '🍵'] },
+  { label: 'Zihin', items: ['📖', '✍️', '🧠', '🙏', '🎧', '🎯', '📵', '🌿'] },
+  { label: 'Ev & İş', items: ['🧹', '🛏️', '🧺', '🍳', '💻', '📚', '💰', '📞', '🌱', '☀️'] },
 ];
+const DEFAULT_ICON = '✅';
+const isSymbolName = (v: string) => /^[a-z_]+$/.test(v);
+
+function HabitIcon({ icon, done }: { icon: string; done?: boolean }) {
+  return isSymbolName(icon)
+    ? <Icon name={icon as IconName} size={22} color={done ? colors.accent : colors.textSecondary} />
+    : <Text style={[styles.emoji, done && styles.emojiDone]}>{icon}</Text>;
+}
 
 export function Checklist({ date }: { date: string }) {
   const loaded = useDb(() => getHabitsForDate(date), [date], ['habits', 'habit_logs']);
@@ -52,7 +64,7 @@ export function Checklist({ date }: { date: string }) {
               accessibilityState={{ checked: !!h.done }}
               accessibilityLabel={h.name}
               accessibilityHint="Düzenlemek için basılı tut">
-              <Icon name={h.icon as IconName} size={22} color={h.done ? colors.accent : colors.textSecondary} />
+              <HabitIcon icon={h.icon} done={!!h.done} />
               <Text style={[type.body, styles.flex, h.done ? styles.doneText : null]}>{h.name}</Text>
               <View style={[styles.check, h.done ? styles.checkOn : null]}>
                 {h.done ? <Icon name="check" size={18} color={colors.onPrimary} /> : null}
@@ -68,14 +80,14 @@ export function Checklist({ date }: { date: string }) {
 
 function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose: () => void }) {
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState<string>(HABIT_ICONS[0]);
+  const [icon, setIcon] = useState<string>(DEFAULT_ICON);
   const [days, setDays] = useState(ALL_DAYS);
   const [prev, setPrev] = useState<Partial<Habit> | null>(null);
   if (habit !== prev) {
     setPrev(habit);
     if (habit) {
       setName(habit.name ?? '');
-      setIcon(habit.icon ?? HABIT_ICONS[0]);
+      setIcon(habit.icon ?? DEFAULT_ICON);
       setDays(habit.weekdays ?? ALL_DAYS);
     }
   }
@@ -87,15 +99,19 @@ function HabitSheet({ habit, onClose }: { habit: Partial<Habit> | null; onClose:
       <TextInput
         value={name} onChangeText={setName} placeholder="ör. Esneme" placeholderTextColor={colors.textSecondary}
         style={styles.input} maxLength={40} accessibilityLabel="Alışkanlık adı" />
-      <Text style={type.caption}>İkon</Text>
-      <View style={styles.icons}>
-        {HABIT_ICONS.map((i) => (
-          <Pressable key={i} onPress={() => setIcon(i)} style={[styles.iconChoice, icon === i && styles.iconOn]}
-            accessibilityRole="button" accessibilityState={{ selected: icon === i }} accessibilityLabel={i}>
-            <Icon name={i} size={24} color={icon === i ? colors.accent : colors.textPrimary} />
-          </Pressable>
-        ))}
-      </View>
+      {EMOJI_GROUPS.map((g) => (
+        <View key={g.label} style={styles.group}>
+          <Text style={type.caption}>{g.label}</Text>
+          <View style={styles.icons}>
+            {g.items.map((i) => (
+              <Pressable key={i} onPress={() => setIcon(i)} style={[styles.iconChoice, icon === i && styles.iconOn]}
+                accessibilityRole="button" accessibilityState={{ selected: icon === i }} accessibilityLabel={i}>
+                <Text style={styles.emojiChoice}>{i}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ))}
       <Text style={type.caption}>Hangi günler</Text>
       <View style={styles.days}>
         {WEEKDAYS_SHORT_TR.map((d, i) => (
@@ -140,6 +156,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg, color: colors.textPrimary, fontSize: 16,
   },
   icons: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  group: { gap: spacing.xs },
+  emoji: { fontSize: 20, width: 24, textAlign: 'center' },
+  emojiDone: { opacity: 0.5 },
+  emojiChoice: { fontSize: 24 },
   iconChoice: {
     width: 48, height: 48, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.divider,

@@ -2,6 +2,7 @@ import { Redirect, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { DaySelector } from '@/components/DaySelector';
 import { CalorieCard } from '@/components/home/CalorieCard';
 import { Checklist } from '@/components/home/Checklist';
@@ -17,6 +18,7 @@ import { Appear } from '@/components/ui/Skeleton';
 import { getSetting, setSetting } from '@/db/repos/settings';
 import { getSleep } from '@/db/repos/sleep';
 import { getStreakState } from '@/db/repos/streak';
+import { getLevel, XP_TABLES } from '@/db/repos/xp';
 import { addTrackerValue } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
 import { formatLongTR, today } from '@/services/dates';
@@ -33,6 +35,7 @@ export default function TodayScreen() {
     onboarded: await getSetting('onboarded'),
     streak: (await getStreakState())?.current ?? 0,
   }), [], ['settings', 'streak_state']);
+  const level = useDb(getLevel, [], XP_TABLES)?.level;
   const [morningPrompt, setMorningPrompt] = useState(false);
 
   // Canlı adım sayımı: uygulama açıkken atılan adımlar bugüne eklenir. Sensör/izin yoksa manuel giriş kalır.
@@ -67,8 +70,8 @@ export default function TodayScreen() {
     <Screen>
       <Appear index={0}>
       <View style={styles.header}>
-        <PressableScale style={styles.avatar} onPress={() => router.navigate('/profile')} accessibilityRole="button" accessibilityLabel="Profil">
-          <Text style={styles.avatarText}>{name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text>
+        <PressableScale onPress={() => router.navigate('/profile')} accessibilityRole="button" accessibilityLabel="Profil">
+          <Avatar name={name} size={48} level={level} />
         </PressableScale>
         <View style={styles.flex}>
           <Text style={type.caption}>{formatLongTR(date)}</Text>
@@ -112,11 +115,6 @@ export default function TodayScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   flex: { flex: 1 },
-  avatar: {
-    width: 48, height: 48, borderRadius: radius.pill, backgroundColor: colors.surfaceElevated,
-    borderWidth: 1, borderColor: colors.accentMuted, alignItems: 'center', justifyContent: 'center',
-  },
-  avatarText: { fontSize: 20, fontWeight: '800', color: colors.accent },
   flame: {
     flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: spacing.md, minHeight: 40,
     borderRadius: radius.pill, backgroundColor: colors.surface,

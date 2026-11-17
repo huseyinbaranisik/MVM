@@ -4,6 +4,7 @@ import { StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-na
 import { LineChart } from 'react-native-gifted-charts';
 
 import { Icon } from '@/components/Icon';
+import { LevelBar } from '@/components/LevelCard';
 import { Screen } from '@/components/Screen';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { confirm } from '@/components/ui/overlays';
@@ -13,11 +14,10 @@ import { SheetRow } from '@/components/ui/Sheet';
 import { LoadingScreen } from '@/components/ui/Skeleton';
 import { deleteMeasurement, getMeasurements, saveMeasurement } from '@/db/repos/measurements';
 import { getSetting, setSetting, type Settings } from '@/db/repos/settings';
-import { getBadges, getStreakState } from '@/db/repos/streak';
+import { getStreakState } from '@/db/repos/streak';
 import { supabase } from '@/db/supabase';
 import { useDb } from '@/db/useDb';
 import { today } from '@/services/dates';
-import { MILESTONES } from '@/services/streakService';
 import { bmi, bmiLabel, fmtDec } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
 import { PALETTES, themeId, type ThemeId } from '@/theme/colors';
@@ -36,9 +36,8 @@ export default function ProfileScreen() {
     weights: await getMeasurements('weight'),
     heights: await getMeasurements('height'),
     streak: await getStreakState(),
-    badges: await getBadges(),
     email: (await supabase.auth.getSession()).data.session?.user.email ?? '',
-  }), [], ['settings', 'body_measurements', 'streak_state', 'badges']);
+  }), [], ['settings', 'body_measurements', 'streak_state']);
   const [prompt, setPrompt] = useState<Prompt>(null);
   const [themesOpen, setThemesOpen] = useState(false);
   const current = THEMES.find((t) => t.id === themeId) ?? THEMES[0];
@@ -54,7 +53,6 @@ export default function ProfileScreen() {
   const recent = data.weights.slice(-30);
   // grafik alt sınırı: son kayıtlar ve hedefin biraz altı, böylece çizgi ekrana yayılır
   const offset = recent.length ? Math.floor(Math.min(...recent.map((w) => w.value), p.targetWeightKg ?? Infinity) - 2) : 0;
-  const earned = new Set(data.badges.map((b) => b.milestone));
   const close = () => setPrompt(null);
   const signOut = async () => {
     if (await confirm({ title: 'Çıkış yapılsın mı?', confirmLabel: 'Çıkış yap' })) {
@@ -79,6 +77,7 @@ export default function ProfileScreen() {
             <TextInput value={name ?? p.name} onChangeText={setName} onEndEditing={saveName} onSubmitEditing={saveName}
               placeholder="Adın" placeholderTextColor={colors.textSecondary} style={styles.nameInput} maxLength={24} accessibilityLabel="Adın" />
           </View>
+          <LevelBar />
           <SheetRow label="Yaş" value={p.age ? String(p.age) : 'Ekle'} onPress={() => setPrompt('age')} />
           <View style={styles.segment}>
             <SegmentedControl<'male' | 'female' | 'none'>
@@ -138,18 +137,6 @@ export default function ProfileScreen() {
           </View>
           <Text style={type.body}>Güncel {data.streak?.current ?? 0} gün · En uzun {data.streak?.longest ?? 0} gün</Text>
         </PressableScale>
-
-        <View style={styles.card}>
-          <Text style={type.subtitle}>Rozetler</Text>
-          <View style={styles.badges}>
-            {MILESTONES.map((m) => (
-              <View key={m} style={[styles.badge, earned.has(m) && styles.badgeOn]} accessibilityLabel={`${m} gün rozeti ${earned.has(m) ? 'kazanıldı' : 'kilitli'}`}>
-                <Text style={styles.badgeIcon}>{earned.has(m) ? '🔥' : '🔒'}</Text>
-                <Text style={[type.caption, earned.has(m) && styles.badgeTextOn]}>{m} gün</Text>
-              </View>
-            ))}
-          </View>
-        </View>
 
         <View style={styles.card}>
           <PressableScale style={styles.themeRow} onPress={() => setThemesOpen(!themesOpen)} accessibilityRole="button"
@@ -215,14 +202,6 @@ const styles = StyleSheet.create({
   tile: { flex: 1, backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   axis: { color: colors.textSecondary, fontSize: 10 },
-  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  badge: {
-    width: 72, paddingVertical: spacing.sm, alignItems: 'center', gap: 2, borderRadius: radius.md,
-    backgroundColor: colors.background, borderWidth: 1, borderColor: colors.divider, opacity: 0.6,
-  },
-  badgeOn: { borderColor: colors.primaryLight, opacity: 1 },
-  badgeIcon: { fontSize: 22 },
-  badgeTextOn: { color: colors.textPrimary },
   themeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 48 },
   flex: { flex: 1 },
   swatches: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: radius.pill, backgroundColor: colors.neutral },

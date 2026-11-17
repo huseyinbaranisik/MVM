@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
+import { LevelBar } from '@/components/LevelCard';
 import { pickTime, toast } from '@/components/ui/overlays';
 import { SegmentedControl } from '@/components/ui/PillButton';
 import { SheetRow } from '@/components/ui/Sheet';
@@ -64,6 +65,7 @@ export default function StreakScreen() {
           <Stat icon="emoji_events" color={colors.warning} label="En uzun" value={`${data.state.longest} gün`} />
           <Stat icon="ac_unit" color={colors.ice} label="Dondurma hakkı" value={`${data.state.freezes_available} / ${MAX_FREEZES}`} />
         </View>
+        <View style={styles.level}><LevelBar /></View>
 
         <View style={styles.card}>
           <View style={styles.monthRow}>
@@ -142,6 +144,7 @@ function Legend({ color, label }: { color: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
+  level: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg },
   safe: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
   body: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },

@@ -37,6 +37,7 @@ export async function evaluateStreak(todayStr: DateStr = today()) {
     logs: new Set(must(logs).map((l) => `${l.habit_id}|${l.date}`)),
   });
   const r = computeStreak(inputs, from, todayStr, rule);
+  // rozetler arayüzde gizli; tablo ileride ayrıntılı başarım sistemi için yazılmaya devam ediyor
   const earned = new Set(must(badges).map((b) => b.milestone as number));
   const fresh = r.milestones.filter((m) => !earned.has(m));
 

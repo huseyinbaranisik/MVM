@@ -5,10 +5,20 @@ import { toast } from '@/components/ui/overlays';
 import { subscribe } from '@/db/bus';
 import { getSetting } from '@/db/repos/settings';
 import { evaluateStreak, STREAK_INPUT_TABLES } from '@/db/repos/streak';
+import { getLevel, XP_TABLES } from '@/db/repos/xp';
 import { cancelReminder, scheduleAt } from '@/services/notifications';
 import { nextStreakReminder } from '@/services/streakService';
 
 const REMINDER_ID = 'streak-reminder';
+const LEVEL_KEY = 'mvm.lastLevel';
+
+/** Seviye arttıysa kutlar; ilk açılışta mevcut seviyeyi sessizce kaydeder. */
+async function checkLevelUp() {
+  const { level } = await getLevel();
+  const last = Number(localStorage.getItem(LEVEL_KEY) ?? 0);
+  if (last && level > last) toast(`⭐ Seviye ${level}!`);
+  if (level !== last) localStorage.setItem(LEVEL_KEY, String(level));
+}
 
 /** Görünmez: açılışta, uygulamaya dönünce ve seriyi etkileyen her yazmada seriyi yeniden hesaplar. */
 export function StreakSync() {
@@ -22,7 +32,6 @@ export function StreakSync() {
         do {
           again = false;
           const r = await evaluateStreak();
-          for (const m of r.fresh) toast(`🔥 ${m} günlük seri! Yeni rozet kazandın.`);
           const time = (await getSetting('notifications')).streakReminder;
           if (!time) await cancelReminder(REMINDER_ID);
           else {
@@ -30,6 +39,7 @@ export function StreakSync() {
               r.current ? `${r.current} günlük serin var; bugünü tamamlamak için hâlâ vaktin var.` : 'Bugünü tamamla, yeni bir seri başlat.');
           }
         } while (again);
+        await checkLevelUp();
       } catch (e) {
         console.warn('Seri hesaplanamadı', e);
       } finally {
@@ -37,7 +47,7 @@ export function StreakSync() {
       }
     };
     run();
-    const unsub = subscribe((t) => { if (t.has('*') || [...t].some((x) => STREAK_INPUT_TABLES.has(x))) run(); });
+    const unsub = subscribe((t) => { if (t.has('*') || [...t].some((x) => STREAK_INPUT_TABLES.has(x) || (XP_TABLES as readonly string[]).includes(x))) run(); });
     const appSub = AppState.addEventListener('change', (s) => { if (s === 'active') run(); });
     return () => { unsub(); appSub.remove(); };
   }, []);

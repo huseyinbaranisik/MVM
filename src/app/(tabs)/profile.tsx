@@ -24,11 +24,8 @@ import { PALETTES, themeId, type ThemeId } from '@/theme/colors';
 import { setTheme } from '@/theme/select';
 
 // Seçicideki önizleme renkleri: zemin, ana renk, vurgu
-const THEMES: { id: ThemeId; name: string; swatch: string[] }[] = [
-  { id: 'bordo', name: 'Bordo & Bej', swatch: ['#0E0C0B', '#7A1F2B', '#E8DCC4'] },
-  ...(Object.entries(PALETTES) as [Exclude<ThemeId, 'bordo'>, (typeof PALETTES)['gece']][])
-    .map(([id, p]) => ({ id, name: p.name, swatch: [p.bg, p.primary, p.highlight] })),
-];
+const THEMES: { id: ThemeId; name: string; swatch: string[] }[] = (Object.entries(PALETTES) as [ThemeId, (typeof PALETTES)['gece']][])
+  .map(([id, p]) => ({ id, name: p.name, swatch: [p.bg, p.primary, p.highlight] }));
 
 type Prompt = 'weight' | 'height' | 'age' | 'target' | null;
 

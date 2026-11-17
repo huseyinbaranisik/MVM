@@ -9,7 +9,7 @@ import { PillButton } from '@/components/ui/PillButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getDayItems, type DayItem } from '@/db/repos/schedule';
 import { getDayWorkoutProgress, startSession } from '@/db/repos/sessions';
-import { getTrackerSettings } from '@/db/repos/trackers';
+import { getTrackerSettings, getTrackerValue } from '@/db/repos/trackers';
 import { useDb } from '@/db/useDb';
 import { today, weekday, WEEKDAYS_TR } from '@/services/dates';
 import { fmtInt } from '@/services/units';
@@ -25,8 +25,9 @@ export function WorkoutCard({ date }: { date: string }) {
       items,
       progress: await Promise.all(items.map((i) => (i.kind === 'workout' ? getDayWorkoutProgress(date, i.templateId) : null))),
       stepGoal: (await getTrackerSettings('steps'))?.goal ?? 0,
+      steps: items.some((i) => i.kind === 'walk') ? await getTrackerValue('steps', date) : 0,
     };
-  }, [date], ['day_schedule_items', 'workout_templates', 'template_exercises', 'workout_sessions', 'session_sets', 'tracker_settings']);
+  }, [date], ['day_schedule_items', 'workout_templates', 'template_exercises', 'workout_sessions', 'session_sets', 'tracker_settings', 'daily_trackers']);
   const [width, setWidth] = useState(0);
   const [page, setPage] = useState(0);
   if (!data) return <Skeleton height={220} />;
@@ -52,7 +53,7 @@ export function WorkoutCard({ date }: { date: string }) {
         onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / Math.max(1, width)))}>
         {data.items.map((item, i) => (
           <View key={item.id} style={[styles.pad, styles.slide, { width: width || undefined }]}>
-            <ItemPage item={item} date={date} dayLabel={dayLabel} progress={data.progress[i]} stepGoal={data.stepGoal} />
+            <ItemPage item={item} date={date} dayLabel={dayLabel} progress={data.progress[i]} stepGoal={data.stepGoal} steps={data.steps} />
           </View>
         ))}
       </ScrollView>
@@ -65,19 +66,29 @@ export function WorkoutCard({ date }: { date: string }) {
   );
 }
 
-function ItemPage({ item, date, dayLabel, progress, stepGoal }: {
-  item: DayItem; date: string; dayLabel: string; progress: Progress | null; stepGoal: number;
+function ItemPage({ item, date, dayLabel, progress, stepGoal, steps }: {
+  item: DayItem; date: string; dayLabel: string; progress: Progress | null; stepGoal: number; steps: number;
 }) {
   if (item.kind !== 'workout' || !progress) {
+    const walk = item.kind === 'walk';
+    const ratio = walk && stepGoal ? Math.min(1, steps / stepGoal) : 0;
     return (
-      <View style={styles.row}>
-        <View style={styles.iconBox}>
-          <Icon name={item.kind === 'walk' ? 'directions_walk' : 'bedtime'} size={32} color={colors.accent} />
-        </View>
+      <View style={styles.page}>
         <View style={styles.flex}>
           <Text style={type.caption}>{dayLabel} planı</Text>
-          <Text style={type.title}>{item.kind === 'walk' ? 'Yürüyüş' : 'Dinlenme günü'}</Text>
-          {item.kind === 'walk' ? <Text style={type.caption}>Adım hedefi: {fmtInt(stepGoal)}</Text> : null}
+          <Text style={type.title}>{walk ? 'Yürüyüş' : 'Dinlenme günü'}</Text>
+          {walk ? <Text style={type.caption}>Hedef {fmtInt(stepGoal)} adım</Text> : null}
+        </View>
+        <View style={styles.big}>
+          {walk ? (
+            <RingGauge size={184} stroke={14} progress={ratio} color={colors.primaryLight}>
+              <Icon name="directions_walk" size={36} color={colors.accent} />
+              <Text style={styles.bigValue}>{fmtInt(steps)}</Text>
+              <Text style={type.caption}>%{Math.round(ratio * 100)}</Text>
+            </RingGauge>
+          ) : (
+            <View style={styles.restCircle}><Icon name="bedtime" size={72} color={colors.accent} /></View>
+          )}
         </View>
       </View>
     );
@@ -119,6 +130,11 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 64, height: 64, borderRadius: radius.md, backgroundColor: colors.surfaceElevated,
     alignItems: 'center', justifyContent: 'center',
+  },
+  big: { alignItems: 'center', paddingVertical: spacing.md },
+  bigValue: { fontSize: 30, fontWeight: '800', color: colors.textPrimary },
+  restCircle: {
+    width: 184, height: 184, borderRadius: 92, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center',
   },
   pct: { fontSize: 15, fontWeight: '800', color: colors.textPrimary },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: spacing.lg, marginTop: -spacing.sm },

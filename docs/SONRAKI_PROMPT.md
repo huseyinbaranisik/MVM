@@ -426,4 +426,10 @@ MVM: Türkçe arayüzlü antrenman + günlük alışkanlık takip uygulaması.
 - Çok seçimli kas filtresi kesişim (VE) mantığıyla çalışır.
 
 ## İlerleme
-(Oturum sırasında biten görevleri buraya işaretle.)
+- [x] G1 alt bar (a6d1270)
+- [x] G2 temalar: Bordo & Bej kalktı; kullanıcının verdiği 7 palet eklendi, toplam 15, kontrast testi (7fbfa36)
+- [x] G3+G4 `day_schedule_items` (migration 20261117091548), boş ilk kurulum, kaydırmalı antrenman kartı, "Plana ekle" (927cb03). Eski `day_schedule` tablosu v1.0.0 APK için duruyor; v1.1.0 yayınlanınca sil.
+- [x] G5 XP/seviye/rank (3dc7527)
+- [x] G6+G7+G8 profil, Ayarlar (`src/app/settings.tsx`), avatar (migration 20261117092614), ana ekran düzeni (7fbfa36). Fotoğraf yükleme emülatörde denenmedi (galeri boş).
+- [ ] G9 … G20
+- Not: Metro OneDrive klasöründe dosya değişikliğini kaçırıyor; emülatörde denerken `npx expo start --clear` ile yeniden başlat.

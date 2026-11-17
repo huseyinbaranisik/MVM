@@ -48,14 +48,22 @@ export function totalXp(s: XpSources) {
 export const rankInfo = (level: number) => [...RANKS].reverse().find((r) => level >= r.from)!;
 export const rankOf = (level: number) => rankInfo(level).name;
 
-/** Her seviye atlayışında kazanılan seri dondurma hakkı. */
-export const FREEZES_PER_LEVEL = 1;
+/** Seri dondurma hakkı bu kadar seviyede bir kazanılır. */
+export const FREEZE_EVERY = 4;
 
-/** Seviye yolundaki bir durağın ödülü: rank başlangıcında yeni rank, diğerlerinde dondurma hakkı. */
+/** Seviye yolundaki bir durağın ödülü: rank başlangıcında yeni rank, her 4. seviyede dondurma hakkı, diğerlerinde yok. */
 export function levelReward(level: number): { kind: 'rank'; name: string; color: string } | { kind: 'freeze' } | null {
   if (level <= 1) return null;
   const r = RANKS.find((x) => x.from === level);
-  return r ? { kind: 'rank', name: r.name, color: r.color } : { kind: 'freeze' };
+  if (r) return { kind: 'rank', name: r.name, color: r.color };
+  return level % FREEZE_EVERY === 0 ? { kind: 'freeze' } : null;
+}
+
+/** from'dan (hariç) to'ya (dahil) atlanırken kazanılan dondurma hakkı sayısı. */
+export function freezesBetween(from: number, to: number) {
+  let n = 0;
+  for (let l = from + 1; l <= to; l++) if (levelReward(l)?.kind === 'freeze') n++;
+  return n;
 }
 
 /** Bir seviyeye ulaşmak için gereken toplam XP. */

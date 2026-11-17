@@ -10,11 +10,11 @@ import { cancelReminder, scheduleAt } from '@/services/notifications';
 import { today } from '@/services/dates';
 import { nextStreakReminder } from '@/services/streakService';
 import { play } from '@/services/sounds';
-import { FREEZES_PER_LEVEL } from '@/services/xp';
+import { freezesBetween } from '@/services/xp';
 
 const REMINDER_ID = 'streak-reminder';
 /**
- * Seviye arttıysa kutlar ve her yeni seviye için dondurma hakkı verir (ayarlara yazılır, seri hesabı okur).
+ * Seviye arttıysa kutlar; dondurma ödüllü seviyeler (her 4. seviye) geçildiyse hak verir (ayarlara yazılır, seri hesabı okur).
  * İlk çalışmada mevcut seviye sessizce kaydedilir: geçmiş seviyeler için toplu hak verilmez.
  */
 async function checkLevelUp() {
@@ -22,10 +22,10 @@ async function checkLevelUp() {
   const rewards = await getSetting('levelRewards');
   if (!rewards) { await setSetting('levelRewards', { level, grants: [] }); return; }
   if (level <= rewards.level) return;
-  const count = (level - rewards.level) * FREEZES_PER_LEVEL;
-  await setSetting('levelRewards', { level, grants: [...rewards.grants, { date: today(), count }] });
+  const count = freezesBetween(rewards.level, level);
+  await setSetting('levelRewards', { level, grants: count ? [...rewards.grants, { date: today(), count }] : rewards.grants });
   play('levelup');
-  toast(`Seviye ${level}! +${count} seri dondurma`);
+  toast(count ? `Seviye ${level}! +${count} seri dondurma` : `Seviye ${level}!`);
 }
 
 /** Görünmez: açılışta, uygulamaya dönünce ve seriyi etkileyen her yazmada seriyi yeniden hesaplar. */

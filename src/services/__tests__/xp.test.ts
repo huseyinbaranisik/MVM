@@ -1,4 +1,4 @@
-import { levelFromXp, levelReward, rankOf, streakXp, totalXp, xpForLevel } from '../xp';
+import { freezesBetween, levelFromXp, levelReward, rankOf, streakXp, totalXp, xpForLevel } from '../xp';
 
 describe('XP', () => {
   it('seviye eşikleri', () => {
@@ -26,7 +26,12 @@ describe('XP', () => {
 
   it('seviye ödülleri ve eşik XP', () => {
     expect(levelReward(1)).toBeNull();
-    expect(levelReward(2)).toEqual({ kind: 'freeze' });
+    expect(levelReward(2)).toBeNull();
+    expect(levelReward(4)).toEqual({ kind: 'freeze' });
+    expect(levelReward(20)).toMatchObject({ kind: 'rank', name: 'Altın' });
+    expect(freezesBetween(1, 3)).toBe(0);
+    expect(freezesBetween(3, 8)).toBe(2);
+    expect(freezesBetween(16, 24)).toBe(1); // 20 rank seviyesi, 24 dondurma
     expect(levelReward(5)).toMatchObject({ kind: 'rank', name: 'Demir' });
     expect(xpForLevel(1)).toBe(0);
     expect(xpForLevel(3)).toBe(250);

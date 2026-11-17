@@ -116,7 +116,7 @@ function Stop({ level, x, y, current, ratio, color }: { level: number; x: number
   const isCurrent = level === current;
   const size = isCurrent ? CURRENT : NODE;
   const reward = levelReward(level);
-  const icon = reward?.kind === 'rank' ? 'military_tech' : reward?.kind === 'freeze' ? 'ac_unit' : 'flag';
+  const icon = reward?.kind === 'rank' ? 'military_tech' : reward?.kind === 'freeze' ? 'ac_unit' : 'star';
   const ring = CURRENT / 2 - 4;
   const circ = 2 * Math.PI * ring;
   return (

@@ -2,7 +2,7 @@
 import { muscles } from '@/data/muscleMap';
 import { seedExercises } from '@/data/seedExercises';
 
-import { builtInExercises, exercisesForMuscles, fromUserRow, musclesOfRegion, regionsOf, sortForLibrary } from '../catalog';
+import { builtInExercises, exercisesForMuscles, fromUserRow, matchesMuscles, musclesOfRegion, regionsOf, sortForLibrary } from '../catalog';
 import { filterFoods, proteinTarget, suggestCalories, sumMacros } from '../nutrition';
 import { buildDayInputs, computeStreak, diffStreakDays, nextStreakReminder } from '../streakService';
 import { adjustRestState, bestsByExercise, exerciseStats, regionVolume } from '../workout';
@@ -147,5 +147,14 @@ describe('yiyecek kategorisi', () => {
     expect(filterFoods(foods, 'süt', 'Süt & Yumurta').map((f) => f.name)).toEqual(['Süt']);
     expect(filterFoods(foods, '', 'Meyve').map((f) => f.name)).toEqual(['Elma']);
     expect(filterFoods(foods, 'SÜT')).toHaveLength(2);
+  });
+});
+
+describe('kas filtresi', () => {
+  it('her seçim karşılanmalı', () => {
+    const bench = ['chest_middle', 'triceps_long', 'delt_front'];
+    expect(matchesMuscles(bench, [])).toBe(true);
+    expect(matchesMuscles(bench, [new Set(['chest_upper', 'chest_middle']), new Set(['triceps_long'])])).toBe(true);
+    expect(matchesMuscles(bench, [new Set(['chest_middle']), new Set(['biceps_long'])])).toBe(false);
   });
 });

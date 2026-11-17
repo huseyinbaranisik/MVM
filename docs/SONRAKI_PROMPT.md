@@ -431,5 +431,10 @@ MVM: Türkçe arayüzlü antrenman + günlük alışkanlık takip uygulaması.
 - [x] G3+G4 `day_schedule_items` (migration 20261117091548), boş ilk kurulum, kaydırmalı antrenman kartı, "Plana ekle" (927cb03). Eski `day_schedule` tablosu v1.0.0 APK için duruyor; v1.1.0 yayınlanınca sil.
 - [x] G5 XP/seviye/rank (3dc7527)
 - [x] G6+G7+G8 profil, Ayarlar (`src/app/settings.tsx`), avatar (migration 20261117092614), ana ekran düzeni (7fbfa36). Fotoğraf yükleme emülatörde denenmedi (galeri boş).
-- [ ] G9 … G20
+- [x] G9+G10 ayrıntılı özet, ±15 düzeltmesi
+- [x] G11+G12 İstatistik ekranı (XP birikim grafiği yapılmadı)
+- [x] G13 kalori birim/kategori (migration 20261117094432; `food_logs.grams` adı APK uyumu için değişmedi)
+- [x] G14 kütüphane: manken↔çip senkronu, bölge/parça çipleri, çoklu seçim (VE), açılır parça listesi, filtreyi sıfırla
+- [x] G15 emoji
+- [ ] G16 İngilizce, G17 giriş ekranı, G18 gizlilik, G19 APK boyutu, G20 teslim
 - Not: Metro OneDrive klasöründe dosya değişikliğini kaçırıyor; emülatörde denerken `npx expo start --clear` ile yeniden başlat.

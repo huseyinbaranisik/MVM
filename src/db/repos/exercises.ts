@@ -58,6 +58,8 @@ export interface ExerciseListItem {
   is_favorite: 0 | 1;
   /** virgülle ayrılmış bölge id'leri */
   regions: string;
+  /** birincil + ikincil kas id'leri */
+  muscles: string[];
 }
 
 /** Kütüphanedeki tüm hareketler (filtreleme ekranda yapılır). Favoriler en üstte, sonra seed ve kullanıcı hareketleri. */
@@ -65,7 +67,7 @@ export async function getExerciseList(): Promise<ExerciseListItem[]> {
   const c = await getCatalog();
   return sortForLibrary(c.list, c.favorites).map((e) => ({
     id: e.id, name_tr: e.name_tr, name_en: e.name_en, equipment: e.equipment, image_key: e.image_key, photo_uri: e.photo_uri,
-    source: e.source, is_favorite: c.favorites.has(e.id) ? 1 : 0, regions: regionsOf(e).join(','),
+    source: e.source, is_favorite: c.favorites.has(e.id) ? 1 : 0, regions: regionsOf(e).join(','), muscles: [...e.primary, ...e.secondary],
   }));
 }
 

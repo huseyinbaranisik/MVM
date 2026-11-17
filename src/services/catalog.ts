@@ -92,3 +92,11 @@ export function exercisesForMuscles(list: CatalogExercise[], muscleIds: Readonly
 }
 
 export const musclesOfRegion = (regionId: string) => new Set(muscles.filter((m) => m.regionId === regionId).map((m) => m.id));
+
+/**
+ * Kas filtresi (VE): seçilen her grup/parça hareket tarafından çalıştırılmalı (birincil ya da ikincil).
+ * groups: her biri bir bölge kümesi (bölge modu) ya da tek kas parçası (parça modu) olan seçimler.
+ */
+export function matchesMuscles(exerciseMuscles: string[], groups: Set<string>[]) {
+  return groups.every((g) => exerciseMuscles.some((m) => g.has(m)));
+}

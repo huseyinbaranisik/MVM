@@ -10,7 +10,8 @@ import { colors } from '@/theme';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const MIN_HIT = 44;
-const STROKE_PX = 1.2; // ekranda kaslar arası ayırıcı çizgi kalınlığı
+const STROKE_PX = 1.2; // parça modunda kaslar arası ayırıcı çizgi kalınlığı
+const FUSE_PX = 4; // bölge modunda aynı bölgenin parçaları arasındaki boşluğu kapatan, aynı tonda kontur
 
 const muscleRegion = new Map(muscles.map((m) => [m.id, m.regionId]));
 
@@ -87,7 +88,7 @@ export function BodyMap({ side, mode, width, primary = [], secondary = [], onPre
           const tone = mode === 'region' ? regionTone.get(muscleRegion.get(m.id)!)! : partTone.get(m.id)!;
           return (
             <MusclePath key={i} id={m.id} d={m.d} clipId={m.clip ? `${side}-clip-${i}` : undefined} tone={tone}
-              level={level(m.id)} seamless={mode === 'region'} strokeWidth={STROKE_PX / scale}
+              level={level(m.id)} seamless={mode === 'region'} strokeWidth={(mode === 'region' ? FUSE_PX : STROKE_PX) / scale}
               unit={unitOf(m.id)} onPress={onPress ? handlePress : undefined} />
           );
         })}
@@ -131,7 +132,7 @@ function ActiveMuscle({ id, unit, d, clipId, tone, level, seamless, strokeWidth,
         d={d}
         clipPath={clipPath}
         fill={fill}
-        stroke={seamless && level === 0 ? tone : colors.background}
+        stroke={seamless ? (level > 0 ? colors.primaryLight : tone) : colors.background}
         strokeWidth={strokeWidth}
         strokeLinejoin="round"
         animatedProps={animatedProps}

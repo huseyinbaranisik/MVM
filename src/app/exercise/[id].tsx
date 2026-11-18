@@ -11,6 +11,7 @@ import { PillButton, SegmentedControl } from '@/components/ui/PillButton';
 import { LoadingScreen } from '@/components/ui/Skeleton';
 import { getExercise, getExerciseHistory } from '@/db/repos/exercises';
 import { useDb } from '@/db/useDb';
+import { niceAxis } from '@/services/stats';
 import { fmtDec } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
 
@@ -92,7 +93,7 @@ export default function ExerciseDetailScreen() {
                   rulesColor={colors.divider}
                   yAxisTextStyle={styles.axis}
                   xAxisLabelTextStyle={styles.axis}
-                  noOfSections={4}
+                  {...chartAxis(history.map((h) => h[metric]))}
                   curved
                 />
               ) : null}
@@ -163,3 +164,14 @@ const styles = StyleSheet.create({
   bullet: { ...type.body, color: colors.accentMuted, width: 20 },
   axis: { color: colors.textSecondary, fontSize: 10 },
 });
+
+/** Yuvarlak adımlı eksen; dar aralıkta (ağırlıklar) veriye yakın başlar. */
+function chartAxis(values: number[]) {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const a = niceAxis(min, Math.max(max, min + 1), 4, !(min > 0 && max - min < min * 0.5));
+  return {
+    noOfSections: 4, maxValue: a.max - a.offset, stepValue: a.step, yAxisOffset: a.offset,
+    yAxisLabelTexts: a.labels.map((v) => fmtDec(v, Number.isInteger(v) ? 0 : 1)),
+  };
+}

@@ -32,3 +32,22 @@ export function weeklyTotals(points: Point[], from: DateStr, to: DateStr): Point
   }
   return [...out].map(([date, value]) => ({ date, value }));
 }
+
+/**
+ * Grafik ekseni için yuvarlak değerler: adım 1, 2, 2,5 ya da 5'in on katları; alt sınır adımın katı.
+ * fromZero: çubuk grafikler ve geniş aralıklı seriler sıfırdan başlar; dar aralıklılar (kilo) veriye yakın başlar.
+ */
+export function niceAxis(min: number, max: number, sections = 3, fromZero = true) {
+  const niceStep = (raw: number) => {
+    const p = 10 ** Math.floor(Math.log10(raw));
+    return ([1, 2, 2.5, 5, 10].find((m) => m * p >= raw) ?? 10) * p;
+  };
+  const lo0 = fromZero ? 0 : min;
+  let step = niceStep(Math.max(1, (max - lo0) / sections));
+  let lo = fromZero ? 0 : Math.floor(min / step) * step;
+  while (lo + step * sections < max) {
+    step = niceStep(step * 1.01);
+    lo = fromZero ? 0 : Math.floor(min / step) * step;
+  }
+  return { offset: lo, step, max: lo + step * sections, labels: Array.from({ length: sections + 1 }, (_, i) => lo + step * i) };
+}

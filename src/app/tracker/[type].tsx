@@ -13,6 +13,7 @@ import { getLatestMeasurement, getTrackerHistory, getTrackerSettings, type Track
 import { useDb } from '@/db/useDb';
 import { addDays, today } from '@/services/dates';
 import { formatDuration, type SleepDisplay } from '@/services/sleep';
+import { niceAxis } from '@/services/stats';
 import { fmtDec, stepsToKm, strideCm, waterToDisplay, type StepUnit, type WaterUnit } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
 
@@ -69,7 +70,7 @@ export default function TrackerHistory() {
   const chartW = width - spacing.lg * 2 - spacing.lg * 2 - 40;
   const spacingPx = 4;
   const barW = Math.max(4, (chartW - spacingPx * n) / n);
-  const maxValue = Math.max(goal * 1.2, ...bars.map((b) => b.value)) || 1;
+  const axis = niceAxis(0, Math.max(goal * 1.1, ...bars.map((b) => b.value)) || 1, 4);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -91,7 +92,8 @@ export default function TrackerHistory() {
             barWidth={barW}
             spacing={spacingPx}
             initialSpacing={spacingPx}
-            maxValue={maxValue}
+            maxValue={axis.max}
+            stepValue={axis.step}
             noOfSections={4}
             barBorderRadius={3}
             yAxisThickness={0}
@@ -100,7 +102,7 @@ export default function TrackerHistory() {
             rulesColor={colors.divider}
             yAxisTextStyle={styles.axis}
             xAxisLabelTextStyle={styles.axis}
-            formatYLabel={(v: string) => fmtDec(Number(v), 1)}
+            yAxisLabelTexts={axis.labels.map((v) => fmtDec(v, Number.isInteger(v) ? 0 : 1))}
             showReferenceLine1
             referenceLine1Position={goal}
             referenceLine1Config={{ color: colors.accent, dashWidth: 6, dashGap: 4, thickness: 1 }}

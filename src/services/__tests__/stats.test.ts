@@ -18,3 +18,15 @@ describe('istatistik', () => {
     expect(w).toEqual([{ date: '2026-11-02', value: 0 }, { date: '2026-11-09', value: 0 }, { date: '2026-11-16', value: 3 }]);
   });
 });
+
+describe('niceAxis', () => {
+  it('yuvarlak adımlar ve aralığı kapsar', () => {
+    const { niceAxis } = jest.requireActual('../stats') as typeof import('../stats');
+    expect(niceAxis(0, 1, 3).labels).toEqual([0, 1, 2, 3]);
+    expect(niceAxis(0, 9800, 3).labels).toEqual([0, 5000, 10000, 15000]);
+    const w = niceAxis(95, 120, 3, false);
+    expect(w.labels.every((v) => Number.isInteger(v))).toBe(true);
+    expect(w.offset).toBeLessThanOrEqual(95);
+    expect(w.max).toBeGreaterThanOrEqual(120);
+  });
+});

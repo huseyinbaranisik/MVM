@@ -25,6 +25,7 @@ import { formatLongTR, today } from '@/services/dates';
 import { DEFAULT_LAYOUT, toRows, type HomeCardId, type HomeCardSize } from '@/services/homeLayout';
 import { startStepTracking } from '@/services/steps';
 import { autoConnectHealthConnect } from '@/services/healthConnect';
+import { syncStepCounter } from '@/services/stepCounter';
 import { syncStepsFromHealthConnect } from '@/services/stepSync';
 import { useAppStore } from '@/stores/useAppStore';
 import { colors, radius, spacing, type } from '@/theme';
@@ -43,26 +44,31 @@ export default function TodayScreen() {
   const level = useDb(getLevel, [], XP_TABLES)?.level;
   const [morningPrompt, setMorningPrompt] = useState(false);
 
-  // Adımlar otomatik: Health Connect varsa ilk açılışta izni kendiliğinden istenir. Bağlıysa telefonun arka planda saydığı adımlar (açılışta, uygulamaya dönünce ve dakikada bir) alınır;
-  // değilse uygulama açıkken telefon sensörü sayar. İkisi birlikte çalışmaz, yoksa adımlar iki kez sayılır.
+  // Adımlar: telefonun donanım adım sayacı uygulama kapalıyken de sayar; açılışta, uygulamaya dönünce ve 15 sn'de bir okunur,
+  // aradaki fark eklenir. Health Connect bağlıysa ondaki günlük toplam daha yüksekse günü yükseltir (saat vb. kaynaklar);
+  // yükseltme olduğu için iki kaynak adımları iki kez saymaz. Sayaç yoksa (Expo Go) uygulama açıkken sensör sayar.
   useEffect(() => {
     let stop: (() => void) | null = null;
     let cancelled = false;
-    let timer: ReturnType<typeof setInterval> | null = null;
-    const appSub = AppState.addEventListener('change', (st) => { if (st === 'active') syncStepsFromHealthConnect(); });
-    autoConnectHealthConnect().then(() => syncStepsFromHealthConnect()).then(async (health) => {
-      if (cancelled) return;
-      if (health) {
-        setStepSensor('health');
-        timer = setInterval(() => syncStepsFromHealthConnect(1), 60_000);
-        return;
-      }
-      const s = await startStepTracking((delta) => addTrackerValue('steps', today(), delta));
-      if (cancelled) { s?.(); return; }
-      stop = s;
-      setStepSensor(s ? 'on' : 'off');
+    const timers: ReturnType<typeof setInterval>[] = [];
+    const appSub = AppState.addEventListener('change', (st) => {
+      if (st === 'active') { syncStepCounter(); syncStepsFromHealthConnect(); }
     });
-    return () => { cancelled = true; stop?.(); appSub.remove(); if (timer) clearInterval(timer); };
+    (async () => {
+      const counter = await syncStepCounter();
+      await autoConnectHealthConnect();
+      const health = await syncStepsFromHealthConnect();
+      if (cancelled) return;
+      if (health) timers.push(setInterval(() => syncStepsFromHealthConnect(1), 60_000));
+      if (counter) timers.push(setInterval(syncStepCounter, 15_000));
+      else {
+        const s = await startStepTracking((delta) => addTrackerValue('steps', today(), delta));
+        if (cancelled) { s?.(); return; }
+        stop = s;
+      }
+      setStepSensor(health ? 'health' : counter || stop ? 'on' : 'off');
+    })();
+    return () => { cancelled = true; stop?.(); appSub.remove(); timers.forEach(clearInterval); };
   }, [setStepSensor, healthTick]);
 
   // Sabah ilk açılışta "Dün gece nasıl uyudun?" (04:00–12:00, bugün kayıt yoksa, günde bir kez)

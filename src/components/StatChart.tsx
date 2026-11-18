@@ -3,7 +3,7 @@ import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
 
 import { fmtDec } from '@/services/units';
-import { summarize, type Point } from '@/services/stats';
+import { niceAxis, summarize, type Point } from '@/services/stats';
 import { colors, radius, spacing, type } from '@/theme';
 
 const label = (d: string) => `${Number(d.slice(8))}.${Number(d.slice(5, 7))}`;
@@ -22,8 +22,13 @@ export function StatChart({ title, unit, points, color, goal, bars, digits = 0, 
   const data = points.map((p, i) => ({ value: p.value, label: i % every === 0 ? label(p.date) : '' }));
   const min = points.length ? Math.min(...points.map((p) => p.value), goal ?? Infinity) : 0;
   const max = points.length ? Math.max(...points.map((p) => p.value), goal ?? 0) : 0;
-  // kilo/boy gibi dar aralıklı seriler ekrana yayılsın: alt sınırı yukarı çek
-  const offset = !bars && min > 0 && max - min < min * 0.3 ? Math.floor(min - (max - min) * 0.2 - 1) : 0;
+  // kilo/boy gibi dar aralıklı seriler ekrana yayılsın: alt sınır veriye yakın; eksen her zaman yuvarlak adımlarla
+  const narrow = !bars && min > 0 && max - min < min * 0.3;
+  const axis = niceAxis(min, Math.max(max, min + 1), 3, !narrow);
+  const axisProps = {
+    noOfSections: 3, maxValue: axis.max - axis.offset, stepValue: axis.step, yAxisOffset: axis.offset,
+    yAxisLabelTexts: axis.labels.map((v) => fmtDec(v, Number.isInteger(v) ? 0 : 1)),
+  };
 
   return (
     <View style={styles.card}>
@@ -41,12 +46,12 @@ export function StatChart({ title, unit, points, color, goal, bars, digits = 0, 
           {points.length >= 2 || (points.length && goal != null && !bars) ? (bars ? (
             <BarChart data={data} width={chartWidth} height={height} frontColor={color} barWidth={Math.max(6, Math.min(22, chartWidth / points.length - 6))}
               spacing={Math.max(3, Math.min(14, chartWidth / points.length / 3))} yAxisThickness={0} xAxisColor={colors.divider}
-              rulesColor={colors.divider} yAxisTextStyle={styles.axis} xAxisLabelTextStyle={styles.axis} noOfSections={3} barBorderRadius={4} />
+              rulesColor={colors.divider} yAxisTextStyle={styles.axis} xAxisLabelTextStyle={styles.axis} {...axisProps} barBorderRadius={4} />
           ) : (
             <LineChart data={data} width={chartWidth} height={height} color={color} dataPointsColor={color} thickness={2}
               spacing={Math.max(8, chartWidth / Math.max(1, points.length - 1))} initialSpacing={8} hideDataPoints={points.length > 31}
               yAxisThickness={0} xAxisColor={colors.divider} rulesColor={colors.divider} yAxisTextStyle={styles.axis}
-              xAxisLabelTextStyle={styles.axis} noOfSections={3} yAxisOffset={offset} curved
+              xAxisLabelTextStyle={styles.axis} {...axisProps} curved
               showReferenceLine1={goal != null} referenceLine1Position={goal ?? 0}
               referenceLine1Config={{ color: colors.accent, type: 'solid', thickness: 2, labelText: goal != null ? `Hedef ${fmt(goal)}` : undefined,
                 labelTextStyle: styles.goalLabel }} />

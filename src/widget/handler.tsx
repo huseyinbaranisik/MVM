@@ -4,6 +4,7 @@ import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
 
 import { addTrackerValue } from '@/db/repos/trackers';
 import { today } from '@/services/dates';
+import { syncStepCounter } from '@/services/stepCounter';
 import { getWidgetData } from '@/widget/data';
 import { TodayWidget } from '@/widget/TodayWidget';
 
@@ -13,6 +14,8 @@ export const WIDGET_NAME = 'Today';
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
   if (props.widgetAction === 'WIDGET_DELETED') return;
   try {
+    // widget yenilenirken (30 dk'da bir ve dokununca) donanım sayacını da oku: uygulama hiç açılmasa da adımlar güne düşer
+    if (props.widgetAction === 'WIDGET_UPDATE' || props.widgetAction === 'WIDGET_CLICK') await syncStepCounter().catch(() => false);
     if (props.widgetAction === 'WIDGET_CLICK' && props.clickAction === 'ADD_WATER') {
       const d = await getWidgetData();
       if (d.signedIn) await addTrackerValue('water', today(), d.glassMl);

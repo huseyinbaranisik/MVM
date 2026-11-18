@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 
+import { usePullRefresh } from '@/components/PullRefresh';
 import { BackHeader } from '@/components/exercise';
 import { Icon } from '@/components/Icon';
 import { LoadingScreen } from '@/components/ui/Skeleton';
@@ -24,6 +25,7 @@ const XP_SOURCES: [string, number][] = [
 
 /** Seviye yolu: aşağıdan yukarı dik uzanan yol; her seviye bir durak, rank başlarında bant, ödüller durakta. */
 export default function LevelPath() {
+  const refresh = usePullRefresh();
   const lv = useDb(getLevel, [], XP_TABLES);
   const { width, height } = useWindowDimensions();
   const scroll = useRef<ScrollViewInstance>(null);
@@ -67,7 +69,7 @@ export default function LevelPath() {
           <Text style={type.caption}>{fmtInt(lv.intoLevel)} / {fmtInt(lv.needed)} XP · toplam {fmtInt(lv.total)}</Text>
         </View>
       </View>
-      <ScrollView ref={scroll} contentContainerStyle={styles.body} onContentSizeChange={() => {
+      <ScrollView ref={scroll} refreshControl={refresh} contentContainerStyle={styles.body} onContentSizeChange={() => {
         // açılışta mevcut seviyeyi ekranın ortasına getir
         if (scrolled.current) return;
         scrolled.current = true;

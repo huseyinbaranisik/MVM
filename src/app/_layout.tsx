@@ -1,13 +1,12 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@supabase/supabase-js';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Icon } from '@/components/Icon';
-import { BRAND, Logo } from '@/components/Logo';
+import { Splash, SplashStill } from '@/components/Splash';
 import { SignIn } from '@/components/SignIn';
 import { StreakSync } from '@/components/StreakSync';
 import { WidgetSync } from '@/components/WidgetSync';
@@ -23,26 +22,6 @@ const navTheme = {
   ...(colors.dark ? DarkTheme : DefaultTheme),
   colors: { ...(colors.dark ? DarkTheme : DefaultTheme).colors, background: colors.background, card: colors.background, primary: colors.primaryLight, text: colors.textPrimary, border: colors.divider },
 };
-
-/** Açılış/yükleme ekranı: yerel açılış ekranıyla aynı zeminde nefes alan logo ve kayan çizgi. */
-function Loading() {
-  const pulse = useSharedValue(0);
-  const bar = useSharedValue(0);
-  useEffect(() => {
-    pulse.set(withRepeat(withSequence(withTiming(1, { duration: 700, easing: Easing.inOut(Easing.quad) }),
-      withTiming(0, { duration: 700, easing: Easing.inOut(Easing.quad) })), -1));
-    bar.set(withRepeat(withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.cubic) }), -1));
-  }, [pulse, bar]);
-  const logo = useAnimatedStyle(() => ({ transform: [{ scale: 1 + pulse.get() * 0.06 }] }));
-  const slide = useAnimatedStyle(() => ({ transform: [{ translateX: -48 + bar.get() * 144 }] }));
-  return (
-    <View style={styles.loading} accessibilityLabel="Yükleniyor">
-      <Animated.View style={logo}><Logo size={120} /></Animated.View>
-      <Text style={styles.word}>MVM</Text>
-      <View style={styles.track}><Animated.View style={[styles.slider, slide]} /></View>
-    </View>
-  );
-}
 
 /** Uygulamanın kendi hata ekranı (Expo Router, render hatalarında bunu gösterir). */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -64,24 +43,32 @@ function AuthGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState<string | null>(null); // kurulumu tamamlanan kullanıcı id'si
   const [failed, setFailed] = useState(false);
   const userId = session?.user.id ?? null;
+  // kurulum bir kez yapılır: sonraki açılışlarda sunucuya sormadan hemen başla
+  const setupKey = `mvm.setupDone.${userId}`;
+  const setupDone = !!userId && globalThis.localStorage?.getItem(setupKey) === '1';
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => { setSession(s); notify('*'); });
+    // ilk oturum ve token yenileme olaylarında her şeyi yeniden yükletme: açılışta tüm sorgular iki kez çalışıyordu
+    const { data } = supabase.auth.onAuthStateChange((e, s) => {
+      setSession(s);
+      if (e === 'SIGNED_IN' || e === 'SIGNED_OUT' || e === 'USER_UPDATED') notify('*');
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || setupDone) return;
     let alive = true;
-    ensureUserData().then(() => { if (alive) { setFailed(false); setReady(userId); } }, (e) => {
-      console.warn('Hesap kurulamadı', e);
-      if (alive) setFailed(true);
-    });
+    ensureUserData().then(() => { globalThis.localStorage?.setItem(setupKey, '1'); })
+      .then(() => { if (alive) { setFailed(false); setReady(userId); } }, (e) => {
+        console.warn('Hesap kurulamadı', e);
+        if (alive) setFailed(true);
+      });
     return () => { alive = false; };
-  }, [userId, failed]);
+  }, [userId, failed, setupDone, setupKey]);
 
-  if (session === undefined) return <Loading />;
+  if (session === undefined) return <SplashStill />;
   if (!session) return <SignIn />;
   if (failed) {
     return (
@@ -93,11 +80,13 @@ function AuthGate({ children }: { children: ReactNode }) {
       </View>
     );
   }
-  if (ready !== userId) return <Loading />;
+  if (!setupDone && ready !== userId) return <SplashStill />;
   return <>{children}</>;
 }
 
 export default function RootLayout() {
+  const [splash, setSplash] = useState(true);
+  const endSplash = useCallback(() => setSplash(false), []);
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <ThemeProvider value={navTheme}>
@@ -112,16 +101,14 @@ export default function RootLayout() {
         </AuthGate>
         <OverlayHost />
       </ThemeProvider>
+      {/* açılış animasyonu her açılışta tam süre oynar; uygulama altında yüklenmeye devam eder */}
+      {splash ? <Splash onDone={endSplash} /> : null}
       <StatusBar style={colors.dark ? 'light' : 'dark'} />
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, backgroundColor: BRAND.bg, alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
-  word: { color: BRAND.mark, fontSize: 22, fontWeight: '800', letterSpacing: 6 },
-  track: { width: 96, height: 4, borderRadius: 2, backgroundColor: 'rgba(246,238,226,0.15)', overflow: 'hidden', marginTop: spacing.md },
-  slider: { width: 48, height: 4, borderRadius: 2, backgroundColor: BRAND.top },
   error: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, padding: spacing.xxl },
   center: { textAlign: 'center' },
 });

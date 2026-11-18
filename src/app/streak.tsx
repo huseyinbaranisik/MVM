@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { usePullRefresh } from '@/components/PullRefresh';
 import { Icon } from '@/components/Icon';
 import { LevelBar } from '@/components/LevelCard';
 import { pickTime, toast } from '@/components/ui/overlays';
@@ -20,6 +21,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const DAY_COLOR = { completed: colors.primaryLight, frozen: colors.ice, missed: colors.surface } as const;
 
 export default function StreakScreen() {
+  const refresh = usePullRefresh();
   const now = today();
   const [month, setMonth] = useState(now.slice(0, 7)); // 'YYYY-MM'
   const first = `${month}-01`;
@@ -56,7 +58,7 @@ export default function StreakScreen() {
         </Pressable>
         <Text style={type.title}>Seri</Text>
       </View>
-      <ScrollView contentContainerStyle={styles.body}>
+      <ScrollView refreshControl={refresh} contentContainerStyle={styles.body}>
         <View style={styles.stats}>
           <Stat icon="local_fire_department" color={colors.primaryLight} label="Güncel seri" value={`${data.state.current} gün`} />
           <Stat icon="emoji_events" color={colors.warning} label="En uzun" value={`${data.state.longest} gün`} />

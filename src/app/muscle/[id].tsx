@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { usePullRefresh } from '@/components/PullRefresh';
 import { BodyMap } from '@/components/BodyMap';
 import { AddToProgramSheet, BackHeader, EQUIPMENT_TR, ExerciseRow } from '@/components/exercise';
 import { Icon } from '@/components/Icon';
@@ -14,6 +15,7 @@ import { colors, radius, spacing, type } from '@/theme';
 
 /** id bir bölge (ör. "chest") veya kas parçası (ör. "chest_upper") olabilir. */
 export default function MuscleDetail() {
+  const refresh = usePullRefresh();
   const { id } = useLocalSearchParams<{ id: string }>();
   const region = regions.find((r) => r.id === id);
   const muscle = muscles.find((m) => m.id === id);
@@ -29,7 +31,7 @@ export default function MuscleDetail() {
   return (
     <View style={styles.screen}>
       <BackHeader title={region ? region.nameTr : muscle!.nameTr} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView refreshControl={refresh} contentContainerStyle={styles.content}>
         <View style={styles.top}>
           <BodyMap side={parentRegion.side} mode="part" width={110} primary={highlight} />
           <View style={styles.flex}>

@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { usePullRefresh } from '@/components/PullRefresh';
 import { BodyMap, FlipView, useFlip, type MapMode } from '@/components/BodyMap';
 import { EQUIPMENT_TR, ExerciseRow } from '@/components/exercise';
 import { TAB_BAR_HEIGHT } from '@/components/FloatingTabBar';
@@ -24,6 +25,7 @@ const groupOfRegion = (regionId: string) => filterGroups.find((g) => g.regionIds
 const muscleName = new Map(muscles.map((m) => [m.id, m.nameTr]));
 
 export default function LibraryScreen() {
+  const refresh = usePullRefresh();
   const { width } = useWindowDimensions();
   const list = useDb(() => getExerciseList(), [], ['user_exercises', 'exercise_favorites']);
   const { side, flip, style } = useFlip();
@@ -120,6 +122,7 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <FlatList
+        refreshControl={refresh}
         data={filtered}
         keyExtractor={(e) => e.id}
         ListHeaderComponent={header}

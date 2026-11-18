@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 
+import { usePullRefresh } from '@/components/PullRefresh';
 import { BodyMapPair } from '@/components/BodyMap';
 import { AddToProgramSheet, BackHeader, EQUIPMENT_TR, exerciseImageSource, FavoriteButton } from '@/components/exercise';
 import { toast } from '@/components/ui/overlays';
@@ -18,6 +19,7 @@ import { colors, radius, spacing, type } from '@/theme';
 type Metric = 'maxKg' | 'e1rm' | 'volume';
 
 export default function ExerciseDetailScreen() {
+  const refresh = usePullRefresh();
   const [metric, setMetric] = useState<Metric>('maxKg');
   const { id: raw } = useLocalSearchParams<{ id: string }>();
   const id = decodeURIComponent(raw);
@@ -42,7 +44,7 @@ export default function ExerciseDetailScreen() {
   return (
     <View style={styles.flex}>
       <BackHeader title={e.name_tr} right={<FavoriteButton id={e.id} name={e.name_tr} favorite={e.is_favorite} />} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView refreshControl={refresh} contentContainerStyle={styles.content}>
         {src ? (
           <View>
             <Image source={src} style={styles.image} contentFit="cover" transition={300} accessibilityLabel={`${e.name_tr} ${frame ? 'bitiş' : 'başlangıç'} pozisyonu`} />

@@ -37,9 +37,9 @@ MVM is a personal Android app that keeps a strength-training program and the sma
 
 ## Home screen widget
 
-<p align="center"><img src="assets/widget.png" alt="Fig. 4: the MVM widget on the Android home screen at three sizes. Left: today's programs with a mini body map; right: rings for water, steps, calories and sleep; top right: the streak; bottom: level and XP bar." width="100%"></p>
+<p align="center"><img src="assets/widget.png" alt="Fig. 4: the MVM widget on the Android home screen at 3×2 and 4×2. Left: today's programs with a mini body map; right: rings for water, steps, calories and sleep; top right: the streak; bottom: level and XP bar." width="100%"></p>
 
-<p align="center"><sub><b>Fig. 4</b> · The widget at 3×1, 3×2 and 4×2 on the emulator, filled with sample data from a demo build (<code>EXPO_PUBLIC_WIDGET_DEMO=1</code>), because the test account cannot sign in on the emulator build.</sub></p>
+<p align="center"><sub><b>Fig. 4</b> · The widget at 3×2 and 4×2 on the emulator (3×1 is a single row: plans, water and step rings, streak), filled with sample data from a demo build (<code>EXPO_PUBLIC_WIDGET_DEMO=1</code>), because the test account cannot sign in on the emulator build.</sub></p>
 
 Long-press the home screen → Widgets → MVM. Today's programs are on the left (a workout shows the muscles it trains), the rings on the right, the streak in the top corner and the level with its XP bar at the bottom. Tapping the water ring adds a glass without opening the app; anything else opens it. The widget redraws whenever the app writes something it shows, and every 30 minutes.
 
@@ -165,7 +165,7 @@ MVM, bir kuvvet antrenmanı programını ve çevresindeki küçük günlük alı
 
 ### Ana ekran widget'ı
 
-Ana ekrana uzun bas → Widget'lar → MVM. Boyutu 3×1, 3×2 ya da 4×2 olabilir (Şekil 4). Solda günün programları (antrenmanda çalışan kaslar mini mankende), sağda halkalar, köşede seri, altta seviye ve XP çubuğu. Su halkasına dokununca uygulamayı açmadan bir bardak eklenir; başka bir yere dokununca uygulama açılır. Şekil 4'teki veriler örnek veridir: emülatör sürümünde test hesabıyla giriş yapılmadığı için widget `EXPO_PUBLIC_WIDGET_DEMO=1` ile derlenen sürümle görüntülendi.
+Ana ekrana uzun bas → Widget'lar → MVM. Boyutu 3×1, 3×2 ya da 4×2 olabilir (Şekil 4'te 3×2 ve 4×2; 3×1 tek satır: programlar, su ve adım halkası, seri). Solda günün programları (antrenmanda çalışan kaslar mini mankende), sağda halkalar, köşede seri, altta seviye ve XP çubuğu. Su halkasına dokununca uygulamayı açmadan bir bardak eklenir; başka bir yere dokununca uygulama açılır. Şekil 4'teki veriler örnek veridir: emülatör sürümünde test hesabıyla giriş yapılmadığı için widget `EXPO_PUBLIC_WIDGET_DEMO=1` ile derlenen sürümle görüntülendi.
 
 ### Nasıl çalışıyor
 

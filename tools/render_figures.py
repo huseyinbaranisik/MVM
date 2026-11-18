@@ -178,6 +178,10 @@ def widget():
         print("widget captures missing, skipping widget.png")
         return
     ims = [src(n).convert("RGBA") for n, _ in names]
+    # kırpmadaki duvar kağıdı kenarlarını at: birkaç piksel içeri al, köşeleri yuvarla
+    ims = [im.crop((12, 12, im.width - 12, im.height - 12)) for im in ims]
+    for im in ims:
+        im.putalpha(rounded_mask(im.size, 46))
     scale = 0.62
     ims = [im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS) for im in ims]
     gap = 60

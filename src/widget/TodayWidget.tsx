@@ -62,14 +62,14 @@ export function TodayWidget({ data, size }: { data: WidgetData; size?: WidgetSiz
     <FlexWidget clickAction="OPEN_APP" style={{ ...box, padding: pad }}>
       <FlexWidget style={{ flexDirection: 'row', width: 'match_parent', height: bodyH, flexGap: 8 }}>
         <Plans plans={data.plans} width={leftW} height={bodyH} layout={L} />
+        {/* widget kütüphanesi React Fragment desteklemiyor: tek satır düzeninin iki parçası ayrı koşullarla */}
         {L === 'row' ? (
-          <>
-            <FlexWidget style={{ flex: 1, height: 'match_parent', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
-              {rings.map((r) => <Ring key={r.key} r={r} size={ring} layout={L} />)}
-            </FlexWidget>
-            <FlexWidget style={{ width: 30, height: 'match_parent', alignItems: 'flex-end' }}>{streak}</FlexWidget>
-          </>
-        ) : (
+          <FlexWidget style={{ flex: 1, height: 'match_parent', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
+            {rings.map((r) => <Ring key={r.key} r={r} size={ring} layout={L} />)}
+          </FlexWidget>
+        ) : null}
+        {L === 'row' ? <FlexWidget style={{ width: 30, height: 'match_parent', alignItems: 'flex-end' }}>{streak}</FlexWidget> : null}
+        {L === 'row' ? null : (
           <FlexWidget style={{ flex: 1, height: 'match_parent' }}>
             <FlexWidget style={{ width: 'match_parent', height: 18, alignItems: 'flex-end' }}>{streak}</FlexWidget>
             {[0, 2].map((i) => (

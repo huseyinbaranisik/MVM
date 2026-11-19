@@ -1,6 +1,7 @@
 import { seedFoods, type FoodCategory, type FoodUnit } from '@/data/foods';
 import { notify } from '@/db/bus';
 import { must, supabase } from '@/db/supabase';
+import { t } from '@/i18n';
 
 /** id: hazır yiyecekler "s<sıra>", kullanıcının eklediği "u<id>" */
 export interface Food {
@@ -11,7 +12,7 @@ export interface Food {
 /** Öğün kaydı; kalori ve makrolar gram üzerinden hesaplanmış halde. */
 export interface FoodLog { id: number; name: string; grams: number; unit: FoodUnit; kcal: number; protein: number; fat: number; carbs: number }
 
-const BUILT_IN: Food[] = seedFoods.map(([name, kcal, protein, fat, carbs, unit, category], i) => ({ id: `s${i}`, name, kcal, protein, fat, carbs, unit, category, source: 'seed' }));
+const BUILT_IN: Food[] = seedFoods.map(([name, kcal, protein, fat, carbs, unit, category], i) => ({ id: `s${i}`, name: t(name), kcal, protein, fat, carbs, unit, category, source: 'seed' }));
 
 /** Kullanıcının eklediği yiyecekler önce. Arama ekranda yapılır (Türkçe harf duyarlı). */
 export async function getFoods(): Promise<Food[]> {

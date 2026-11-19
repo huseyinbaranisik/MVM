@@ -13,6 +13,7 @@ import { createTemplate, getTemplates, MAX_TEMPLATES } from '@/db/repos/template
 import { useDb } from '@/db/useDb';
 import { today, weekday, WEEKDAYS_SHORT_TR, WEEKDAYS_TR } from '@/services/dates';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 export default function ProgramScreen() {
   const data = useDb(async () => ({ week: await getWeekPlan(), templates: await getTemplates() }), [], ['day_schedule_items', 'workout_templates', 'template_exercises']);
@@ -24,8 +25,8 @@ export default function ProgramScreen() {
 
   const newTemplate = async (assignTo?: number) => {
     let id: number;
-    try { id = await createTemplate('Yeni antrenman'); } catch (e) {
-      toast(e instanceof Error ? e.message : 'Şablon oluşturulamadı');
+    try { id = await createTemplate(t('Yeni antrenman')); } catch (e) {
+      toast(e instanceof Error ? e.message : t('Şablon oluşturulamadı'));
       return;
     }
     if (assignTo != null) await addDayItem(assignTo, 'workout', id);
@@ -35,11 +36,11 @@ export default function ProgramScreen() {
 
   return (
     <Screen>
-      <Text style={type.hero}>Program</Text>
+      <Text style={type.hero}>{t('Program')}</Text>
       <View style={styles.card}>
         {data?.week.map((d) => {
           const workouts = d.items.filter((i) => i.kind === 'workout');
-          const title = d.items.length ? d.items.map(dayItemName).join(' + ') : 'Plan yok';
+          const title = d.items.length ? d.items.map(dayItemName).join(' + ') : t('Plan yok');
           return (
             <Pressable key={d.weekday} onPress={() => setAssigning(d.weekday)} style={styles.row} accessibilityRole="button"
               accessibilityLabel={`${WEEKDAYS_TR[d.weekday]}: ${title}`}>
@@ -58,16 +59,16 @@ export default function ProgramScreen() {
       </View>
 
       <View style={styles.titleRow}>
-        <Text style={[type.title, styles.flex]}>Şablonlar</Text>
+        <Text style={[type.title, styles.flex]}>{t('Şablonlar')}</Text>
         <Text style={type.caption}>{data?.templates.length ?? 0}/{MAX_TEMPLATES}</Text>
-        <PillButton label="+ Yeni" onPress={() => newTemplate()} disabled={(data?.templates.length ?? 0) >= MAX_TEMPLATES} />
+        <PillButton label={t('+ Yeni')} onPress={() => newTemplate()} disabled={(data?.templates.length ?? 0) >= MAX_TEMPLATES} />
       </View>
       <View style={styles.card}>
-        {data?.templates.map((t) => (
-          <Pressable key={t.id} onPress={() => router.push(`/template/${t.id}`)} style={styles.row} accessibilityRole="button">
+        {data?.templates.map((tp) => (
+          <Pressable key={tp.id} onPress={() => router.push(`/template/${tp.id}`)} style={styles.row} accessibilityRole="button">
             <View style={styles.flex}>
-              <Text style={type.subtitle} numberOfLines={1}>{t.name}</Text>
-              <Text style={type.caption}>{t.exerciseCount} hareket</Text>
+              <Text style={type.subtitle} numberOfLines={1}>{tp.name}</Text>
+              <Text style={type.caption}>{t('{n} hareket', { n: tp.exerciseCount })}</Text>
             </View>
             <Icon name="chevron_right" color={colors.textSecondary} />
           </Pressable>
@@ -76,15 +77,15 @@ export default function ProgramScreen() {
 
       <Sheet visible={assigning != null} onClose={() => setAssigning(null)} title={assigning != null ? WEEKDAYS_TR[assigning] : ''}>
         {dayItems.map((i) => (
-          <SheetRow key={i.id} label={dayItemName(i)} value="Kaldır" onPress={() => removeDayItem(i.id)} />
+          <SheetRow key={i.id} label={dayItemName(i)} value={t('Kaldır')} onPress={() => removeDayItem(i.id)} />
         ))}
         {dayItems.length ? <View style={styles.divider} /> : null}
-        {data?.templates.filter((t) => !has('workout', t.id)).map((t) => (
-          <SheetRow key={t.id} label={`+ ${t.name}`} value={`${t.exerciseCount} hareket`} onPress={() => addDayItem(day, 'workout', t.id)} />
+        {data?.templates.filter((tp) => !has('workout', tp.id)).map((tp) => (
+          <SheetRow key={tp.id} label={`+ ${tp.name}`} value={t('{n} hareket', { n: tp.exerciseCount })} onPress={() => addDayItem(day, 'workout', tp.id)} />
         ))}
-        {has('walk') ? null : <SheetRow label="+ Yürüyüş" onPress={() => addDayItem(day, 'walk')} />}
-        {has('rest') ? null : <SheetRow label="Dinlenme günü" onPress={() => addDayItem(day, 'rest')} />}
-        <SheetRow label="+ Yeni şablon" onPress={() => newTemplate(day)} />
+        {has('walk') ? null : <SheetRow label={t('+ Yürüyüş')} onPress={() => addDayItem(day, 'walk')} />}
+        {has('rest') ? null : <SheetRow label={t('Dinlenme günü')} onPress={() => addDayItem(day, 'rest')} />}
+        <SheetRow label={t('+ Yeni şablon')} onPress={() => newTemplate(day)} />
       </Sheet>
     </Screen>
   );

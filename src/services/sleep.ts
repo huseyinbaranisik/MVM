@@ -1,3 +1,4 @@
+import { isEn, locale } from '@/i18n';
 // Saatler 'HH:MM'. Uyku kaydı uyanılan güne aittir.
 
 export type SleepDisplay = 'hm' | 'decimal';
@@ -16,10 +17,11 @@ export function sleepDuration(bedtime: string, wake: string): number {
 }
 
 export function formatDuration(min: number, display: SleepDisplay = 'hm'): string {
-  if (display === 'decimal') return `${(min / 60).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} s`;
+  const hr = isEn ? 'h' : 's';
+  if (display === 'decimal') return `${(min / 60).toLocaleString(locale, { maximumFractionDigits: 1 })} ${hr}`;
   const h = Math.floor(min / 60);
   const m = Math.round(min % 60);
-  return m ? `${h}s ${m}dk` : `${h}s`;
+  return m ? `${h}${hr} ${m}${isEn ? 'm' : 'dk'}` : `${h}${hr}`;
 }
 
 /** Ortalama yatış saati; gece yarısı etrafında doğru ortalar (23:30 ve 00:30 → 00:00). */

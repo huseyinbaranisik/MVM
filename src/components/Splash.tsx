@@ -4,6 +4,7 @@ import Animated, { Easing, useAnimatedProps, useAnimatedStyle, useSharedValue, w
 import Svg, { Polyline } from 'react-native-svg';
 
 import { BRAND } from '@/components/Logo';
+import { t } from '@/i18n';
 
 const AnimatedPolyline = Animated.createAnimatedComponent(Polyline);
 // Logo ile aynı "M" (src/components/Logo.tsx); çizginin uzunluğu: iki dikey (42) + iki çapraz (26√2)
@@ -36,7 +37,7 @@ export function Splash({ onDone }: { onDone: () => void }) {
   const screen = useAnimatedStyle(() => ({ opacity: fade.get() }));
 
   return (
-    <Animated.View style={[styles.screen, screen]} accessibilityLabel="Yükleniyor">
+    <Animated.View style={[styles.screen, screen]} accessibilityLabel={t('Yükleniyor')}>
       <Animated.View style={grow}>
         <Svg width={SIZE} height={SIZE} viewBox="0 0 100 100">
           <Polyline points={POINTS} fill="none" stroke={BRAND.mark} strokeOpacity={0.14} strokeWidth={13}

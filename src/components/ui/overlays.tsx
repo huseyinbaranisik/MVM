@@ -9,6 +9,7 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Wheel } from '@/components/ui/Wheel';
 import { parseHM, toHM } from '@/services/sleep';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 // Uygulamanın kendi pencereleri: Android'in Alert/saat seçicisi yerine, temaya uygun ve her yerden çağrılabilir.
 interface ConfirmOptions { title: string; message?: string; confirmLabel?: string; cancelLabel?: string; destructive?: boolean }
@@ -58,13 +59,13 @@ export function OverlayHost() {
       <Modal visible={!!dialog} transparent animationType="none" onRequestClose={() => answer(false)} statusBarTranslucent>
         {dialog ? (
           <Animated.View entering={FadeIn.duration(160)} style={styles.dialogBackdrop}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => answer(false)} accessibilityLabel="Vazgeç" />
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => answer(false)} accessibilityLabel={t('Vazgeç')} />
             <Animated.View entering={FadeIn.duration(140)} style={styles.dialog} accessibilityRole="alert">
               <Text style={type.title}>{dialog.title}</Text>
               {dialog.message ? <Text style={[type.body, styles.message]}>{dialog.message}</Text> : null}
               <View style={styles.actions}>
-                <PillButton label={dialog.cancelLabel ?? 'Vazgeç'} onPress={() => answer(false)} style={styles.action} />
-                <PillButton label={dialog.confirmLabel ?? 'Tamam'} variant="primary" onPress={() => answer(true)}
+                <PillButton label={dialog.cancelLabel ?? t('Vazgeç')} onPress={() => answer(false)} style={styles.action} />
+                <PillButton label={dialog.confirmLabel ?? t('Tamam')} variant="primary" onPress={() => answer(true)}
                   style={[styles.action, dialog.destructive && styles.danger]} />
               </View>
             </Animated.View>
@@ -92,13 +93,13 @@ function TimeSheet({ initial, onDone }: { initial: string; onDone: (v: string | 
   // kapanış animasyonu bitsin, sonra sonucu bildir
   const close = (v: string | null) => { setOpen(false); setTimeout(() => onDone(v), 210); };
   return (
-    <Sheet visible={open} onClose={() => close(null)} title="Saat seç">
+    <Sheet visible={open} onClose={() => close(null)} title={t('Saat seç')}>
       <View style={styles.wheels}>
-        <Wheel values={HOURS} value={h} onChange={setH} format={pad} label="Saat" />
+        <Wheel values={HOURS} value={h} onChange={setH} format={pad} label={t('Saat')} />
         <Text style={styles.colon}>:</Text>
-        <Wheel values={MINUTES} value={min} onChange={setMin} format={pad} label="Dakika" />
+        <Wheel values={MINUTES} value={min} onChange={setMin} format={pad} label={t('Dakika')} />
       </View>
-      <PillButton label="Tamam" variant="primary" onPress={() => close(toHM(h * 60 + min))} />
+      <PillButton label={t('Tamam')} variant="primary" onPress={() => close(toHM(h * 60 + min))} />
     </Sheet>
   );
 }

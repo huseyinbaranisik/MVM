@@ -5,15 +5,16 @@ import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } f
 
 import { Icon } from '@/components/Icon';
 import { colors, radius, spacing } from '@/theme';
+import { t } from '@/i18n';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
 
 const TABS: Record<string, { label: string; icon: IconName }> = {
-  index: { label: 'Bugün', icon: 'home' },
-  program: { label: 'Program', icon: 'calendar_month' },
-  profile: { label: 'Profil', icon: 'person' },
-  library: { label: 'Kütüphane', icon: 'fitness_center' },
-  stats: { label: 'İstatistik', icon: 'bar_chart' },
+  index: { label: t('Bugün'), icon: 'home' },
+  program: { label: t('Program'), icon: 'calendar_month' },
+  profile: { label: t('Profil'), icon: 'person' },
+  library: { label: t('Kütüphane'), icon: 'fitness_center' },
+  stats: { label: t('İstatistik'), icon: 'bar_chart' },
 };
 
 export const TAB_BAR_HEIGHT = 68;
@@ -40,11 +41,11 @@ export function FloatingTabBar({ state, emitter, navigateToTab, insets }: Bottom
 
 /** Seçili sekmenin ikonu ana renkli bir dairenin içine girer ve hafifçe büyür. */
 function TabItem({ label, icon, focused, onPress }: { label: string; icon: IconName; focused: boolean; onPress: () => void }) {
-  const t = useSharedValue(focused ? 1 : 0);
-  useEffect(() => { t.value = withSpring(focused ? 1 : 0, { damping: 14, stiffness: 180 }); }, [focused, t]);
-  const grow = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(t.value, [0, 1], [1, 1.12]) }] }));
+  const focus = useSharedValue(focused ? 1 : 0);
+  useEffect(() => { focus.value = withSpring(focused ? 1 : 0, { damping: 14, stiffness: 180 }); }, [focused, focus]);
+  const grow = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(focus.value, [0, 1], [1, 1.12]) }] }));
   // Fabric: sonradan eklenen arka plan borderRadius'u yok sayıyor, daire hep çizili kalır, sadece opaklığı değişir
-  const bubble = useAnimatedStyle(() => ({ opacity: t.value }));
+  const bubble = useAnimatedStyle(() => ({ opacity: focus.value }));
   return (
     <Pressable onPress={onPress} style={styles.item} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={label}>
       <Animated.View style={[styles.iconWrap, grow]}>

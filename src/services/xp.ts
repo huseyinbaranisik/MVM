@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 // XP her seferinde kayıtlı veriden hesaplanır (kalıcı XP tablosu yok): geçmiş sayılır, aynı iş iki kez sayılmaz.
 
 export const XP_RULES = {
@@ -14,15 +15,15 @@ export const XP_RULES = {
 
 /** Rank'lar ve rozet renkleri (tema dışı sabit: metal tonları her temada aynı okunur). */
 export const RANKS: { from: number; name: string; color: string }[] = [
-  { from: 1, name: 'Çaylak', color: '#9AA3AD' },
-  { from: 5, name: 'Demir', color: '#7D8790' },
-  { from: 10, name: 'Bronz', color: '#B87333' },
-  { from: 15, name: 'Gümüş', color: '#C0C7CF' },
-  { from: 20, name: 'Altın', color: '#E2B33C' },
-  { from: 30, name: 'Platin', color: '#6FC3C0' },
-  { from: 40, name: 'Elmas', color: '#6FA8F2' },
-  { from: 50, name: 'Usta', color: '#B07CF0' },
-  { from: 65, name: 'Efsane', color: '#F0647A' },
+  { from: 1, name: t('Çaylak'), color: '#9AA3AD' },
+  { from: 5, name: t('Demir'), color: '#7D8790' },
+  { from: 10, name: t('Bronz'), color: '#B87333' },
+  { from: 15, name: t('Gümüş'), color: '#C0C7CF' },
+  { from: 20, name: t('Altın'), color: '#E2B33C' },
+  { from: 30, name: t('Platin'), color: '#6FC3C0' },
+  { from: 40, name: t('Elmas'), color: '#6FA8F2' },
+  { from: 50, name: t('Usta'), color: '#B07CF0' },
+  { from: 65, name: t('Efsane'), color: '#F0647A' },
 ];
 
 export type StreakDayStatus = 'completed' | 'frozen' | 'missed';

@@ -1,3 +1,4 @@
+import { t, tList } from '@/i18n';
 // Giriş/kayıt formunun saf doğrulamaları.
 
 export const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
@@ -13,7 +14,7 @@ export function passwordStrength(p: string) {
   return Math.min(4, Math.floor(score));
 }
 
-export const STRENGTH_LABELS = ['Çok kısa', 'Zayıf', 'Orta', 'İyi', 'Güçlü'];
+export const STRENGTH_LABELS = tList(['Çok kısa', 'Zayıf', 'Orta', 'İyi', 'Güçlü']);
 
 const ERRORS: [RegExp, string][] = [
   [/Invalid login credentials/i, 'E-posta veya şifre hatalı.'],
@@ -27,5 +28,5 @@ const ERRORS: [RegExp, string][] = [
 
 /** Supabase hata mesajını Türkçeye çevirir. */
 export function authError(message: string) {
-  return ERRORS.find(([re]) => re.test(message))?.[1] ?? 'Bir şeyler ters gitti, tekrar dene.';
+  return t(ERRORS.find(([re]) => re.test(message))?.[1] ?? 'Bir şeyler ters gitti, tekrar dene.');
 }

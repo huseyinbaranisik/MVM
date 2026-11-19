@@ -11,6 +11,7 @@ import { PillButton, SegmentedControl } from '@/components/ui/PillButton';
 import { muscles, regions } from '@/data/muscleMap';
 import { createUserExercise } from '@/db/repos/exercises';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 type Role = 'primary' | 'secondary';
 
@@ -43,8 +44,8 @@ export default function NewExercise() {
 
   const save = async () => {
     const primary = Object.keys(roles).filter((k) => roles[k] === 'primary');
-    if (!name.trim()) return setError('Hareket adı gerekli.');
-    if (!primary.length) return setError('En az bir birincil kas seç.');
+    if (!name.trim()) return setError(t('Hareket adı gerekli.'));
+    if (!primary.length) return setError(t('En az bir birincil kas seç.'));
     const id = await createUserExercise({
       name: name.trim(), description: description.trim(), equipment, mode, photoUri: photo,
       primary, secondary: Object.keys(roles).filter((k) => roles[k] === 'secondary'),
@@ -54,37 +55,37 @@ export default function NewExercise() {
 
   return (
     <View style={styles.flex}>
-      <BackHeader title="Kendi hareketin" />
+      <BackHeader title={t('Kendi hareketin')} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <TextInput value={name} onChangeText={setName} placeholder="Hareket adı" placeholderTextColor={colors.textSecondary}
-          style={styles.input} maxLength={60} accessibilityLabel="Hareket adı" />
-        <TextInput value={description} onChangeText={setDescription} placeholder="Açıklama"
-          placeholderTextColor={colors.textSecondary} style={[styles.input, styles.multiline]} multiline accessibilityLabel="Açıklama" />
+        <TextInput value={name} onChangeText={setName} placeholder={t('Hareket adı')} placeholderTextColor={colors.textSecondary}
+          style={styles.input} maxLength={60} accessibilityLabel={t('Hareket adı')} />
+        <TextInput value={description} onChangeText={setDescription} placeholder={t('Açıklama')}
+          placeholderTextColor={colors.textSecondary} style={[styles.input, styles.multiline]} multiline accessibilityLabel={t('Açıklama')} />
 
-        <Pressable onPress={pickPhoto} style={styles.photo} accessibilityRole="button" accessibilityLabel="Fotoğraf seç">
+        <Pressable onPress={pickPhoto} style={styles.photo} accessibilityRole="button" accessibilityLabel={t('Fotoğraf seç')}>
           {photo ? <Image source={{ uri: photo }} style={styles.photoImg} contentFit="cover" />
-            : <><Icon name="add_a_photo" color={colors.accentMuted} /><Text style={type.caption}>Fotoğraf ekle</Text></>}
+            : <><Icon name="add_a_photo" color={colors.accentMuted} /><Text style={type.caption}>{t('Fotoğraf ekle')}</Text></>}
         </Pressable>
 
-        <Text style={type.subtitle}>Ekipman</Text>
+        <Text style={type.subtitle}>{t('Ekipman')}</Text>
         <View style={styles.wrap}>
           {['dumbbell', 'machine', 'bodyweight', 'barbell', 'cable', 'other'].map((eq) => (
             <PillButton key={eq} label={EQUIPMENT_TR[eq]} active={equipment === eq} onPress={() => setEquipment(eq)} />
           ))}
         </View>
-        <Text style={type.subtitle}>Tür</Text>
+        <Text style={type.subtitle}>{t('Tür')}</Text>
         <View style={styles.row}>
-          <SegmentedControl options={[{ value: 'reps', label: 'Tekrarlı' }, { value: 'time', label: 'Süreli' }]} value={mode} onChange={setMode} />
+          <SegmentedControl options={[{ value: 'reps', label: t('Tekrarlı') }, { value: 'time', label: t('Süreli') }]} value={mode} onChange={setMode} />
         </View>
 
-        <Text style={type.subtitle}>Kaslar</Text>
-        <Text style={type.caption}>Bir kez dokun: birincil · iki kez: ikincil · üç kez: kaldır</Text>
+        <Text style={type.subtitle}>{t('Kaslar')}</Text>
+        <Text style={type.caption}>{t('Bir kez dokun: birincil · iki kez: ikincil · üç kez: kaldır')}</Text>
         {regions.map((r) => (
           <View key={r.id} style={styles.region}>
             <Text style={type.caption}>{r.nameTr}</Text>
             <View style={styles.wrap}>
               {muscles.filter((m) => m.regionId === r.id).map((m) => (
-                <PillButton key={m.id} label={`${m.nameTr}${roles[m.id] === 'secondary' ? ' · ikincil' : ''}`}
+                <PillButton key={m.id} label={`${m.nameTr}${roles[m.id] === 'secondary' ? t(' · ikincil') : ''}`}
                   active={roles[m.id] === 'primary'} onPress={() => cycle(m.id)}
                   style={roles[m.id] === 'secondary' ? styles.secondary : undefined} />
               ))}
@@ -93,7 +94,7 @@ export default function NewExercise() {
         ))}
 
         {error ? <Text style={[type.body, { color: colors.warning }]}>{error}</Text> : null}
-        <PillButton label="Kaydet" variant="primary" onPress={save} />
+        <PillButton label={t('Kaydet')} variant="primary" onPress={save} />
       </ScrollView>
     </View>
   );

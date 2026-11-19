@@ -2,6 +2,7 @@ import { notify } from '@/db/bus';
 import { maybe, must, supabase } from '@/db/supabase';
 import { today } from '@/services/dates';
 import { DEFAULT_LAYOUT, sanitize, type HomeItem } from '@/services/homeLayout';
+import type { DevicePrefs } from '@/services/devicePrefs';
 import { DEFAULT_RULE, type StreakRule } from '@/services/streakService';
 
 export interface Settings {
@@ -21,6 +22,8 @@ export interface Settings {
   homeLayout: HomeItem[];
   /** Seviye ödülü dondurma hakları: en son ödüllendirilen seviye ve verildikleri günler (geri alınmaz). */
   levelRewards: { level: number; grants: { date: string; count: number }[] } | null;
+  /** Tema, özel renkler ve dil: cihazda da tutulur, yeni telefona buradan gelir (PrefsSync). */
+  appearance: DevicePrefs | null;
 }
 
 /** Kayıt yoksa kullanılan değerler. startDate ilk girişte (bootstrap) kalıcı yazılır. */
@@ -36,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
   onboarded: false,
   homeLayout: DEFAULT_LAYOUT,
   levelRewards: null,
+  appearance: null,
 };
 
 export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K]> {

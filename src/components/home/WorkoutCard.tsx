@@ -14,6 +14,7 @@ import { useDb } from '@/db/useDb';
 import { today, weekday, WEEKDAYS_TR } from '@/services/dates';
 import { fmtInt } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { isEn, t } from '@/i18n';
 
 type Progress = Awaited<ReturnType<typeof getDayWorkoutProgress>>;
 
@@ -31,17 +32,17 @@ export function WorkoutCard({ date }: { date: string }) {
   const [width, setWidth] = useState(0);
   const [page, setPage] = useState(0);
   if (!data) return <Skeleton height={220} />;
-  const dayLabel = date === today() ? 'Bugünün' : `${WEEKDAYS_TR[weekday(date)]} günü`;
+  const dayLabel = date === today() ? t('Bugünün') : isEn ? `${WEEKDAYS_TR[weekday(date)]}'s` : `${WEEKDAYS_TR[weekday(date)]} günü`;
 
   if (!data.items.length) {
     return (
       <View style={[styles.card, styles.pad, styles.row]}>
         <View style={styles.iconBox}><Icon name="event_busy" size={32} color={colors.textSecondary} /></View>
         <View style={styles.flex}>
-          <Text style={type.caption}>{dayLabel} planı</Text>
-          <Text style={type.title}>Plan yok.</Text>
+          <Text style={type.caption}>{t('{day} planı', { day: dayLabel })}</Text>
+          <Text style={type.title}>{t('Plan yok.')}</Text>
         </View>
-        <PillButton label="Plan ekle" onPress={() => router.navigate('/program')} />
+        <PillButton label={t('Plan ekle')} onPress={() => router.navigate('/program')} />
       </View>
     );
   }
@@ -58,7 +59,7 @@ export function WorkoutCard({ date }: { date: string }) {
         ))}
       </ScrollView>
       {many ? (
-        <View style={styles.dots} accessibilityLabel={`${data.items.length} plandan ${page + 1}.`}>
+        <View style={styles.dots} accessibilityLabel={t('{n} plandan {i}.', { n: data.items.length, i: page + 1 })}>
           {data.items.map((item, i) => <View key={item.id} style={[styles.dot, i === page && styles.dotOn]} />)}
         </View>
       ) : null}
@@ -75,9 +76,9 @@ function ItemPage({ item, date, dayLabel, progress, stepGoal, steps }: {
     return (
       <View style={styles.page}>
         <View style={styles.flex}>
-          <Text style={type.caption}>{dayLabel} planı</Text>
-          <Text style={type.title}>{walk ? 'Yürüyüş' : 'Dinlenme günü'}</Text>
-          {walk ? <Text style={type.caption}>Hedef {fmtInt(stepGoal)} adım</Text> : null}
+          <Text style={type.caption}>{t('{day} planı', { day: dayLabel })}</Text>
+          <Text style={type.title}>{walk ? t('Yürüyüş') : t('Dinlenme günü')}</Text>
+          {walk ? <Text style={type.caption}>{t('Hedef {n} adım', { n: fmtInt(stepGoal) })}</Text> : null}
         </View>
         <View style={styles.big}>
           {walk ? (
@@ -99,9 +100,9 @@ function ItemPage({ item, date, dayLabel, progress, stepGoal, steps }: {
     <View style={styles.page}>
       <View style={styles.row}>
         <View style={styles.flex}>
-          <Text style={type.caption}>{dayLabel} antrenmanı</Text>
+          <Text style={type.caption}>{t('{day} antrenmanı', { day: dayLabel })}</Text>
           <Text style={type.title} numberOfLines={2}>{item.templateName}</Text>
-          <Text style={type.caption}>{item.exerciseCount} hareket · {progress.totalSets} set</Text>
+          <Text style={type.caption}>{t('{n} hareket', { n: item.exerciseCount })} · {t('{n} set', { n: progress.totalSets })}</Text>
         </View>
         <RingGauge size={76} stroke={7} progress={ratio} color={colors.primaryLight}>
           <Text style={styles.pct}>%{Math.round(ratio * 100)}</Text>
@@ -109,7 +110,7 @@ function ItemPage({ item, date, dayLabel, progress, stepGoal, steps }: {
       </View>
       {templateId ? <View style={styles.maps}><TemplateMiniMap templateId={templateId} height={120} /></View> : null}
       <PillButton
-        label={progress.finished ? 'Tamamlandı ✓' : date < today() ? 'Yapılmadı' : progress.doneSets ? 'Devam et' : 'Başla'}
+        label={progress.finished ? t('Tamamlandı ✓') : date < today() ? t('Yapılmadı') : progress.doneSets ? t('Devam et') : t('Başla')}
         variant="primary"
         // geçmiş günlere sonradan kayıt girilmez, gelecek günler de bugünden başlatılamaz
         disabled={progress.finished || date !== today()}

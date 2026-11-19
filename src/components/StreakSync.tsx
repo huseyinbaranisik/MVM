@@ -11,6 +11,7 @@ import { today } from '@/services/dates';
 import { nextStreakReminder } from '@/services/streakService';
 import { play } from '@/services/sounds';
 import { freezesBetween } from '@/services/xp';
+import { t } from '@/i18n';
 
 const REMINDER_ID = 'streak-reminder';
 /**
@@ -25,7 +26,7 @@ async function checkLevelUp() {
   const count = freezesBetween(rewards.level, level);
   await setSetting('levelRewards', { level, grants: count ? [...rewards.grants, { date: today(), count }] : rewards.grants });
   play('levelup');
-  toast(count ? `Seviye ${level}! +${count} seri dondurma` : `Seviye ${level}!`);
+  toast(count ? t('Seviye {level}! +{count} seri dondurma', { level, count }) : t('Seviye {level}!', { level }));
 }
 
 /** Görünmez: açılışta, uygulamaya dönünce ve seriyi etkileyen her yazmada seriyi yeniden hesaplar. */
@@ -40,12 +41,12 @@ export function StreakSync() {
         do {
           again = false;
           const r = await evaluateStreak();
-          if (r.newlyFrozen) toast(`Seri dondurma kullanıldı, ${r.current} günlük serin korundu`);
+          if (r.newlyFrozen) toast(t('Seri dondurma kullanıldı, {n} günlük serin korundu', { n: r.current }));
           const time = (await getSetting('notifications')).streakReminder;
           if (!time) await cancelReminder(REMINDER_ID);
           else {
-            await scheduleAt(REMINDER_ID, nextStreakReminder(new Date(), time, r.todayCompleted), 'Serin bozulmasın 🔥',
-              r.current ? `${r.current} günlük serin var; bugünü tamamlamak için hâlâ vaktin var.` : 'Bugünü tamamla, yeni bir seri başlat.');
+            await scheduleAt(REMINDER_ID, nextStreakReminder(new Date(), time, r.todayCompleted), t('Serin bozulmasın 🔥'),
+              r.current ? t('{n} günlük serin var; bugünü tamamlamak için hâlâ vaktin var.', { n: r.current }) : t('Bugünü tamamla, yeni bir seri başlat.'));
           }
         } while (again);
         await checkLevelUp();

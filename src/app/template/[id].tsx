@@ -17,6 +17,7 @@ import {
 import { useDb } from '@/db/useDb';
 import { parseNumber } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { locale, t } from '@/i18n';
 
 const ROW_H = 76;
 const SUPERSET_LETTERS = 'ABCDEFGH';
@@ -36,15 +37,15 @@ export default function TemplateEditor() {
   const groups = [...new Set(data.items.map((x) => x.superset_group).filter((g) => g != null))];
 
   const confirmDelete = async () => {
-    if (!(await confirm({ title: 'Şablon silinsin mi?', message: 'Atandığı günler dinlenme gününe döner.', confirmLabel: 'Sil', destructive: true }))) return;
+    if (!(await confirm({ title: t('Şablon silinsin mi?'), message: t('Atandığı günler dinlenme gününe döner.'), confirmLabel: t('Sil'), destructive: true }))) return;
     await deleteTemplate(templateId);
     router.back();
   };
 
   return (
     <View style={styles.flex}>
-      <BackHeader title="Şablonu düzenle" right={
-        <Pressable onPress={confirmDelete} hitSlop={10} accessibilityRole="button" accessibilityLabel="Şablonu sil">
+      <BackHeader title={t('Şablonu düzenle')} right={
+        <Pressable onPress={confirmDelete} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('Şablonu sil')}>
           <Icon name="delete" color={colors.textSecondary} />
         </Pressable>
       } />
@@ -53,8 +54,8 @@ export default function TemplateEditor() {
           value={name ?? data.name}
           onChangeText={setName}
           onEndEditing={() => { if (name?.trim()) renameTemplate(templateId, name.trim()); }}
-          style={styles.nameInput} accessibilityLabel="Şablon adı" maxLength={40} />
-        <Text style={type.caption}>{data.items.length} hareket · sıralamak için sağdaki tutamaçtan sürükle</Text>
+          style={styles.nameInput} accessibilityLabel={t('Şablon adı')} maxLength={40} />
+        <Text style={type.caption}>{t('{n} hareket', { n: data.items.length })} · {t('sıralamak için sağdaki tutamaçtan sürükle')}</Text>
 
         <View style={styles.list}>
           <DraggableList
@@ -63,20 +64,20 @@ export default function TemplateEditor() {
             rowHeight={ROW_H}
             onReorder={(keys) => reorderTemplateExercises(keys as number[])}
             renderRow={(x) => (
-              <Pressable onPress={() => setEditing(x)} style={styles.row} accessibilityRole="button" accessibilityLabel={`${x.name_tr} düzenle`}>
+              <Pressable onPress={() => setEditing(x)} style={styles.row} accessibilityRole="button" accessibilityLabel={t('{name} düzenle', { name: x.name_tr })}>
                 <ExerciseThumb imageKey={x.image_key} photoUri={x.photo_uri} size={48} />
                 <View style={styles.flex1}>
                   <Text style={type.subtitle} numberOfLines={1}>{x.name_tr}</Text>
                   <Text style={type.caption} numberOfLines={1}>{summary(x)}</Text>
                 </View>
                 {x.superset_group != null ? (
-                  <Text style={styles.superset}>Süperset {SUPERSET_LETTERS[groups.indexOf(x.superset_group)] ?? ''}</Text>
+                  <Text style={styles.superset}>{t('Süperset')} {SUPERSET_LETTERS[groups.indexOf(x.superset_group)] ?? ''}</Text>
                 ) : null}
               </Pressable>
             )}
           />
         </View>
-        <PillButton label="+ Hareket ekle" variant="primary" onPress={() => setPicking(true)} />
+        <PillButton label={t('+ Hareket ekle')} variant="primary" onPress={() => setPicking(true)} />
       </ScrollView>
 
       <EditSheet item={editing} items={data.items} onClose={() => setEditing(null)} />
@@ -138,30 +139,30 @@ function EditSheet({ item, items, onClose }: { item: TemplateExercise | null; it
   return (
     <Sheet visible onClose={onClose} title={item.name_tr}>
       <View style={styles.setsRow}>
-        <Text style={[type.subtitle, styles.flex1]}>Set</Text>
-        <PillButton label="−" onPress={() => setSets(Math.max(1, sets - 1))} accessibilityLabel="Set azalt" />
+        <Text style={[type.subtitle, styles.flex1]}>{t('Set')}</Text>
+        <PillButton label="−" onPress={() => setSets(Math.max(1, sets - 1))} accessibilityLabel={t('Set azalt')} />
         <Text style={styles.setsValue}>{sets}</Text>
-        <PillButton label="+" onPress={() => setSets(Math.min(10, sets + 1))} accessibilityLabel="Set artır" />
+        <PillButton label="+" onPress={() => setSets(Math.min(10, sets + 1))} accessibilityLabel={t('Set artır')} />
       </View>
       <View style={styles.inline}>
-        <PillButton label="Tekrar" active={!timed} onPress={() => setTimed(false)} style={styles.flex1} />
-        <PillButton label="Süre (sn)" active={timed} onPress={() => setTimed(true)} style={styles.flex1} />
+        <PillButton label={t('Tekrar')} active={!timed} onPress={() => setTimed(false)} style={styles.flex1} />
+        <PillButton label={t('Süre (sn)')} active={timed} onPress={() => setTimed(true)} style={styles.flex1} />
       </View>
       {timed ? (
-        <Field label="Süre (sn)" value={duration} onChange={setDuration} />
+        <Field label={t('Süre (sn)')} value={duration} onChange={setDuration} />
       ) : (
         <View style={styles.inline}>
-          <Field label="En az tekrar" value={repMin} onChange={setRepMin} />
-          <Field label="En çok tekrar" value={repMax} onChange={setRepMax} />
+          <Field label={t('En az tekrar')} value={repMin} onChange={setRepMin} />
+          <Field label={t('En çok tekrar')} value={repMax} onChange={setRepMax} />
         </View>
       )}
-      <Field label="Dinlenme (sn) · boş = varsayılan" value={rest} onChange={setRest} />
+      <Field label={t('Dinlenme (sn) · boş = varsayılan')} value={rest} onChange={setRest} />
       <View style={styles.inline}>
-        <PillButton label="Her taraf / bacak" active={perSide} onPress={() => setPerSide(!perSide)} style={styles.flex1} />
-        {before ? <PillButton label="Öncekiyle süperset" active={superset} onPress={() => setSuperset(!superset)} style={styles.flex1} /> : null}
+        <PillButton label={t('Her taraf / bacak')} active={perSide} onPress={() => setPerSide(!perSide)} style={styles.flex1} />
+        {before ? <PillButton label={t('Öncekiyle süperset')} active={superset} onPress={() => setSuperset(!superset)} style={styles.flex1} /> : null}
       </View>
-      <PillButton label="Kaydet" variant="primary" onPress={save} />
-      <PillButton label="Şablondan çıkar" onPress={async () => { await removeTemplateExercise(item.id); onClose(); }} />
+      <PillButton label={t('Kaydet')} variant="primary" onPress={save} />
+      <PillButton label={t('Şablondan çıkar')} onPress={async () => { await removeTemplateExercise(item.id); onClose(); }} />
     </Sheet>
   );
 }
@@ -179,17 +180,17 @@ function PickerSheet({ visible, onClose, onPick }: { visible: boolean; onClose: 
   const list = useDb(() => getExerciseList(), [], ['user_exercises', 'exercise_favorites']);
   const [q, setQ] = useState('');
   const filtered = useMemo(() => {
-    const s = q.trim().toLocaleLowerCase('tr-TR');
+    const s = q.trim().toLocaleLowerCase(locale);
     const all = list ?? [];
-    return (s ? all.filter((e) => e.name_tr.toLocaleLowerCase('tr-TR').includes(s) || (e.name_en ?? '').toLowerCase().includes(s)) : all).slice(0, 40);
+    return (s ? all.filter((e) => e.name_tr.toLocaleLowerCase(locale).includes(s) || (e.name_en ?? '').toLowerCase().includes(s)) : all).slice(0, 40);
   }, [list, q]);
   return (
-    <Sheet visible={visible} onClose={onClose} title="Hareket ekle">
-      <TextInput value={q} onChangeText={setQ} placeholder="Ara" placeholderTextColor={colors.textSecondary} style={styles.input} accessibilityLabel="Hareket ara" />
+    <Sheet visible={visible} onClose={onClose} title={t('Hareket ekle')}>
+      <TextInput value={q} onChangeText={setQ} placeholder={t('Ara')} placeholderTextColor={colors.textSecondary} style={styles.input} accessibilityLabel={t('Hareket ara')} />
       {filtered.map((e) => (
         <ExerciseRow key={e.id} id={e.id} name={e.name_tr} imageKey={e.image_key} photoUri={e.photo_uri} favorite={!!e.is_favorite}
           right={
-            <Pressable onPress={() => onPick(e.id)} hitSlop={8} style={styles.addBtn} accessibilityRole="button" accessibilityLabel={`${e.name_tr} ekle`}>
+            <Pressable onPress={() => onPick(e.id)} hitSlop={8} style={styles.addBtn} accessibilityRole="button" accessibilityLabel={t('{name} ekle', { name: e.name_tr })}>
               <Icon name="add" color={colors.onPrimary} />
             </Pressable>
           } />

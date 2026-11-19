@@ -1,6 +1,8 @@
 // Tüm renkler burada. Bileşenlerde sabit renk kodu kullanma.
 // Tema uygulama açılırken bir kez seçilir (StyleSheet'ler modül yüklenirken oluşur); değiştirince uygulama yeniden başlar.
 
+import { CUSTOM_KEY, THEME_KEY } from '@/services/devicePrefs';
+
 export type ThemeId =
   | 'sarap' | 'gece' | 'erik' | 'violet' | 'balkabagi'
   | 'karpuz' | 'domates' | 'mandalina' | 'deniz' | 'mocha' | 'kizilcik' | 'vanilya' | 'bal' | 'kiraz' | 'claret';
@@ -114,12 +116,11 @@ export function hsl(h: number, s: number, l: number) {
   return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
 }
 
-export const THEME_KEY = 'mvm.theme';
-export const CUSTOM_KEY = 'mvm.customTheme';
+export { CUSTOM_KEY, THEME_KEY };
 
 /** Kullanıcının seçtiği 3 renk; zeminin parlaklığına göre açık/koyu tema olur. */
 export interface CustomColors { bg: string; primary: string; highlight: string }
-export const customPalette = (c: CustomColors): Palette => ({ name: 'Özel', ...c, light: lum(c.bg) > 0.3 });
+export const customPalette = (c: CustomColors): Palette => ({ name: 'Özel', ...c, light: lum(c.bg) > 0.3 }); // ad ekranda t() ile çevrilir
 
 const HEX = /^#[0-9A-F]{6}$/i;
 export function loadCustomColors(): CustomColors | null {

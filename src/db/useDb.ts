@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { toast } from '@/components/ui/overlays';
 import { subscribe } from '@/db/bus';
+import { t } from '@/i18n';
 
 /**
  * Sorguyu çalıştırır ve `tables` içindeki bir tabloya yazıldığında (bus.notify) yeniden çalıştırır.
@@ -18,7 +19,7 @@ export function useDb<T>(query: () => Promise<T>, deps: unknown[], tables: reado
     const run = () => {
       query().then((r) => { if (alive) setData(r); }, (e) => {
         console.warn('Sorgu başarısız', e);
-        if (alive) toast('Bağlantı hatası, veriler yüklenemedi.');
+        if (alive) toast(t('Bağlantı hatası, veriler yüklenemedi.'));
       });
     };
     run();
@@ -47,7 +48,7 @@ export function useOptimistic<T>(data: T | undefined) {
     } catch (e) {
       console.warn('Yazma başarısız', e);
       setO(null);
-      toast('Kaydedilemedi, bağlantını kontrol et.');
+      toast(t('Kaydedilemedi, bağlantını kontrol et.'));
     }
   };
   return [shown, apply] as const;

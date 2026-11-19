@@ -4,6 +4,7 @@ import { getLevel, XP_TABLES } from '@/db/repos/xp';
 import { useDb } from '@/db/useDb';
 import { fmtInt } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 /** Rank, seviye ve seviye içindeki XP çubuğu. */
 export function LevelBar() {
@@ -11,10 +12,10 @@ export function LevelBar() {
   if (!lv) return <View style={styles.placeholder} />;
   const ratio = lv.needed ? lv.intoLevel / lv.needed : 0;
   return (
-    <View style={styles.wrap} accessibilityLabel={`${lv.rank}, seviye ${lv.level}, ${lv.intoLevel} / ${lv.needed} XP`}>
+    <View style={styles.wrap} accessibilityLabel={t('{rank}, seviye {level}, {into} / {needed} XP', { rank: lv.rank, level: lv.level, into: lv.intoLevel, needed: lv.needed })}>
       <View style={styles.row}>
         <Text style={styles.rank}>{lv.rank}</Text>
-        <Text style={type.subtitle}>Sv {lv.level}</Text>
+        <Text style={type.subtitle}>{t('Sv {n}', { n: lv.level })}</Text>
         <Text style={[type.caption, styles.end]}>{fmtInt(lv.intoLevel)} / {fmtInt(lv.needed)} XP</Text>
       </View>
       {/* Fabric: dolgu her zaman çizili, genişliği değişir */}

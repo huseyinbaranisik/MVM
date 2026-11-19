@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 
 import { getSetting } from '@/db/repos/settings';
 import { must, supabase } from '@/db/supabase';
+import { t } from '@/i18n';
 
 /** Kullanıcının kendi verisini tuttuğu tüm tablolar (RLS yalnızca kendi satırlarını döndürür). */
 const TABLES = [
@@ -20,7 +21,7 @@ export async function exportMyData() {
   if (file.exists) file.delete();
   file.create();
   file.write(JSON.stringify(data, null, 2));
-  await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'MVM verilerim' });
+  await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: t('MVM verilerim') });
 }
 
 /** Hesabı ve tüm veriyi kalıcı olarak siler, sonra oturumu kapatır. */

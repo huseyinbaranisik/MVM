@@ -16,6 +16,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { formatSteps, kmToSteps, stepsToKm, stepUnitLabel, strideCm, type StepUnit } from '@/services/units';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 const STEP_DECREMENT = 500;
 
@@ -43,19 +44,18 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
   const hit = weekVals.filter((v) => v >= data.s!.goal).length;
   const counter = (
     <Counter
-      minusLabel={`${STEP_DECREMENT} adım çıkar`} plusLabel="Adım ekle"
+      minusLabel={t('{n} adım çıkar', { n: STEP_DECREMENT })} plusLabel={t('Adım ekle')}
       onMinus={() => applySteps(Math.max(0, steps - STEP_DECREMENT), () => addTrackerValue('steps', date, -STEP_DECREMENT))}
       onPlus={() => setOpen('add')}
     />
   );
-  const strideLabel = data.s.unit_size != null ? `Elle · ${stride} cm`
-    : data.heightCm ? `Boydan · ${stride} cm` : `Varsayılan · ${stride} cm`;
+  const strideLabel = `${data.s.unit_size != null ? t('Elle') : data.heightCm ? t('Boydan') : t('Varsayılan')} · ${stride} cm`;
 
   return (
     <>
       <TrackerCard
         resetKey={data.date}
-        title="Adım" icon="directions_walk" color={colors.primaryLight}
+        title={t('Adım')} icon="directions_walk" color={colors.primaryLight}
         progress={steps / data.s.goal}
         value={fmt(steps)}
         caption={`/ ${fmt(data.s.goal)} ${stepUnitLabel(unit)}`}
@@ -68,47 +68,47 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
               <WeekBars date={date} values={data.week} goal={data.s.goal} />
             </>
           ),
-          footer: <Text style={type.caption}>Haftalık ort. {fmt(avg)} {stepUnitLabel(unit)} · Hedef {hit}/7 gün</Text>,
+          footer: <Text style={type.caption}>{t('Haftalık ort. {avg} {unit} · Hedef {hit}/7 gün', { avg: fmt(avg), unit: stepUnitLabel(unit), hit })}</Text>,
         } : counterSlot(size, counter))}
       />
-      <Sheet visible={open === 'menu'} onClose={close} title="Adım">
-        <SheetRow label="Hedefi değiştir" value={`${fmt(data.s.goal)} ${stepUnitLabel(unit)}`} onPress={() => setOpen('goal')} />
+      <Sheet visible={open === 'menu'} onClose={close} title={t('Adım')}>
+        <SheetRow label={t('Hedefi değiştir')} value={`${fmt(data.s.goal)} ${stepUnitLabel(unit)}`} onPress={() => setOpen('goal')} />
         <View style={styles.segment}>
           <SegmentedControl<StepUnit>
-            options={[{ value: 'steps', label: 'Adım' }, { value: 'km', label: 'Km' }]}
+            options={[{ value: 'steps', label: t('Adım') }, { value: 'km', label: 'Km' }]}
             value={unit}
             onChange={(v) => updateTrackerSettings('steps', { display_unit: v })}
           />
         </View>
-        <SheetRow label="Adım uzunluğu" value={strideLabel} onPress={() => setOpen('stride')} />
+        <SheetRow label={t('Adım uzunluğu')} value={strideLabel} onPress={() => setOpen('stride')} />
         {data.s.unit_size != null ? (
-          <SheetRow label="Boydan hesapla" onPress={() => updateTrackerSettings('steps', { unit_size: null })} />
+          <SheetRow label={t('Boydan hesapla')} onPress={() => updateTrackerSettings('steps', { unit_size: null })} />
         ) : null}
-        <SheetRow label="Adım kaynağı"
-          value={sensor === 'health' ? 'Health Connect' : sensor === 'on' ? 'Telefon sensörü' : sensor === 'off' ? 'Elle giriş' : '…'} />
+        <SheetRow label={t('Adım kaynağı')}
+          value={sensor === 'health' ? 'Health Connect' : sensor === 'on' ? t('Telefon sensörü') : sensor === 'off' ? t('Elle giriş') : '…'} />
         {sensor === 'health' ? (
-          <SheetRow label="Health Connect bağlantısını kes" onPress={() => { disconnectHealthConnect(); bumpHealth(); close(); }} />
+          <SheetRow label={t('Health Connect bağlantısını kes')} onPress={() => { disconnectHealthConnect(); bumpHealth(); close(); }} />
         ) : (
-          <SheetRow label="Health Connect'e bağlan" onPress={async () => {
+          <SheetRow label={t('Health Connect\'e bağlan')} onPress={async () => {
             close();
-            if (!(await healthConnectAvailable())) { toast('Health Connect bu telefonda yok'); return; }
-            if (await connectHealthConnect()) { bumpHealth(); toast('Health Connect bağlandı'); } else toast('İzin verilmedi');
+            if (!(await healthConnectAvailable())) { toast(t('Health Connect bu telefonda yok')); return; }
+            if (await connectHealthConnect()) { bumpHealth(); toast(t('Health Connect bağlandı')); } else toast(t('İzin verilmedi'));
           }} />
         )}
-        <SheetRow label="Geçmişi gör" onPress={() => { close(); router.push('/tracker/steps'); }} />
+        <SheetRow label={t('Geçmişi gör')} onPress={() => { close(); router.push('/tracker/steps'); }} />
       </Sheet>
       <NumberPrompt
-        visible={open === 'goal'} onClose={close} title="Günlük adım hedefi" suffix={stepUnitLabel(unit)}
+        visible={open === 'goal'} onClose={close} title={t('Günlük adım hedefi')} suffix={stepUnitLabel(unit)}
         initial={unit === 'km' ? Number(stepsToKm(data.s.goal, stride).toFixed(2)) : data.s.goal}
         onSubmit={(v) => updateTrackerSettings('steps', { goal: unit === 'km' ? kmToSteps(v, stride) : Math.round(v) })}
       />
       <NumberPrompt
-        visible={open === 'stride'} onClose={close} title="Adım uzunluğu" suffix="cm" initial={stride} min={20}
+        visible={open === 'stride'} onClose={close} title={t('Adım uzunluğu')} suffix="cm" initial={stride} min={20}
         onSubmit={(v) => updateTrackerSettings('steps', { unit_size: Math.round(v) })}
       />
       <NumberPrompt
-        visible={open === 'add'} onClose={close} title="Adım ekle"
-        suffix="adım" quick={[500, 1000, 2000]}
+        visible={open === 'add'} onClose={close} title={t('Adım ekle')}
+        suffix={t('adım')} quick={[500, 1000, 2000]}
         onSubmit={(v) => applySteps(steps + Math.round(v), () => addTrackerValue('steps', date, Math.round(v)))}
       />
     </>

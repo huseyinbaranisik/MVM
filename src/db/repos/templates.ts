@@ -1,6 +1,7 @@
 import { notify } from '@/db/bus';
 import { getCatalog } from '@/db/repos/exercises';
 import { maybe, must, supabase } from '@/db/supabase';
+import { t } from '@/i18n';
 
 export interface TemplateSummary { id: number; name: string; exerciseCount: number }
 
@@ -41,7 +42,7 @@ export async function getTemplateExercises(templateId: number): Promise<Template
     return {
       id: te.id, exercise_id: te.exercise_id, position: te.position, sets: te.sets, rep_min: te.rep_min, rep_max: te.rep_max,
       duration_sec: te.duration_sec, rest_sec: te.rest_sec, per_side: te.per_side ? 1 : 0, superset_group: te.superset_group,
-      name_tr: e?.name_tr ?? 'Silinmiş hareket', image_key: e?.image_key ?? null, photo_uri: e?.photo_uri ?? null,
+      name_tr: e?.name_tr ?? t('Silinmiş hareket'), image_key: e?.image_key ?? null, photo_uri: e?.photo_uri ?? null,
       mode: e?.mode ?? 'reps', is_heavy: e?.is_heavy ? 1 : 0,
     };
   });
@@ -49,7 +50,7 @@ export async function getTemplateExercises(templateId: number): Promise<Template
 
 /** Kullanıcı başına en fazla şablon (sunucuda da tetikleyiciyle uygulanır). */
 export const MAX_TEMPLATES = 10;
-export const TEMPLATE_LIMIT_MSG = `En fazla ${MAX_TEMPLATES} program oluşturabilirsin`;
+export const TEMPLATE_LIMIT_MSG = t('En fazla {n} program oluşturabilirsin', { n: MAX_TEMPLATES });
 
 export async function createTemplate(name: string): Promise<number> {
   const { count, error } = await supabase.from('workout_templates').select('id', { count: 'exact', head: true });
@@ -108,8 +109,8 @@ export async function reorderTemplateExercises(orderedIds: number[]) {
 
 /** "4 × 6-8 (her taraf) · 90 sn dinlenme" */
 export function summary(x: TemplateExercise) {
-  const reps = x.duration_sec ? `${x.duration_sec} sn` : x.rep_min === x.rep_max || !x.rep_max ? `${x.rep_min ?? '?'}` : `${x.rep_min}-${x.rep_max}`;
-  return `${x.sets} × ${reps}${x.per_side ? ' (her taraf)' : ''}${x.rest_sec ? ` · ${x.rest_sec} sn dinlenme` : ''}`;
+  const reps = x.duration_sec ? `${x.duration_sec} ${t('sn')}` : x.rep_min === x.rep_max || !x.rep_max ? `${x.rep_min ?? '?'}` : `${x.rep_min}-${x.rep_max}`;
+  return `${x.sets} × ${reps}${x.per_side ? t(' (her taraf)') : ''}${x.rest_sec ? ` · ${t('{n} sn dinlenme', { n: x.rest_sec })}` : ''}`;
 }
 
 /** Şablonun çalıştırdığı kaslar (mini vücut haritası için); bir harekette birincilse birincil sayılır. */

@@ -5,8 +5,9 @@ import { BarChart, LineChart } from 'react-native-gifted-charts';
 import { fmtDec } from '@/services/units';
 import { niceAxis, summarize, type Point } from '@/services/stats';
 import { colors, radius, spacing, type } from '@/theme';
+import { isEn, t } from '@/i18n';
 
-const label = (d: string) => `${Number(d.slice(8))}.${Number(d.slice(5, 7))}`;
+const label = (d: string) => (isEn ? `${Number(d.slice(5, 7))}/${Number(d.slice(8))}` : `${Number(d.slice(8))}.${Number(d.slice(5, 7))}`);
 
 /** Başlık, son/ortalama/değişim ve çizgi (ya da çubuk) grafiği olan istatistik kartı. */
 export function StatChart({ title, unit, points, color, goal, bars, digits = 0, right, height = 140, children }: {
@@ -39,9 +40,9 @@ export function StatChart({ title, unit, points, color, goal, bars, digits = 0, 
       {sum ? (
         <>
           <View style={styles.nums}>
-            <Num label="Son" value={`${fmt(sum.last)} ${unit}`} />
-            <Num label="Ortalama" value={`${fmt(sum.avg)} ${unit}`} />
-            {!bars ? <Num label="Değişim" value={`${sum.change > 0 ? '+' : ''}${fmt(sum.change)} ${unit}`} /> : null}
+            <Num label={t('Son')} value={`${fmt(sum.last)} ${unit}`} />
+            <Num label={t('Ortalama')} value={`${fmt(sum.avg)} ${unit}`} />
+            {!bars ? <Num label={t('Değişim')} value={`${sum.change > 0 ? '+' : ''}${fmt(sum.change)} ${unit}`} /> : null}
           </View>
           {points.length >= 2 || (points.length && goal != null && !bars) ? (bars ? (
             <BarChart data={data} width={chartWidth} height={height} frontColor={color} barWidth={Math.max(6, Math.min(22, chartWidth / points.length - 6))}
@@ -53,11 +54,11 @@ export function StatChart({ title, unit, points, color, goal, bars, digits = 0, 
               yAxisThickness={0} xAxisColor={colors.divider} rulesColor={colors.divider} yAxisTextStyle={styles.axis}
               xAxisLabelTextStyle={styles.axis} {...axisProps} curved
               showReferenceLine1={goal != null} referenceLine1Position={goal ?? 0}
-              referenceLine1Config={{ color: colors.accent, type: 'solid', thickness: 2, labelText: goal != null ? `Hedef ${fmt(goal)}` : undefined,
+              referenceLine1Config={{ color: colors.accent, type: 'solid', thickness: 2, labelText: goal != null ? t('Hedef {v}', { v: fmt(goal) }) : undefined,
                 labelTextStyle: styles.goalLabel }} />
           )) : null}
         </>
-      ) : <Text style={type.caption}>Kayıt yok.</Text>}
+      ) : <Text style={type.caption}>{t('Kayıt yok.')}</Text>}
       {children}
     </View>
   );

@@ -428,7 +428,7 @@ MVM: Türkçe arayüzlü antrenman + günlük alışkanlık takip uygulaması.
 ## İlerleme
 - [x] G1 alt bar (a6d1270)
 - [x] G2 temalar: Bordo & Bej kalktı; kullanıcının verdiği 7 palet eklendi, toplam 15, kontrast testi (7fbfa36)
-- [x] G3+G4 `day_schedule_items` (migration 20261117091548), boş ilk kurulum, kaydırmalı antrenman kartı, "Plana ekle" (927cb03). Eski `day_schedule` tablosu v1.0.0 APK için duruyor; v1.1.0 yayınlanınca sil.
+- [x] G3+G4 `day_schedule_items` (migration 20261117091548), boş ilk kurulum, kaydırmalı antrenman kartı, "Plana ekle" (927cb03). Eski `day_schedule` tablosu 19 Kasım 2026'da silindi (migration 20261119134110).
 - [x] G5 XP/seviye/rank (3dc7527)
 - [x] G6+G7+G8 profil, Ayarlar (`src/app/settings.tsx`), avatar (migration 20261117092614), ana ekran düzeni (7fbfa36). Fotoğraf yükleme emülatörde denenmedi (galeri boş).
 - [x] G9+G10 ayrıntılı özet, ±15 düzeltmesi
@@ -440,7 +440,9 @@ MVM: Türkçe arayüzlü antrenman + günlük alışkanlık takip uygulaması.
 - [x] G18 gizlilik: Ayarlar → Verilerimi dışa aktar (JSON, denendi), Hesabı sil (`delete_my_account` RPC, migration 20261117095829; denenmedi). Oturum expo-sqlite localStorage'da kaldı (SecureStore 2 KB sınırı Supabase oturumuna yetmiyor). Supabase panelinde "Leaked password protection" kapalı: kullanıcı açmalı.
 - [x] G19 APK: yalnızca arm64-v8a, R8 + kaynak budama (expo-build-properties), görseller WebP (32→11 MB), sürüm 1.1.0
 - [x] README güncellendi (Şekil 5 hâlâ eski dokuz temayı gösteriyor)
-- [ ] **G16 İngilizce dil desteği: yapılmadı.** Bir sonraki oturumun ilk işi. Ayrıca XP birikim grafiği (G11) ve tema/README görsellerinin yenilenmesi kaldı.
+- [x] G16 İngilizce dil desteği (19 Kasım 2026): `src/i18n/` (`t('Türkçe metin')`, karşılıklar `en.ts`'te; anahtar yoksa Türkçe kalır), Ayarlar → "Dil · Language", dil değişince uygulama yeniden başlar. İlk açılışta cihaz dili. Hareket adları/talimatları İngilizcede free-exercise-db'den; seed hareketlerin Türkçe hata/ipucu listeleri İngilizcede gizli. Bu makinede Node yoktu: tsc/lint/jest çalıştırılmadı, emülatörde denenmedi.
+- [x] Tema ve dil hesaba da yazılıyor (`settings.appearance`, `src/components/PrefsSync.tsx`): yeni telefonda girişte geri gelir.
+- [ ] XP birikim grafiği (G11) ve tema/README görsellerinin yenilenmesi kaldı.
 - Not: Metro OneDrive klasöründe dosya değişikliğini kaçırıyor; emülatörde denerken `npx expo start --clear` ile yeniden başlat.
 - [x] v1.1.0 ve v1.2.0 GitHub'da yayınlandı. v1.2.0: Health Connect adımları (`src/services/healthConnect.ts`, `stepSync.ts`), ana ekran widget'ı (`src/widget/`, giriş `index.ts`; widget dosyalarında `'use no memo'` şart), hareket ilerleme grafiği. Widget'ın oturum açık hali ve Health Connect bağlantısı emülatörde denenmedi.
 - [x] v1.3.0: bölge mankeni (`src/data/bodyRegions.ts`, `scripts/build-body-regions.py`), istatistik/profil yenilemesi, seviye yolu (`src/app/level.tsx`, 1–100, dik), her 4 seviyede bir dondurma hakkı (`settings.levelRewards`, `freezesBetween`, `computeStreak` grants), 10 şablon sınırı (uygulama + `workout_templates_limit` tetikleyicisi), sürükle-bırak ana ekran düzeni, ses efektleri (`src/services/sounds.ts`, expo-audio), anında yansıyan dokunuşlar (`useOptimistic`), yeni ilk açılış (isim, yaş, boy, kilo), görev silme modu, logo (`tools/make_logo.py`, `src/components/Logo.tsx`) ve özel yükleme ekranı, 3×1/3×2/4×2 widget. Widget'ın oturum açık hali ve seviye ödülü bildirimleri gerçek kullanımda denenmedi.

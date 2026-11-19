@@ -7,10 +7,11 @@ import { Sheet } from '@/components/ui/Sheet';
 import { colors, radius, spacing, type } from '@/theme';
 import { customPalette, derive, loadCustomColors, PALETTES, themeId, type CustomColors } from '@/theme/colors';
 import { setCustomTheme } from '@/theme/select';
+import { t } from '@/i18n';
 
 type Slot = keyof CustomColors;
 const SLOTS: { key: Slot; label: string }[] = [
-  { key: 'bg', label: 'Arka plan' }, { key: 'primary', label: 'Birincil' }, { key: 'highlight', label: 'Vurgu' },
+  { key: 'bg', label: t('Arka plan') }, { key: 'primary', label: t('Birincil') }, { key: 'highlight', label: t('Vurgu') },
 ];
 
 // Renk çemberi: 12'den saat yönünde 10 renk ailesi; her ailede dıştan içe koyudan açığa 5 ton, ortada beyaz
@@ -64,7 +65,7 @@ export function CustomThemeSheet({ visible, onClose }: { visible: boolean; onClo
   };
 
   return (
-    <Sheet visible={visible} onClose={onClose} title="Özel tema">
+    <Sheet visible={visible} onClose={onClose} title={t('Özel tema')}>
       <View style={styles.slots}>
         {SLOTS.map((s) => (
           <Pressable key={s.key} onPress={() => setSlot(s.key)} style={styles.slot} accessibilityRole="button"
@@ -80,7 +81,7 @@ export function CustomThemeSheet({ visible, onClose }: { visible: boolean; onClo
       <View style={styles.row}>
         <Preview c={c} />
         <Pressable onPress={(e) => pickAt(e.nativeEvent.locationX, e.nativeEvent.locationY)} accessibilityRole="adjustable"
-          accessibilityLabel="Renk çemberi">
+          accessibilityLabel={t('Renk çemberi')}>
         <Svg width={wheel} height={wheel} pointerEvents="none">
           {FAMILIES.flatMap((fam, fi) => fam.map((hex, ri) => {
             const a0 = fi * SPAN - Math.PI / 2;
@@ -101,39 +102,39 @@ export function CustomThemeSheet({ visible, onClose }: { visible: boolean; onClo
         </Pressable>
       </View>
 
-      <PillButton label="Kaydet ve uygula" variant="primary" onPress={() => setCustomTheme(c)} />
+      <PillButton label={t('Kaydet ve uygula')} variant="primary" onPress={() => setCustomTheme(c)} />
     </Sheet>
   );
 }
 
 /** Seçilen renklerle ana ekranın küçük taslağı. */
 function Preview({ c }: { c: CustomColors }) {
-  const t = derive(customPalette(c));
+  const pc = derive(customPalette(c));
   return (
-    <View style={[styles.phone, { backgroundColor: t.background, borderColor: t.surfaceElevated }]} accessibilityLabel="Önizleme">
+    <View style={[styles.phone, { backgroundColor: pc.background, borderColor: pc.surfaceElevated }]} accessibilityLabel={t('Önizleme')}>
       <View style={styles.pHeader}>
-        <View style={[styles.pAvatar, { backgroundColor: t.primary }]} />
-        <View style={[styles.pLine, { backgroundColor: t.textPrimary }]} />
+        <View style={[styles.pAvatar, { backgroundColor: pc.primary }]} />
+        <View style={[styles.pLine, { backgroundColor: pc.textPrimary }]} />
       </View>
-      <View style={[styles.pCard, { backgroundColor: t.surface }]}>
-        <View style={[styles.pTitle, { backgroundColor: t.textSecondary }]} />
-        <View style={[styles.pTrack, { backgroundColor: t.surfaceElevated }]}>
-          <View style={[styles.pFill, { backgroundColor: t.primaryLight }]} />
+      <View style={[styles.pCard, { backgroundColor: pc.surface }]}>
+        <View style={[styles.pTitle, { backgroundColor: pc.textSecondary }]} />
+        <View style={[styles.pTrack, { backgroundColor: pc.surfaceElevated }]}>
+          <View style={[styles.pFill, { backgroundColor: pc.primaryLight }]} />
         </View>
-        <View style={[styles.pButton, { backgroundColor: t.primary }]}>
-          <View style={[styles.pBtnText, { backgroundColor: t.onPrimary }]} />
+        <View style={[styles.pButton, { backgroundColor: pc.primary }]}>
+          <View style={[styles.pBtnText, { backgroundColor: pc.onPrimary }]} />
         </View>
       </View>
       <View style={styles.pRow}>
         {[0, 1].map((i) => (
-          <View key={i} style={[styles.pSmall, { backgroundColor: t.surface }]}>
-            <View style={[styles.pRing, { borderColor: i ? t.accent : t.primaryLight }]} />
+          <View key={i} style={[styles.pSmall, { backgroundColor: pc.surface }]}>
+            <View style={[styles.pRing, { borderColor: i ? pc.accent : pc.primaryLight }]} />
           </View>
         ))}
       </View>
-      <View style={[styles.pTabs, { backgroundColor: t.surface }]}>
-        <View style={[styles.pTab, { backgroundColor: t.primary }]} />
-        {[0, 1, 2].map((i) => <View key={i} style={[styles.pTabOff, { backgroundColor: t.textSecondary }]} />)}
+      <View style={[styles.pTabs, { backgroundColor: pc.surface }]}>
+        <View style={[styles.pTab, { backgroundColor: pc.primary }]} />
+        {[0, 1, 2].map((i) => <View key={i} style={[styles.pTabOff, { backgroundColor: pc.textSecondary }]} />)}
       </View>
     </View>
   );

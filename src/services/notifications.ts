@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { AndroidImportance, SchedulableTriggerInputTypes } from 'expo-notifications';
 
 import { parseHM } from './sleep';
+import { t } from '@/i18n';
 
 // Sadece yerel bildirimler (push yok). Uygulama açıkken de gösterilsin:
 Notifications.setNotificationHandler({
@@ -18,7 +19,7 @@ const CHANNEL = 'reminders';
  */
 async function channelId(): Promise<string | undefined> {
   try {
-    await Notifications.setNotificationChannelAsync(CHANNEL, { name: 'Hatırlatıcılar', importance: AndroidImportance.DEFAULT });
+    await Notifications.setNotificationChannelAsync(CHANNEL, { name: t('Hatırlatıcılar'), importance: AndroidImportance.DEFAULT });
     return CHANNEL;
   } catch {
     return undefined;

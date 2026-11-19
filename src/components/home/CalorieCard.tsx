@@ -16,6 +16,7 @@ import { useDb } from '@/db/useDb';
 import { filterFoods, proteinTarget, suggestCalories, sumMacros } from '@/services/nutrition';
 import { fmtInt, parseNumber } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 const MAX_RESULTS = 40;
 
@@ -48,7 +49,7 @@ export function CalorieCard({ date, size = 'large' }: { date: string; size?: 'sm
   const choose = (f: Food) => { setPicked(f); setOpen('grams'); };
 
   const remove = async (id: number, label: string) => {
-    if (await confirm({ title: 'Kayıt silinsin mi?', message: label, confirmLabel: 'Sil', destructive: true })) {
+    if (await confirm({ title: t('Kayıt silinsin mi?'), message: label, confirmLabel: t('Sil'), destructive: true })) {
       await deleteFoodLog(id);
     }
   };
@@ -57,7 +58,7 @@ export function CalorieCard({ date, size = 'large' }: { date: string; size?: 'sm
     <>
       <TrackerCard
         layout={size === 'large' ? 'wide' : 'square'} resetKey={data.date}
-        title="Kalori" icon="restaurant" color={colors.warning}
+        title={t('Kalori')} icon="restaurant" color={colors.warning}
         progress={total.kcal / goal}
         value={fmtInt(total.kcal)}
         caption={`/ ${fmtInt(goal)} kcal`}
@@ -66,34 +67,34 @@ export function CalorieCard({ date, size = 'large' }: { date: string; size?: 'sm
         side={
           <>
             <Info label="Protein" value={protein ? `${fmtInt(total.protein)} / ${protein} g` : `${fmtInt(total.protein)} g`} />
-            <Info label="Yağ" value={`${fmtInt(total.fat)} g`} />
-            <Info label="Karbonhidrat" value={`${fmtInt(total.carbs)} g`} />
+            <Info label={t('Yağ')} value={`${fmtInt(total.fat)} g`} />
+            <Info label={t('Karbonhidrat')} value={`${fmtInt(total.carbs)} g`} />
           </>
         }
         footer={
           <Text style={type.caption} numberOfLines={1}>
-            {size === 'small' ? `Kalan ${fmtInt(Math.max(0, goal - total.kcal))} kcal`
-              : data.logs.length ? `${data.logs.length} kayıt · kalan ${fmtInt(Math.max(0, goal - total.kcal))} kcal` : ''}
+            {size === 'small' ? t('Kalan {n} kcal', { n: fmtInt(Math.max(0, goal - total.kcal)) })
+              : data.logs.length ? t('{c} kayıt · kalan {n} kcal', { c: data.logs.length, n: fmtInt(Math.max(0, goal - total.kcal)) }) : ''}
           </Text>
         }
       />
 
-      <Sheet visible={open === 'search'} onClose={close} title="Yiyecek ekle">
-        <TextInput value={query} onChangeText={setQuery} placeholder="Ara" placeholderTextColor={colors.textSecondary}
-          style={styles.input} accessibilityLabel="Yiyecek ara" autoCorrect={false} />
+      <Sheet visible={open === 'search'} onClose={close} title={t('Yiyecek ekle')}>
+        <TextInput value={query} onChangeText={setQuery} placeholder={t('Ara')} placeholderTextColor={colors.textSecondary}
+          style={styles.input} accessibilityLabel={t('Yiyecek ara')} autoCorrect={false} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
-          {FOOD_CATEGORIES.map((c) => <PillButton key={c} label={c} active={cat === c} onPress={() => setCat(cat === c ? null : c)} />)}
+          {FOOD_CATEGORIES.map((c) => <PillButton key={c} label={t(c)} active={cat === c} onPress={() => setCat(cat === c ? null : c)} />)}
         </ScrollView>
-        <SheetRow label="+ Kendi yiyeceğini ekle" onPress={() => setOpen('new')} />
+        <SheetRow label={t('+ Kendi yiyeceğini ekle')} onPress={() => setOpen('new')} />
         {!searching && recent.length ? (
           <>
-            <Text style={type.caption}>Son yenenler</Text>
+            <Text style={type.caption}>{t('Son yenenler')}</Text>
             {recent.map((f) => <SheetRow key={f.id} label={f.name} value={`${fmtInt(f.kcal)} kcal/100 ${f.unit}`} onPress={() => choose(f)} />)}
-            <Text style={type.caption}>Tüm yiyecekler</Text>
+            <Text style={type.caption}>{t('Tüm yiyecekler')}</Text>
           </>
         ) : null}
         {results.map((f) => <SheetRow key={f.id} label={f.name} value={`${fmtInt(f.kcal)} kcal/100 ${f.unit}`} onPress={() => choose(f)} />)}
-        {!results.length ? <Text style={type.caption}>Bulunamadı.</Text> : null}
+        {!results.length ? <Text style={type.caption}>{t('Bulunamadı.')}</Text> : null}
       </Sheet>
 
       <NumberPrompt
@@ -104,28 +105,28 @@ export function CalorieCard({ date, size = 'large' }: { date: string; size?: 'sm
       <NewFoodSheet visible={open === 'new'} onClose={close} initialName={query.trim()}
         onSaved={(f) => choose(f)} save={(f) => addFood(f)} />
 
-      <Sheet visible={open === 'menu'} onClose={close} title="Kalori">
-        <SheetRow label="Hedefi değiştir" value={`${fmtInt(goal)} kcal`} onPress={() => setOpen('goal')} />
+      <Sheet visible={open === 'menu'} onClose={close} title={t('Kalori')}>
+        <SheetRow label={t('Hedefi değiştir')} value={`${fmtInt(goal)} kcal`} onPress={() => setOpen('goal')} />
         {suggested ? (
-          <SheetRow label="Önerilen hedef" value={`${fmtInt(suggested)} kcal`}
+          <SheetRow label={t('Önerilen hedef')} value={`${fmtInt(suggested)} kcal`}
             onPress={() => { updateTrackerSettings('calories', { goal: suggested }); close(); }} />
         ) : (
-          <SheetRow label="Önerilen hedef" value="Profili doldur" onPress={() => { close(); router.navigate('/profile'); }} />
+          <SheetRow label={t('Önerilen hedef')} value={t('Profili doldur')} onPress={() => { close(); router.navigate('/profile'); }} />
         )}
-        <SheetRow label="Bugünkü kayıtlar" value={String(data.logs.length)} onPress={() => setOpen('logs')} />
-        <SheetRow label="Geçmişi gör" onPress={() => { close(); router.push('/tracker/calories'); }} />
+        <SheetRow label={t('Bugünkü kayıtlar')} value={String(data.logs.length)} onPress={() => setOpen('logs')} />
+        <SheetRow label={t('Geçmişi gör')} onPress={() => { close(); router.push('/tracker/calories'); }} />
       </Sheet>
 
-      <Sheet visible={open === 'logs'} onClose={close} title="Kayıtlar">
+      <Sheet visible={open === 'logs'} onClose={close} title={t('Kayıtlar')}>
         {data.logs.map((l) => {
           const label = `${l.name} · ${fmtInt(l.grams)} ${l.unit}`;
           return <SheetRow key={l.id} label={label} value={`${fmtInt(l.kcal)} kcal`} onPress={() => remove(l.id, label)} />;
         })}
-        {!data.logs.length ? <Text style={type.caption}>Kayıt yok.</Text> : null}
+        {!data.logs.length ? <Text style={type.caption}>{t('Kayıt yok.')}</Text> : null}
       </Sheet>
 
       <NumberPrompt
-        visible={open === 'goal'} onClose={close} title="Günlük kalori hedefi" suffix="kcal" initial={goal} min={499}
+        visible={open === 'goal'} onClose={close} title={t('Günlük kalori hedefi')} suffix="kcal" initial={goal} min={499}
         onSubmit={(v) => updateTrackerSettings('calories', { goal: Math.round(v) })}
       />
     </>
@@ -133,10 +134,10 @@ export function CalorieCard({ date, size = 'large' }: { date: string; size?: 'sm
 }
 
 const FIELDS = [
-  { key: 'kcal', label: 'Kalori (kcal)' },
-  { key: 'protein', label: 'Protein (g)' },
-  { key: 'fat', label: 'Yağ (g)' },
-  { key: 'carbs', label: 'Karbonhidrat (g)' },
+  { key: 'kcal', label: t('Kalori (kcal)') },
+  { key: 'protein', label: t('Protein (g)') },
+  { key: 'fat', label: t('Yağ (g)') },
+  { key: 'carbs', label: t('Karbonhidrat (g)') },
 ] as const;
 type Macro = (typeof FIELDS)[number]['key'];
 
@@ -170,23 +171,23 @@ function NewFoodSheet({ visible, onClose, initialName, save, onSaved }: {
   };
 
   return (
-    <Sheet visible={visible} onClose={onClose} title={`Yeni yiyecek (100 ${unit} başına)`}>
-      <TextInput value={name} onChangeText={setName} placeholder="Yiyecek adı" placeholderTextColor={colors.textSecondary}
-        style={styles.input} maxLength={48} accessibilityLabel="Yiyecek adı" />
+    <Sheet visible={visible} onClose={onClose} title={t('Yeni yiyecek (100 {unit} başına)', { unit })}>
+      <TextInput value={name} onChangeText={setName} placeholder={t('Yiyecek adı')} placeholderTextColor={colors.textSecondary}
+        style={styles.input} maxLength={48} accessibilityLabel={t('Yiyecek adı')} />
       <View style={styles.row}>
-        <SegmentedControl<FoodUnit> options={[{ value: 'g', label: 'Katı (g)' }, { value: 'ml', label: 'Sıvı (ml)' }]} value={unit} onChange={setUnit} />
+        <SegmentedControl<FoodUnit> options={[{ value: 'g', label: t('Katı (g)') }, { value: 'ml', label: t('Sıvı (ml)') }]} value={unit} onChange={setUnit} />
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
-        {FOOD_CATEGORIES.map((c) => <PillButton key={c} label={c} active={category === c} onPress={() => setCategory(category === c ? null : c)} />)}
+        {FOOD_CATEGORIES.map((c) => <PillButton key={c} label={t(c)} active={category === c} onPress={() => setCategory(category === c ? null : c)} />)}
       </ScrollView>
       {FIELDS.map((f) => (
         <View key={f.key} style={styles.field}>
           <Text style={[type.body, styles.flex]}>{f.label}</Text>
-          <TextInput value={vals[f.key]} onChangeText={(t) => setVals({ ...vals, [f.key]: t })} keyboardType="decimal-pad"
+          <TextInput value={vals[f.key]} onChangeText={(v) => setVals({ ...vals, [f.key]: v })} keyboardType="decimal-pad"
             placeholder="0" placeholderTextColor={colors.textSecondary} style={[styles.input, styles.num]} accessibilityLabel={f.label} />
         </View>
       ))}
-      <PillButton label="Kaydet" variant="primary" disabled={!valid} onPress={submit} />
+      <PillButton label={t('Kaydet')} variant="primary" disabled={!valid} onPress={submit} />
     </Sheet>
   );
 }

@@ -1,4 +1,5 @@
 import { addDays, weekday, type DateStr } from '@/services/dates';
+import { t } from '@/i18n';
 
 /** Ayın takvim hücreleri, Pazartesi ile başlar; ay dışı hücreler null. month = 'YYYY-MM'. */
 export function monthCells(month: string): (DateStr | null)[] {
@@ -35,7 +36,7 @@ export function groupActivity(input: ActivityInput) {
     if (!a) map.set(d, (a = { workouts: [], water: 0, steps: 0, habits: 0 }));
     return a;
   };
-  for (const s of input.sessions) day(s.date).workouts.push(s.name ?? 'Antrenman');
+  for (const s of input.sessions) day(s.date).workouts.push(s.name ?? t('Antrenman'));
   for (const t of input.trackers) if (t.type === 'water' || t.type === 'steps') day(t.date)[t.type] += t.value;
   for (const h of input.habitLogs) day(h.date).habits++;
   for (const s of input.streak) day(s.date).streak = s.status;

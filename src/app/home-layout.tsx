@@ -11,6 +11,7 @@ import { getSetting, setSetting } from '@/db/repos/settings';
 import { useDb } from '@/db/useDb';
 import { ALL_CARDS, DEFAULT_LAYOUT, defaultSize, HOME_CARD_NAMES, RESIZABLE, toRows, type HomeCardId, type HomeItem } from '@/services/homeLayout';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
 const ICONS: Record<HomeCardId, IconName> = {
@@ -49,12 +50,12 @@ export default function HomeLayoutScreen() {
   const save = (next: HomeItem[]) => setSetting('homeLayout', next);
 
   const reset = async () => {
-    if (await confirm({ title: 'Varsayılana dönülsün mü?', confirmLabel: 'Sıfırla' })) save(DEFAULT_LAYOUT);
+    if (await confirm({ title: t('Varsayılana dönülsün mü?'), confirmLabel: t('Sıfırla') })) save(DEFAULT_LAYOUT);
   };
 
   return (
     <View style={styles.safe}>
-      <BackHeader title="Ana ekran düzeni" />
+      <BackHeader title={t('Ana ekran düzeni')} />
       <ScrollView contentContainerStyle={styles.body} scrollEnabled={!drag}>
         <View style={[styles.phone, { width: phoneW }]}>
           <View style={styles.notch} />
@@ -86,8 +87,8 @@ export default function HomeLayoutScreen() {
                     let bestD = Infinity;
                     for (let i = 0; i <= others.length; i++) {
                       const trial = [...others.slice(0, i), it, ...others.slice(i)];
-                      const t = slots(trial, innerW).map.get(it.id)!;
-                      const d = (t.x + t.w / 2 - cx) ** 2 + (t.y + t.h / 2 - cy) ** 2;
+                      const sl = slots(trial, innerW).map.get(it.id)!;
+                      const d = (sl.x + sl.w / 2 - cx) ** 2 + (sl.y + sl.h / 2 - cy) ** 2;
                       if (d < bestD) { bestD = d; best = i; }
                     }
                     const next = [...others.slice(0, best), it, ...others.slice(best)];
@@ -111,7 +112,7 @@ export default function HomeLayoutScreen() {
           <View style={styles.tray}>
             {hidden.map((id) => (
               <Pressable key={id} onPress={() => save([...items, { id, size: defaultSize(id) }])} style={styles.chip}
-                accessibilityRole="button" accessibilityLabel={`${HOME_CARD_NAMES[id]} ekle`}>
+                accessibilityRole="button" accessibilityLabel={t('{name} ekle', { name: HOME_CARD_NAMES[id] })}>
                 <Icon name="add" size={18} color={colors.accent} />
                 <Text style={type.body}>{HOME_CARD_NAMES[id]}</Text>
               </Pressable>
@@ -119,7 +120,7 @@ export default function HomeLayoutScreen() {
           </View>
         ) : null}
 
-        <PillButton label="Varsayılana dön" onPress={reset} />
+        <PillButton label={t('Varsayılana dön')} onPress={reset} />
       </ScrollView>
     </View>
   );
@@ -161,7 +162,7 @@ function MiniCard({ item, slot, dragging, canRemove, onRemove, onToggle, onStart
     <Animated.View layout={dragging ? undefined : LinearTransition.duration(160)} {...pan.panHandlers}
       style={[styles.mini, { left: slot.x, top: slot.y, width: slot.w, height: slot.h }, dragging && styles.miniDrag, anim]}
       accessibilityRole="button"
-      accessibilityLabel={`${HOME_CARD_NAMES[item.id]}${resizable ? `, ${small ? 'küçük' : 'büyük'}` : ''}`}>
+      accessibilityLabel={`${HOME_CARD_NAMES[item.id]}${resizable ? `, ${small ? t('küçük') : t('büyük')}` : ''}`}>
       <View style={[styles.miniBody, small && styles.miniBodySmall]}>
         <Icon name={ICONS[item.id]} size={small ? 22 : 20} color={colors.accent} />
         <Text style={styles.miniName} numberOfLines={1}>{HOME_CARD_NAMES[item.id]}</Text>
@@ -170,7 +171,7 @@ function MiniCard({ item, slot, dragging, canRemove, onRemove, onToggle, onStart
         <View style={styles.sizeTag}><Icon name={small ? 'open_in_full' : 'close_fullscreen'} size={12} color={colors.textSecondary} /></View>
       ) : null}
       {canRemove ? (
-        <Pressable onPress={onRemove} hitSlop={8} style={styles.remove} accessibilityRole="button" accessibilityLabel={`${HOME_CARD_NAMES[item.id]} kaldır`}>
+        <Pressable onPress={onRemove} hitSlop={8} style={styles.remove} accessibilityRole="button" accessibilityLabel={t('{name} kaldır', { name: HOME_CARD_NAMES[item.id] })}>
           <Icon name="close" size={14} color={colors.textPrimary} />
         </Pressable>
       ) : null}

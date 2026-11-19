@@ -17,6 +17,7 @@ import { cancelReminder, scheduleDaily } from '@/services/notifications';
 import { averageBedtime, formatDuration, QUALITY_EMOJI, type SleepDisplay } from '@/services/sleep';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 const BEDTIME_ID = 'bedtime-reminder';
 
@@ -47,17 +48,17 @@ export function SleepCard({ date, size = 'large' }: { date: string; size?: 'smal
   const maxMin = Math.max(goal, ...data.week.map((l) => l.duration_min));
 
   const setReminder = async () => {
-    const t = await pickTime(data.notif.bedtimeReminder ?? '23:30');
-    if (!t) return;
+    const time = await pickTime(data.notif.bedtimeReminder ?? '23:30');
+    if (!time) return;
     let ok: boolean;
     try {
-      ok = await scheduleDaily(BEDTIME_ID, t, 'Yatma vakti 🌙', 'Uyku hedefin için yatmaya hazırlanma zamanı.');
+      ok = await scheduleDaily(BEDTIME_ID, time, t('Yatma vakti 🌙'), t('Uyku hedefin için yatmaya hazırlanma zamanı.'));
     } catch {
-      setNotice('Hatırlatıcı kurulamadı, tekrar dene.');
+      setNotice(t('Hatırlatıcı kurulamadı, tekrar dene.'));
       return;
     }
-    if (!ok) { setNotice('Bildirim izni verilmedi.'); return; }
-    await setSetting('notifications', { ...data.notif, bedtimeReminder: t });
+    if (!ok) { setNotice(t('Bildirim izni verilmedi.')); return; }
+    await setSetting('notifications', { ...data.notif, bedtimeReminder: time });
     setNotice('');
   };
 
@@ -65,7 +66,7 @@ export function SleepCard({ date, size = 'large' }: { date: string; size?: 'smal
     <>
       <TrackerCard
         layout={size === 'large' ? 'wide' : 'square'} resetKey={data.date}
-        title="Uyku" icon="bedtime" color={colors.primary}
+        title={t('Uyku')} icon="bedtime" color={colors.primary}
         progress={log ? log.duration_min / goal : 0}
         value={log ? formatDuration(log.duration_min, display) : '—'}
         caption={`/ ${formatDuration(goal, display)}`}
@@ -73,10 +74,10 @@ export function SleepCard({ date, size = 'large' }: { date: string; size?: 'smal
         onPress={() => setOpen('entry')}
         side={
           <>
-            <Info label="Yatış" value={log?.bedtime ?? '—'} />
-            <Info label="Kalkış" value={log?.wake_time ?? '—'} />
-            <Info label="Kalite" value={log?.quality ? QUALITY_EMOJI[log.quality - 1] : '—'} />
-            <View style={styles.bars} accessibilityLabel="Son 7 gün uyku süreleri">
+            <Info label={t('Yatış')} value={log?.bedtime ?? '—'} />
+            <Info label={t('Kalkış')} value={log?.wake_time ?? '—'} />
+            <Info label={t('Kalite')} value={log?.quality ? QUALITY_EMOJI[log.quality - 1] : '—'} />
+            <View style={styles.bars} accessibilityLabel={t('Son 7 gün uyku süreleri')}>
               {days.map((d) => {
                 const l = data.week.find((x) => x.date === d);
                 return (
@@ -93,32 +94,32 @@ export function SleepCard({ date, size = 'large' }: { date: string; size?: 'smal
         }
         footer={
           <Text style={type.caption}>
-            {avg != null ? `Haftalık ort. ${formatDuration(Math.round(avg), display)} · Ort. yatış ${avgBed}` : ''}
+            {avg != null ? t('Haftalık ort. {avg} · Ort. yatış {bed}', { avg: formatDuration(Math.round(avg), display), bed: avgBed ?? '—' }) : ''}
           </Text>
         }
       />
       <SleepSheet visible={open === 'entry'} date={date} log={log} onClose={close} />
-      <Sheet visible={open === 'menu'} onClose={close} title="Uyku">
-        <SheetRow label="Hedef süre" value={formatDuration(goal, display)} onPress={() => setOpen('goal')} />
+      <Sheet visible={open === 'menu'} onClose={close} title={t('Uyku')}>
+        <SheetRow label={t('Hedef süre')} value={formatDuration(goal, display)} onPress={() => setOpen('goal')} />
         <View style={styles.segment}>
           <SegmentedControl<SleepDisplay>
-            options={[{ value: 'hm', label: 'Saat:dakika' }, { value: 'decimal', label: 'Ondalık saat' }]}
+            options={[{ value: 'hm', label: t('Saat:dakika') }, { value: 'decimal', label: t('Ondalık saat') }]}
             value={display}
             onChange={(v) => updateTrackerSettings('sleep', { display_unit: v })}
           />
         </View>
-        <SheetRow label="Yatma saati hatırlatıcısı" value={data.notif.bedtimeReminder ?? 'Kapalı'} onPress={setReminder} />
+        <SheetRow label={t('Yatma saati hatırlatıcısı')} value={data.notif.bedtimeReminder ?? t('Kapalı')} onPress={setReminder} />
         {data.notif.bedtimeReminder ? (
-          <SheetRow label="Hatırlatıcıyı kapat" onPress={async () => {
+          <SheetRow label={t('Hatırlatıcıyı kapat')} onPress={async () => {
             await cancelReminder(BEDTIME_ID);
             await setSetting('notifications', { ...data.notif, bedtimeReminder: null });
           }} />
         ) : null}
         {notice ? <Text style={[type.caption, { color: colors.warning }]}>{notice}</Text> : null}
-        <SheetRow label="Geçmişi gör" onPress={() => { close(); router.push('/tracker/sleep'); }} />
+        <SheetRow label={t('Geçmişi gör')} onPress={() => { close(); router.push('/tracker/sleep'); }} />
       </Sheet>
       <NumberPrompt
-        visible={open === 'goal'} onClose={close} title="Uyku hedefi" suffix="saat" initial={goal / 60} min={1}
+        visible={open === 'goal'} onClose={close} title={t('Uyku hedefi')} suffix={t('saat')} initial={goal / 60} min={1}
         onSubmit={(v) => updateTrackerSettings('sleep', { goal: Math.round(v * 60) })}
       />
     </>

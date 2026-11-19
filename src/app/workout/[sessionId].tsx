@@ -24,11 +24,12 @@ import { fmtDec, parseNumber } from '@/services/units';
 import { mmss, overloadSuggestion } from '@/services/workout';
 import { useWorkoutStore } from '@/stores/useWorkoutStore';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 /** Saniyede bir yeniden çizdirmek için şu anki zaman. */
 function useNow(ms = 1000) {
   const [now, setNow] = useState(() => Date.now());
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), ms); return () => clearInterval(t); }, [ms]);
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), ms); return () => clearInterval(id); }, [ms]);
   return now;
 }
 
@@ -71,7 +72,7 @@ export default function ActiveWorkout() {
     const key = keyOf(x.exercise_id, setIndex);
     setPicking({
       key,
-      title: `${x.name_tr} · Set ${setIndex + 1}`,
+      title: `${x.name_tr} · ${t('Set {n}', { n: setIndex + 1 })}`,
       kg: parseNumber(inputs[key]?.kg ?? '') ?? kgHint ?? 10,
       reps: x.duration_sec ? null : parseNumber(inputs[key]?.reps ?? '') ?? repsHint ?? 10,
     });
@@ -102,13 +103,13 @@ export default function ActiveWorkout() {
 
   const finish = async () => {
     if (!done.length) {
-      if (await confirm({ title: 'Hiç set tamamlanmadı', message: 'Antrenman iptal edilsin mi?', confirmLabel: 'İptal et', cancelLabel: 'Devam et', destructive: true })) {
+      if (await confirm({ title: t('Hiç set tamamlanmadı'), message: t('Antrenman iptal edilsin mi?'), confirmLabel: t('İptal et'), cancelLabel: t('Devam et'), destructive: true })) {
         await endSession(sessionId, 'abandoned');
         router.back();
       }
       return;
     }
-    if (!(await confirm({ title: 'Antrenmanı bitir', message: `${done.length}/${totalSets} set tamamlandı.`, confirmLabel: 'Bitir' }))) return;
+    if (!(await confirm({ title: t('Antrenmanı bitir'), message: t('{d}/{n} set tamamlandı.', { d: done.length, n: totalSets }), confirmLabel: t('Bitir') }))) return;
     useWorkoutStore.getState().stopRest();
     await endSession(sessionId, 'done');
     play('complete');
@@ -117,12 +118,12 @@ export default function ActiveWorkout() {
 
   return (
     <View style={styles.flex}>
-      <BackHeader title={session.template_name ?? 'Antrenman'} right={
-        <PillButton label="Bitir" variant="primary" onPress={finish} style={styles.finish} />
+      <BackHeader title={session.template_name ?? t('Antrenman')} right={
+        <PillButton label={t('Bitir')} variant="primary" onPress={finish} style={styles.finish} />
       } />
       <View style={styles.statusRow}>
-        <View style={styles.pill}><Text style={styles.pillText}>Süre {mmss(elapsed)}</Text></View>
-        <View style={styles.pill}><Text style={styles.pillText}>{done.length}/{totalSets} set</Text></View>
+        <View style={styles.pill}><Text style={styles.pillText}>{t('Süre {v}', { v: mmss(elapsed) })}</Text></View>
+        <View style={styles.pill}><Text style={styles.pillText}>{t('{d}/{n} set', { d: done.length, n: totalSets })}</Text></View>
       </View>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {plan.map((x, xi) => {
@@ -134,20 +135,20 @@ export default function ActiveWorkout() {
                 <ExerciseThumb imageKey={x.image_key} photoUri={x.photo_uri} size={44} />
                 <View style={styles.flex1}>
                   <Text style={type.subtitle}>{x.name_tr}</Text>
-                  <Text style={type.caption}>{summary(x)}{x.superset_group != null ? ' · süperset' : ''}</Text>
+                  <Text style={type.caption}>{summary(x)}{x.superset_group != null ? t(' · süperset') : ''}</Text>
                 </View>
               </Pressable>
               {suggest ? (
                 <View style={styles.suggest}>
                   <Icon name="trending_up" size={18} color={colors.accent} />
-                  <Text style={styles.suggestText}>Geçen sefer tüm setlerde {x.rep_max} tekrara ulaştın: ağırlığı artır (~{suggest} kg)</Text>
+                  <Text style={styles.suggestText}>{t('Geçen sefer tüm setlerde {reps} tekrara ulaştın: ağırlığı artır (~{kg} kg)', { reps: x.rep_max ?? '', kg: suggest })}</Text>
                 </View>
               ) : null}
               <View style={styles.tableHead}>
-                <Text style={[styles.th, styles.colSet]}>Set</Text>
-                <Text style={[styles.th, styles.colPrev]}>Önceki</Text>
+                <Text style={[styles.th, styles.colSet]}>{t('Set')}</Text>
+                <Text style={[styles.th, styles.colPrev]}>{t('Önceki')}</Text>
                 <Text style={[styles.th, styles.colIn]}>kg</Text>
-                <Text style={[styles.th, styles.colIn]}>{x.duration_sec ? 'Süre' : 'Tekrar'}</Text>
+                <Text style={[styles.th, styles.colIn]}>{x.duration_sec ? t('Süre') : t('Tekrar')}</Text>
                 <View style={styles.colCheck} />
               </View>
               {Array.from({ length: x.sets }, (_, i) => {
@@ -157,7 +158,7 @@ export default function ActiveWorkout() {
                 const kgHint = lastKgThisSession(x.exercise_id) ?? p?.weight_kg ?? null;
                 const repsHint = p?.reps ?? x.rep_max ?? x.rep_min ?? null;
                 const running = stopwatch?.key === key;
-                const prevLabel = p ? (p.duration_sec ? `${p.duration_sec} sn` : `${p.weight_kg ?? 0}×${p.reps ?? 0}`) : '—';
+                const prevLabel = p ? (p.duration_sec ? `${p.duration_sec} ${t('sn')}` : `${p.weight_kg ?? 0}×${p.reps ?? 0}`) : '—';
                 return (
                   <View key={key} style={[styles.setRow, d && styles.setDone]}>
                     <Text style={[styles.cell, styles.colSet]}>{i + 1}</Text>
@@ -165,29 +166,29 @@ export default function ActiveWorkout() {
                     <Cell
                       value={d ? (d.weight_kg != null ? fmtDec(d.weight_kg) : '—') : inputs[key]?.kg ?? null}
                       hint={kgHint != null ? fmtDec(kgHint) : 'kg'}
-                      disabled={!!d || locked} label={`Set ${i + 1} ağırlık`}
+                      disabled={!!d || locked} label={t('Set {n} ağırlık', { n: i + 1 })}
                       onPress={() => openPicker(x, i, kgHint, repsHint)} />
                     {x.duration_sec ? (
                       <Pressable style={[styles.input, styles.colIn, styles.timerBtn]} disabled={!!d || locked}
-                        accessibilityRole="button" accessibilityLabel={running ? 'Kronometreyi durdur' : 'Kronometreyi başlat'}
+                        accessibilityRole="button" accessibilityLabel={running ? t('Kronometreyi durdur') : t('Kronometreyi başlat')}
                         onPress={() => {
                           if (!running) { setStopwatch({ key, startedAt: Date.now() }); return; }
                           setStopwatch(null);
                           complete(x, xi, i, Math.round((Date.now() - stopwatch.startedAt) / 1000));
                         }}>
                         <Text style={styles.cell}>
-                          {d ? `${d.duration_sec} sn` : running ? `■ ${Math.floor((now - stopwatch.startedAt) / 1000)}/${x.duration_sec}` : `▶ ${x.duration_sec} sn`}
+                          {d ? `${d.duration_sec} ${t('sn')}` : running ? `■ ${Math.floor((now - stopwatch.startedAt) / 1000)}/${x.duration_sec}` : `▶ ${x.duration_sec} ${t('sn')}`}
                         </Text>
                       </Pressable>
                     ) : (
                       <Cell
                         value={d ? String(d.reps ?? '—') : inputs[key]?.reps ?? null}
                         hint={p?.reps != null ? String(p.reps) : `${x.rep_min ?? ''}${x.rep_max && x.rep_max !== x.rep_min ? `-${x.rep_max}` : ''}`}
-                        disabled={!!d || locked} label={`Set ${i + 1} tekrar`}
+                        disabled={!!d || locked} label={t('Set {n} tekrar', { n: i + 1 })}
                         onPress={() => openPicker(x, i, kgHint, repsHint)} />
                     )}
                     <Pressable onPress={() => complete(x, xi, i)} disabled={locked} style={[styles.check, styles.colCheck, d && styles.checkOn]}
-                      accessibilityRole="checkbox" accessibilityState={{ checked: !!d }} accessibilityLabel={`Set ${i + 1} tamamlandı`}>
+                      accessibilityRole="checkbox" accessibilityState={{ checked: !!d }} accessibilityLabel={t('Set {n} tamamlandı', { n: i + 1 })}>
                       <Icon name="check" size={20} color={d ? colors.onPrimary : colors.textSecondary} />
                     </Pressable>
                   </View>
@@ -248,11 +249,11 @@ function RestTimer({ now }: { now: number }) {
         </RingGauge>
       </Animated.View>
       <View style={styles.flex1}>
-        <Text style={type.subtitle}>Dinlenme</Text>
+        <Text style={type.subtitle}>{t('Dinlenme')}</Text>
         <View style={styles.restBtns}>
-          <PillButton label="−15" onPress={() => adjust(-15)} accessibilityLabel="15 saniye azalt" />
-          <PillButton label="+15" onPress={() => adjust(15)} accessibilityLabel="15 saniye ekle" />
-          <PillButton label="Atla" onPress={stopRest} />
+          <PillButton label="−15" onPress={() => adjust(-15)} accessibilityLabel={t('15 saniye azalt')} />
+          <PillButton label="+15" onPress={() => adjust(15)} accessibilityLabel={t('15 saniye ekle')} />
+          <PillButton label={t('Atla')} onPress={stopRest} />
         </View>
       </View>
     </View>

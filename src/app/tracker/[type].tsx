@@ -16,8 +16,9 @@ import { formatDuration, type SleepDisplay } from '@/services/sleep';
 import { niceAxis } from '@/services/stats';
 import { fmtDec, stepsToKm, strideCm, waterToDisplay, type StepUnit, type WaterUnit } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
-const TITLES: Record<TrackerType, string> = { water: 'Su geçmişi', steps: 'Adım geçmişi', sleep: 'Uyku geçmişi', calories: 'Kalori geçmişi' };
+const TITLES: Record<TrackerType, string> = { water: t('Su geçmişi'), steps: t('Adım geçmişi'), sleep: t('Uyku geçmişi'), calories: t('Kalori geçmişi') };
 const BAR_COLOR: Record<TrackerType, string> = { water: colors.accent, steps: colors.primaryLight, sleep: colors.primary, calories: colors.warning };
 
 export default function TrackerHistory() {
@@ -47,7 +48,7 @@ export default function TrackerHistory() {
     return v / 60; // uyku: saat
   };
   const unitLabel = kind === 'water' ? (s.display_unit === 'glass' ? 'bardak' : 'L')
-    : kind === 'steps' ? (s.display_unit === 'km' ? 'km' : 'adım') : kind === 'calories' ? 'kcal' : 'saat';
+    : kind === 'steps' ? (s.display_unit === 'km' ? 'km' : t('adım')) : kind === 'calories' ? 'kcal' : t('saat');
   // kaloride hedef bir üst sınır: kayıtlı ve hedefi aşmayan gün başarılı
   const met = (v: number) => (kind === 'calories' ? v > 0 && v <= s.goal : v >= s.goal);
 
@@ -75,14 +76,14 @@ export default function TrackerHistory() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Geri">
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Geri')}>
           <Icon name="arrow_back" color={colors.textPrimary} />
         </Pressable>
         <Text style={type.title}>{TITLES[kind]}</Text>
       </View>
       <View style={styles.body}>
         <View style={styles.segment}>
-          <SegmentedControl options={[{ value: '14', label: '2 hafta' }, { value: '30', label: '1 ay' }]} value={days} onChange={setDays} />
+          <SegmentedControl options={[{ value: '14', label: t('2 hafta') }, { value: '30', label: t('1 ay') }]} value={days} onChange={setDays} />
         </View>
         <View style={styles.card}>
           <BarChart
@@ -108,12 +109,12 @@ export default function TrackerHistory() {
             referenceLine1Config={{ color: colors.accent, dashWidth: 6, dashGap: 4, thickness: 1 }}
             isAnimated
           />
-          <Text style={type.caption}>Kesikli çizgi: hedef ({kind === 'sleep' ? formatDuration(s.goal, s.display_unit as SleepDisplay) : `${fmtDec(goal, 2)} ${unitLabel}`})</Text>
+          <Text style={type.caption}>{t('Kesikli çizgi: hedef')} ({kind === 'sleep' ? formatDuration(s.goal, s.display_unit as SleepDisplay) : `${fmtDec(goal, 2)} ${unitLabel}`})</Text>
         </View>
         <View style={styles.stats}>
-          <Stat label="Kayıtlı gün ortalaması"
+          <Stat label={t('Kayıtlı gün ortalaması')}
             value={kind === 'sleep' ? formatDuration(Math.round(avg), s.display_unit as SleepDisplay) : `${fmtDec(conv(avg), 1)} ${unitLabel}`} />
-          <Stat label="Hedefe ulaşılan gün" value={`${hit} / ${n}`} />
+          <Stat label={t('Hedefe ulaşılan gün')} value={`${hit} / ${n}`} />
         </View>
       </View>
     </SafeAreaView>

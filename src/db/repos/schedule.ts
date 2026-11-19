@@ -1,5 +1,6 @@
 import { notify } from '@/db/bus';
 import { must, supabase } from '@/db/supabase';
+import { t } from '@/i18n';
 
 export type DayItemKind = 'workout' | 'walk' | 'rest';
 
@@ -48,5 +49,5 @@ export async function removeDayItem(id: number) {
 }
 
 export function dayItemName(i: DayItem) {
-  return i.kind === 'workout' ? i.templateName ?? 'Antrenman' : i.kind === 'walk' ? 'Yürüyüş' : 'Dinlenme';
+  return i.kind === 'workout' ? i.templateName ?? t('Antrenman') : i.kind === 'walk' ? t('Yürüyüş') : t('Dinlenme');
 }

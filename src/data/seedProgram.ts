@@ -1,8 +1,9 @@
-// İlk kurulumda eklenen örnek alışkanlıklar (program ve gün atamaları boş başlar).
+// İlk kurulumda eklenen örnek alışkanlıklar (program ve gün atamaları boş başlar). Kurulum anındaki dilde yazılır.
+import { t } from '@/i18n';
 
 export const seedHabits = [
-  { name: 'Tatlı yeme', icon: 'no_food' },
-  { name: 'Protein hedefi', icon: 'egg' },
-  { name: 'Esneme', icon: 'self_improvement' },
-  { name: 'Yürüyüş', icon: 'directions_walk' },
+  { name: t('Tatlı yeme'), icon: 'no_food' },
+  { name: t('Protein hedefi'), icon: 'egg' },
+  { name: t('Esneme'), icon: 'self_improvement' },
+  { name: t('Yürüyüş'), icon: 'directions_walk' },
 ];

@@ -15,6 +15,7 @@ import { fmtDec, fmtInt } from '@/services/units';
 import { exerciseStats, findPRs, mmss, regionVolume, volume } from '@/services/workout';
 import { XP_RULES } from '@/services/xp';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 const regionOfMuscle = new Map(muscles.map((m) => [m.id, m.regionId]));
 const regionName = new Map(regions.map((r) => [r.id, r.nameTr]));
@@ -52,14 +53,14 @@ export default function WorkoutSummary() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.emoji}>🏁</Text>
-        <Text style={[type.hero, styles.center]}>Antrenman bitti!</Text>
+        <Text style={[type.hero, styles.center]}>{t('Antrenman bitti!')}</Text>
         <Text style={[type.caption, styles.center]}>{session.template_name}</Text>
 
         <View style={styles.stats}>
-          <Stat label="Süre" value={mmss(duration)} delta={prevDuration != null ? signed(Math.round((duration - prevDuration) / 60), ' dk') : undefined} />
-          <Pressable style={styles.stat} onPress={() => setInfo(true)} accessibilityRole="button" accessibilityLabel={`Toplam hacim ${fmtInt(total)} kg, açıklama`}>
+          <Stat label={t('Süre')} value={mmss(duration)} delta={prevDuration != null ? signed(Math.round((duration - prevDuration) / 60), ` ${t('dk')}`) : undefined} />
+          <Pressable style={styles.stat} onPress={() => setInfo(true)} accessibilityRole="button" accessibilityLabel={t('Toplam hacim {n} kg, açıklama', { n: fmtInt(total) })}>
             <View style={styles.statLabel}>
-              <Text style={type.caption}>Toplam hacim</Text>
+              <Text style={type.caption}>{t('Toplam hacim')}</Text>
               <Icon name="info" size={14} color={colors.textSecondary} />
             </View>
             <Text style={type.title} numberOfLines={1} adjustsFontSizeToFit>{fmtInt(total)} kg</Text>
@@ -67,14 +68,14 @@ export default function WorkoutSummary() {
           </Pressable>
         </View>
         <View style={styles.stats}>
-          <Stat label="Set" value={String(sets.length)} />
-          <Stat label="Tekrar" value={fmtInt(reps)} />
+          <Stat label={t('Set')} value={String(sets.length)} />
+          <Stat label={t('Tekrar')} value={fmtInt(reps)} />
           <Stat label="XP" value={`+${sets.length * XP_RULES.set}`} />
         </View>
 
         {byRegion.length ? (
           <>
-            <Text style={type.title}>Kas gruplarına göre hacim</Text>
+            <Text style={type.title}>{t('Kas gruplarına göre hacim')}</Text>
             <View style={styles.card}>
               {byRegion.map(([r, v]) => (
                 <View key={r} style={styles.barRow}>
@@ -87,7 +88,7 @@ export default function WorkoutSummary() {
           </>
         ) : null}
 
-        <Text style={type.title}>Hareketler</Text>
+        <Text style={type.title}>{t('Hareketler')}</Text>
         <View style={styles.card}>
           {[...stats].map(([id, st]) => (
             <View key={id} style={styles.exercise}>
@@ -96,9 +97,9 @@ export default function WorkoutSummary() {
                 {prIds.has(id) ? <Icon name="emoji_events" color={colors.warning} size={20} /> : null}
               </View>
               <Text style={type.caption}>
-                {st.sets} set · {st.seconds && !st.reps ? `${st.seconds} sn` : `${st.reps} tekrar`}
+                {t('{n} set', { n: st.sets })} · {st.seconds && !st.reps ? `${st.seconds} ${t('sn')}` : t('{n} tekrar', { n: st.reps })}
                 {st.volume ? ` · ${fmtInt(st.volume)} kg` : ''}
-                {st.best?.kg ? ` · en iyi ${fmtDec(st.best.kg)}×${st.best.reps}` : ''}
+                {st.best?.kg ? ` · ${t('en iyi')} ${fmtDec(st.best.kg)}×${st.best.reps}` : ''}
               </Text>
             </View>
           ))}
@@ -106,7 +107,7 @@ export default function WorkoutSummary() {
 
         {prs.length ? (
           <>
-            <Text style={type.title}>Kişisel rekorlar</Text>
+            <Text style={type.title}>{t('Kişisel rekorlar')}</Text>
             <View style={styles.card}>
               {prs.map((p) => (
                 <View key={`${p.exercise_id}-${p.kind}`} style={styles.row}>
@@ -119,12 +120,12 @@ export default function WorkoutSummary() {
           </>
         ) : null}
 
-        <PillButton label="Ana sayfaya dön" variant="primary" onPress={() => router.dismissTo('/')} />
+        <PillButton label={t('Ana sayfaya dön')} variant="primary" onPress={() => router.dismissTo('/')} />
       </ScrollView>
 
-      <Sheet visible={info} onClose={() => setInfo(false)} title="Toplam hacim">
-        <Text style={type.body}>Kaldırılan toplam ağırlık: her setin ağırlığı × tekrar sayısı, hepsinin toplamı.</Text>
-        <Text style={type.caption}>3 set × 10 tekrar × 50 kg = 1.500 kg</Text>
+      <Sheet visible={info} onClose={() => setInfo(false)} title={t('Toplam hacim')}>
+        <Text style={type.body}>{t('Kaldırılan toplam ağırlık: her setin ağırlığı × tekrar sayısı, hepsinin toplamı.')}</Text>
+        <Text style={type.caption}>{t('3 set × 10 tekrar × 50 kg = 1.500 kg')}</Text>
       </Sheet>
     </SafeAreaView>
   );

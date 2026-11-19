@@ -12,16 +12,17 @@ import { play } from '@/services/sounds';
 import { formatLongTR, WEEKDAYS_SHORT_TR } from '@/services/dates';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
 
 /** Alışkanlık simgeleri: tek renkli Material Symbols, gruplu. Ara sürümde emoji seçilmiş kayıtlar da çizilir (HabitIcon). */
 const ICON_GROUPS: { label: string; items: IconName[] }[] = [
-  { label: 'Spor', items: ['fitness_center', 'directions_run', 'directions_walk', 'directions_bike', 'pool', 'self_improvement', 'sports_soccer', 'sports_basketball', 'sports_martial_arts', 'hiking', 'sports_tennis', 'rowing'] },
-  { label: 'Sağlık', items: ['water_drop', 'bedtime', 'medication', 'monitor_heart', 'smoke_free', 'spa', 'healing', 'sunny'] },
-  { label: 'Beslenme', items: ['restaurant', 'nutrition', 'egg', 'no_food', 'local_cafe', 'emoji_food_beverage', 'set_meal', 'bakery_dining'] },
-  { label: 'Zihin', items: ['menu_book', 'edit_note', 'psychology', 'headphones', 'track_changes', 'phonelink_erase', 'eco', 'favorite'] },
-  { label: 'Ev & İş', items: ['cleaning_services', 'bed', 'local_laundry_service', 'cooking', 'laptop', 'school', 'savings', 'call', 'check_circle'] },
+  { label: t('Spor'), items: ['fitness_center', 'directions_run', 'directions_walk', 'directions_bike', 'pool', 'self_improvement', 'sports_soccer', 'sports_basketball', 'sports_martial_arts', 'hiking', 'sports_tennis', 'rowing'] },
+  { label: t('Sağlık'), items: ['water_drop', 'bedtime', 'medication', 'monitor_heart', 'smoke_free', 'spa', 'healing', 'sunny'] },
+  { label: t('Beslenme'), items: ['restaurant', 'nutrition', 'egg', 'no_food', 'local_cafe', 'emoji_food_beverage', 'set_meal', 'bakery_dining'] },
+  { label: t('Zihin'), items: ['menu_book', 'edit_note', 'psychology', 'headphones', 'track_changes', 'phonelink_erase', 'eco', 'favorite'] },
+  { label: t('Ev & İş'), items: ['cleaning_services', 'bed', 'local_laundry_service', 'cooking', 'laptop', 'school', 'savings', 'call', 'check_circle'] },
 ];
 const DEFAULT_ICON: IconName = 'check_circle';
 const isSymbolName = (v: string) => /^[a-z_]+$/.test(v);
@@ -43,21 +44,21 @@ export function Checklist({ date }: { date: string }) {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={[type.title, styles.flex]}>Bugün</Text>
+        <Text style={[type.title, styles.flex]}>{t('Bugün')}</Text>
         <Text style={styles.count}>{done}/{habits.length}</Text>
         {habits.length ? (
           <Pressable onPress={() => setRemoving(!removing)} style={[styles.addBtn, styles.editBtn, removing && styles.editOn]} hitSlop={8}
-            accessibilityRole="button" accessibilityState={{ selected: removing }} accessibilityLabel="Görevleri düzenle">
+            accessibilityRole="button" accessibilityState={{ selected: removing }} accessibilityLabel={t('Görevleri düzenle')}>
             <Icon name={removing ? 'check' : 'edit'} size={20} color={removing ? colors.onPrimary : colors.textPrimary} />
           </Pressable>
         ) : null}
         <Pressable onPress={() => setEditing({})} style={styles.addBtn} hitSlop={8}
-          accessibilityRole="button" accessibilityLabel="Alışkanlık ekle">
+          accessibilityRole="button" accessibilityLabel={t('Alışkanlık ekle')}>
           <Icon name="add" size={22} color={colors.onPrimary} />
         </Pressable>
       </View>
       {!loaded ? <Skeleton height={224} /> : habits.length === 0 ? (
-        <Text style={type.caption}>Alışkanlık yok.</Text>
+        <Text style={type.caption}>{t('Alışkanlık yok.')}</Text>
       ) : (
         <View style={styles.list}>
           {habits.map((h) => (
@@ -74,12 +75,12 @@ export function Checklist({ date }: { date: string }) {
               accessibilityRole="checkbox"
               accessibilityState={{ checked: !!h.done }}
               accessibilityLabel={h.name}
-              accessibilityHint="Düzenlemek için basılı tut">
+              accessibilityHint={t('Düzenlemek için basılı tut')}>
               <HabitIcon icon={h.icon} done={!!h.done} />
               <Text style={[type.body, styles.flex, h.done ? styles.doneText : null]}>{h.name}</Text>
               {removing ? (
                 <Pressable onPress={() => removeHabit(h)} hitSlop={10} style={styles.remove}
-                  accessibilityRole="button" accessibilityLabel={`${h.name} kaldır`}>
+                  accessibilityRole="button" accessibilityLabel={t('{name} kaldır', { name: h.name })}>
                   <Icon name="remove_circle" size={26} color={colors.warning} />
                 </Pressable>
               ) : (
@@ -97,7 +98,7 @@ export function Checklist({ date }: { date: string }) {
 }
 
 async function removeHabit(h: Pick<Habit, 'id' | 'name'>) {
-  if (!(await confirm({ title: 'Silinsin mi?', message: `"${h.name}" listeden kaldırılacak. Geçmiş kayıtlar istatistiklerde kalır.`, confirmLabel: 'Sil', destructive: true }))) return false;
+  if (!(await confirm({ title: t('Silinsin mi?'), message: t('"{name}" listeden kaldırılacak. Geçmiş kayıtlar istatistiklerde kalır.', { name: h.name }), confirmLabel: t('Sil'), destructive: true }))) return false;
   await archiveHabit(h.id);
   return true;
 }
@@ -121,12 +122,12 @@ function HabitSheet({ habit, date, onClose }: { habit: Partial<Habit> | null; da
   const habitId = habit?.id; // closure'larda null olabilen habit'e dokunmamak için
 
   return (
-    <Sheet visible={!!habit} onClose={onClose} title={habit?.id ? 'Alışkanlığı düzenle' : 'Yeni alışkanlık'}>
+    <Sheet visible={!!habit} onClose={onClose} title={habit?.id ? t('Alışkanlığı düzenle') : t('Yeni alışkanlık')}>
       <TextInput
-        value={name} onChangeText={setName} placeholder="ör. Esneme" placeholderTextColor={colors.textSecondary}
-        style={styles.input} maxLength={40} accessibilityLabel="Alışkanlık adı" />
+        value={name} onChangeText={setName} placeholder={t('ör. Esneme')} placeholderTextColor={colors.textSecondary}
+        style={styles.input} maxLength={40} accessibilityLabel={t('Alışkanlık adı')} />
       <View style={styles.days}>
-        <SegmentedControl<'daily' | 'weekly'> options={[{ value: 'daily', label: 'Günlük' }, { value: 'weekly', label: 'Haftalık' }]}
+        <SegmentedControl<'daily' | 'weekly'> options={[{ value: 'daily', label: t('Günlük') }, { value: 'weekly', label: t('Haftalık') }]}
           value={kind} onChange={setKind} />
       </View>
       {ICON_GROUPS.map((g) => (
@@ -146,7 +147,7 @@ function HabitSheet({ habit, date, onClose }: { habit: Partial<Habit> | null; da
         <Text style={type.caption}>{formatLongTR(habit?.only_date ?? date)}</Text>
       ) : (
         <>
-          <Text style={type.caption}>Hangi günler</Text>
+          <Text style={type.caption}>{t('Hangi günler')}</Text>
           <View style={styles.days}>
             {WEEKDAYS_SHORT_TR.map((d, i) => (
               <PillButton key={d} label={d} active={(days & (1 << i)) !== 0} onPress={() => setDays(days ^ (1 << i))}
@@ -155,13 +156,13 @@ function HabitSheet({ habit, date, onClose }: { habit: Partial<Habit> | null; da
           </View>
         </>
       )}
-      <PillButton label="Kaydet" variant="primary" disabled={!valid}
+      <PillButton label={t('Kaydet')} variant="primary" disabled={!valid}
         onPress={async () => {
           await saveHabit({ id: habitId, name: name.trim(), icon, weekdays: days, only_date: kind === 'daily' ? habit?.only_date ?? date : null });
           onClose();
         }} />
       {habit?.id ? (
-        <PillButton label="Sil" onPress={async () => {
+        <PillButton label={t('Sil')} onPress={async () => {
           if (habitId && await removeHabit({ id: habitId, name: habit.name ?? '' })) onClose();
         }} />
       ) : null}

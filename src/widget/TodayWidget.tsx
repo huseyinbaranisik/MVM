@@ -5,12 +5,14 @@ import { FlexWidget, OverlapWidget, SvgWidget, TextWidget } from 'react-native-a
 import type { WidgetData, WidgetPlan } from '@/widget/data';
 import { barSvg, ICONS, iconSvg, mannequinSvg, ringSvg } from '@/widget/svg';
 import { colors, mix } from '@/theme/colors';
+import { isEn, locale, t } from '@/i18n';
 
 type Hex = `#${string}`;
 const c = (v: string) => v as Hex;
-const n1 = (n: number) => n.toLocaleString('tr-TR', { maximumFractionDigits: 1 });
-const int = (n: number) => Math.round(n).toLocaleString('tr-TR');
-const short = (n: number) => (n >= 1000 ? `${n1(n / 1000)}b` : String(Math.round(n)));
+const n1 = (n: number) => n.toLocaleString(locale, { maximumFractionDigits: 1 });
+const int = (n: number) => Math.round(n).toLocaleString(locale);
+const short = (n: number) => (n >= 1000 ? `${n1(n / 1000)}${isEn ? 'k' : 'b'}` : String(Math.round(n)));
+const HR = isEn ? 'h' : 's';
 const TRACK = mix(colors.background, colors.textPrimary, 0.14);
 
 /** Widget boyutu (dp): 3x1 tek satır, 3x2 orta, 4x2 geniş. */
@@ -25,7 +27,7 @@ export function TodayWidget({ data, size }: { data: WidgetData; size?: WidgetSiz
     return (
       <FlexWidget clickAction="OPEN_APP" style={{ ...box, justifyContent: 'center', alignItems: 'center' }}>
         <TextWidget text="MVM" style={{ fontSize: L === 'row' ? 16 : 20, fontWeight: '800', color: c(colors.textPrimary) }} />
-        {L !== 'row' ? <TextWidget text="Giriş yap" style={{ fontSize: 13, color: c(colors.textSecondary) }} /> : null}
+        {L !== 'row' ? <TextWidget text={t('Giriş yap')} style={{ fontSize: 13, color: c(colors.textSecondary) }} /> : null}
       </FlexWidget>
     );
   }
@@ -37,11 +39,11 @@ export function TodayWidget({ data, size }: { data: WidgetData; size?: WidgetSiz
   const bodyH = H - pad * 2 - xpH - 6; // programlar + halkalar alanı
   const leftW = Math.round((W - pad * 2) * (L === 'large' ? 0.46 : 0.45));
   const rings = [
-    { key: 'Su', ratio: data.waterGoal ? data.water / data.waterGoal : 0, color: colors.ice, value: n1(data.water), cap: `Su ${n1(data.water)}/${n1(data.waterGoal)}`, water: true },
-    { key: 'Adım', ratio: data.stepGoal ? data.steps / data.stepGoal : 0, color: colors.success, value: short(data.steps), cap: `${int(data.steps)} adım` },
-    { key: 'Kalori', ratio: data.kcalGoal ? data.kcal / data.kcalGoal : 0, color: colors.warning, value: short(data.kcal), cap: `${int(data.kcal)} kcal` },
-    { key: 'Uyku', ratio: data.sleepMin != null && data.sleepGoal ? data.sleepMin / data.sleepGoal : 0, color: colors.primaryLight,
-      value: data.sleepMin != null ? `${n1(data.sleepMin / 60)}s` : '–', cap: data.sleepMin != null ? `Uyku ${n1(data.sleepMin / 60)} sa` : 'Uyku' },
+    { key: 'Su', name: t('Su'), ratio: data.waterGoal ? data.water / data.waterGoal : 0, color: colors.ice, value: n1(data.water), cap: `${t('Su')} ${n1(data.water)}/${n1(data.waterGoal)}`, water: true },
+    { key: 'Adım', name: t('Adım'), ratio: data.stepGoal ? data.steps / data.stepGoal : 0, color: colors.success, value: short(data.steps), cap: `${int(data.steps)} ${t('adım')}` },
+    { key: 'Kalori', name: t('Kalori'), ratio: data.kcalGoal ? data.kcal / data.kcalGoal : 0, color: colors.warning, value: short(data.kcal), cap: `${int(data.kcal)} kcal` },
+    { key: 'Uyku', name: t('Uyku'), ratio: data.sleepMin != null && data.sleepGoal ? data.sleepMin / data.sleepGoal : 0, color: colors.primaryLight,
+      value: data.sleepMin != null ? `${n1(data.sleepMin / 60)}${HR}` : '–', cap: data.sleepMin != null ? `${t('Uyku')} ${n1(data.sleepMin / 60)} ${t('sa')}` : t('Uyku') },
   ].slice(0, L === 'row' ? 2 : 4);
 
   // halka çapı: sağ alanın genişliğine ve yüksekliğine sığacak şekilde (2×2 ızgara; tek satırda 2 yan yana)
@@ -53,7 +55,7 @@ export function TodayWidget({ data, size }: { data: WidgetData; size?: WidgetSiz
   const streak = (
     <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', flexGap: 2 }}>
       <SvgWidget svg={iconSvg(ICONS.fire, colors.warning)} style={{ width: 15, height: 15 }} />
-      <TextWidget text={L === 'large' ? `${data.streak} gün` : String(data.streak)}
+      <TextWidget text={L === 'large' ? t('{n} gün', { n: data.streak }) : String(data.streak)}
         style={{ fontSize: L === 'row' ? 12 : 13, fontWeight: '800', color: c(colors.textPrimary) }} />
     </FlexWidget>
   );
@@ -89,7 +91,7 @@ function Plans({ plans, width, height, layout }: { plans: WidgetPlan[]; width: n
   if (!plans.length) {
     return (
       <FlexWidget style={{ ...tile, width, height: 'match_parent', justifyContent: 'center' }}>
-        <TextWidget text="Plan yok" style={{ fontSize: 13, fontWeight: '700', color: c(colors.textSecondary) }} />
+        <TextWidget text={t('Plan yok')} style={{ fontSize: 13, fontWeight: '700', color: c(colors.textSecondary) }} />
       </FlexWidget>
     );
   }
@@ -141,7 +143,7 @@ function Plan({ plan, width, height, layout }: { plan: WidgetPlan; width: number
   );
 }
 
-type RingItem = { key: string; ratio: number; color: string; value: string; cap: string; water?: boolean };
+type RingItem = { key: string; name: string; ratio: number; color: string; value: string; cap: string; water?: boolean };
 function Ring({ r, size, layout }: { r: RingItem; size: number; layout: Layout }) {
   const stroke = Math.max(3, Math.round(size * 0.12));
   const label = layout === 'large' ? (r.key === 'Su' ? r.value : `%${Math.round(Math.min(1, r.ratio) * 100)}`) : r.value;
@@ -155,7 +157,7 @@ function Ring({ r, size, layout }: { r: RingItem; size: number; layout: Layout }
         </FlexWidget>
       </OverlapWidget>
       {layout !== 'row' ? (
-        <TextWidget text={layout === 'large' ? r.cap : r.key} maxLines={1} style={{ fontSize: 10, color: c(colors.textSecondary), marginTop: 2 }} />
+        <TextWidget text={layout === 'large' ? r.cap : r.name} maxLines={1} style={{ fontSize: 10, color: c(colors.textSecondary), marginTop: 2 }} />
       ) : null}
     </FlexWidget>
   );

@@ -16,6 +16,7 @@ import { getExerciseList } from '@/db/repos/exercises';
 import { useDb } from '@/db/useDb';
 import { matchesMuscles } from '@/services/catalog';
 import { colors, radius, spacing, type } from '@/theme';
+import { locale, t } from '@/i18n';
 
 const EQUIPMENT_FILTERS = ['dumbbell', 'machine', 'bodyweight'] as const;
 const regionOfMuscle = new Map(muscles.map((m) => [m.id, m.regionId]));
@@ -48,10 +49,10 @@ export default function LibraryScreen() {
   const highlighted = mode === 'part' ? selected : selected.flatMap((g) => [...(groupMuscles.get(g) ?? [])]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase('tr-TR');
+    const q = query.trim().toLocaleLowerCase(locale);
     const groups = selected.map((k) => (mode === 'part' ? new Set([k]) : groupMuscles.get(k) ?? new Set<string>()));
     return (list ?? []).filter((e) =>
-      (!q || e.name_tr.toLocaleLowerCase('tr-TR').includes(q) || (e.name_en ?? '').toLowerCase().includes(q)) &&
+      (!q || e.name_tr.toLocaleLowerCase(locale).includes(q) || (e.name_en ?? '').toLowerCase().includes(q)) &&
       (!equipment || e.equipment === equipment) &&
       matchesMuscles(e.muscles, groups));
   }, [list, query, selected, equipment, mode]);
@@ -66,38 +67,38 @@ export default function LibraryScreen() {
   const header = (
     <View style={styles.headerWrap}>
       <View style={styles.titleRow}>
-        <Text style={[type.hero, styles.flex]}>Kütüphane</Text>
+        <Text style={[type.hero, styles.flex]}>{t('Kütüphane')}</Text>
         <Pressable onPress={() => router.push('/exercise/new')} style={styles.addBtn} hitSlop={8}
-          accessibilityRole="button" accessibilityLabel="Kendi hareketini ekle">
+          accessibilityRole="button" accessibilityLabel={t('Kendi hareketini ekle')}>
           <Icon name="add" color={colors.onPrimary} />
         </Pressable>
       </View>
       <View style={styles.controls}>
-        <PillButton label="Çevir" onPress={flip} accessibilityLabel={side === 'front' ? 'Arka görünüme çevir' : 'Ön görünüme çevir'} />
+        <PillButton label={t('Çevir')} onPress={flip} accessibilityLabel={side === 'front' ? t('Arka görünüme çevir') : t('Ön görünüme çevir')} />
         <View style={styles.segment}>
-          <SegmentedControl<MapMode> options={[{ value: 'region', label: 'Bölge' }, { value: 'part', label: 'Parça' }]} value={mode} onChange={changeMode} />
+          <SegmentedControl<MapMode> options={[{ value: 'region', label: t('Bölge') }, { value: 'part', label: t('Parça') }]} value={mode} onChange={changeMode} />
         </View>
       </View>
       <View>
-        <Text style={[type.caption, styles.center]}>{side === 'front' ? 'Ön' : 'Arka'}</Text>
+        <Text style={[type.caption, styles.center]}>{side === 'front' ? t('Ön') : t('Arka')}</Text>
         <FlipView style={style}>
           <BodyMap side={side} mode={mode} width={Math.min(width * 0.62, 280)} primary={highlighted} onPress={onMap} />
         </FlipView>
         {filtering ? (
-          <Pressable onPress={reset} style={styles.reset} hitSlop={8} accessibilityRole="button" accessibilityLabel="Filtreyi sıfırla">
+          <Pressable onPress={reset} style={styles.reset} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Filtreyi sıfırla')}>
             <Icon name="filter_alt_off" size={20} color={colors.onPrimary} />
           </Pressable>
         ) : null}
       </View>
 
-      <TextInput value={query} onChangeText={setQuery} placeholder="Hareket ara" placeholderTextColor={colors.textSecondary}
-        style={styles.search} accessibilityLabel="Hareket ara" />
+      <TextInput value={query} onChangeText={setQuery} placeholder={t('Hareket ara')} placeholderTextColor={colors.textSecondary}
+        style={styles.search} accessibilityLabel={t('Hareket ara')} />
       <View style={styles.chipRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.flex}>
           {orderedChips.map((c) => <PillButton key={c.key} label={c.label} active={selected.includes(c.key)} onPress={() => toggle(c.key)} />)}
         </ScrollView>
         {mode === 'part' ? (
-          <Pressable onPress={() => setAllParts(true)} style={styles.more} hitSlop={6} accessibilityRole="button" accessibilityLabel="Tüm kas parçaları">
+          <Pressable onPress={() => setAllParts(true)} style={styles.more} hitSlop={6} accessibilityRole="button" accessibilityLabel={t('Tüm kas parçaları')}>
             <Icon name="expand_more" color={colors.textPrimary} />
           </Pressable>
         ) : null}
@@ -108,9 +109,9 @@ export default function LibraryScreen() {
         ))}
       </ScrollView>
       <View style={styles.titleRow}>
-        <Text style={[type.caption, styles.flex]}>{filtered.length} hareket</Text>
+        <Text style={[type.caption, styles.flex]}>{t('{n} hareket', { n: filtered.length })}</Text>
         {selected.length === 1 ? (
-          <PillButton label="Kas ayrıntısı" onPress={() => {
+          <PillButton label={t('Kas ayrıntısı')} onPress={() => {
             const k = selected[0];
             router.push(`/muscle/${mode === 'part' ? k : filterGroups.find((g) => g.label === k)!.regionIds[0]}`);
           }} />
@@ -133,18 +134,18 @@ export default function LibraryScreen() {
         windowSize={7}
         removeClippedSubviews
         ListEmptyComponent={list ? (
-          <Text style={[type.caption, styles.empty]}>Aradığınız kriterlere uygun hareket bulunamadı.</Text>
+          <Text style={[type.caption, styles.empty]}>{t('Aradığınız kriterlere uygun hareket bulunamadı.')}</Text>
         ) : (
           <View style={styles.skeletons}>{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} height={64} rounded={radius.md} />)}</View>
         )}
         renderItem={({ item }) => (
           <ExerciseRow id={item.id} name={item.name_tr} imageKey={item.image_key} photoUri={item.photo_uri} favorite={!!item.is_favorite}
-            subtitle={[EQUIPMENT_TR[item.equipment], item.source === 'user' ? 'Kendi hareketin' : item.name_en !== item.name_tr ? item.name_en : null]
+            subtitle={[EQUIPMENT_TR[item.equipment], item.source === 'user' ? t('Kendi hareketin') : item.name_en !== item.name_tr ? item.name_en : null]
               .filter(Boolean).join(' · ')} />
         )}
       />
 
-      <Sheet visible={allParts} onClose={() => setAllParts(false)} title="Kas parçaları">
+      <Sheet visible={allParts} onClose={() => setAllParts(false)} title={t('Kas parçaları')}>
         {filterGroups.map((g) => (
           <View key={g.label} style={styles.group}>
             <Text style={type.caption}>{g.label}</Text>

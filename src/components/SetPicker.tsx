@@ -7,6 +7,7 @@ import { Wheel } from '@/components/ui/Wheel';
 import { KG_VALUES, nearest, REP_VALUES } from '@/services/workout';
 import { fmtDec, parseNumber } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 export interface SetPickerTarget { title: string; kg: number; reps: number | null }
 
@@ -48,25 +49,25 @@ export function SetPicker({ target, onSave, onClose }: {
       {manual ? (
         <View style={styles.row}>
           <Field label="kg" value={kgText} onChange={setKgText} />
-          {reps != null ? <Field label="Tekrar" value={repsText} onChange={setRepsText} /> : null}
+          {reps != null ? <Field label={t('Tekrar')} value={repsText} onChange={setRepsText} /> : null}
         </View>
       ) : (
         <View style={styles.row}>
           <View style={styles.col}>
             <Text style={type.caption}>kg</Text>
-            <Wheel key={`kg-${target?.title}`} values={KG_VALUES} value={kg} onChange={setKg} format={(v) => fmtDec(v, 1)} width={120} label="Kilo" />
+            <Wheel key={`kg-${target?.title}`} values={KG_VALUES} value={kg} onChange={setKg} format={(v) => fmtDec(v, 1)} width={120} label={t('Kilo')} />
           </View>
           {reps != null ? (
             <View style={styles.col}>
-              <Text style={type.caption}>Tekrar</Text>
-              <Wheel key={`r-${target?.title}`} values={REP_VALUES} value={reps} onChange={setReps} width={120} label="Tekrar" />
+              <Text style={type.caption}>{t('Tekrar')}</Text>
+              <Wheel key={`r-${target?.title}`} values={REP_VALUES} value={reps} onChange={setReps} width={120} label={t('Tekrar')} />
             </View>
           ) : null}
         </View>
       )}
-      <PillButton label="Tamam" variant="primary" onPress={save} />
+      <PillButton label={t('Tamam')} variant="primary" onPress={save} />
       <Pressable onPress={() => setManual(!manual)} style={styles.link} accessibilityRole="button">
-        <Text style={styles.linkText}>{manual ? 'Listeden seç' : 'Elle gir'}</Text>
+        <Text style={styles.linkText}>{manual ? t('Listeden seç') : t('Elle gir')}</Text>
       </Pressable>
     </Sheet>
   );

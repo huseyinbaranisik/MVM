@@ -1,3 +1,4 @@
+import { isEn } from '@/i18n';
 // Takvim günleri her yerde yerel 'YYYY-MM-DD' metni olarak taşınır.
 // Gün aritmetiği UTC üzerinden yapılır: sadece takvim hesabıdır, saat dilimi/DST etkilemez.
 
@@ -33,10 +34,18 @@ export function weekday(s: DateStr): number {
   return (new Date(toUtc(s)).getUTCDay() + 6) % 7;
 }
 
-export const WEEKDAYS_TR = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
-export const WEEKDAYS_SHORT_TR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-export const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+// Adlar tarihsel olarak _TR; seçili dilde gelir.
+export const WEEKDAYS_TR = isEn
+  ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  : ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+export const WEEKDAYS_SHORT_TR = isEn
+  ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  : ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+export const MONTHS_TR = isEn
+  ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  : ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
-/** '2026-11-02' → '2 Kasım, Pazartesi' */
-export const formatLongTR = (s: DateStr) =>
-  `${Number(s.slice(8))} ${MONTHS_TR[Number(s.slice(5, 7)) - 1]}, ${WEEKDAYS_TR[weekday(s)]}`;
+/** '2026-11-02' → '2 Kasım, Pazartesi' (İngilizce: 'November 2, Monday') */
+export const formatLongTR = (s: DateStr) => isEn
+  ? `${MONTHS_TR[Number(s.slice(5, 7)) - 1]} ${Number(s.slice(8))}, ${WEEKDAYS_TR[weekday(s)]}`
+  : `${Number(s.slice(8))} ${MONTHS_TR[Number(s.slice(5, 7)) - 1]}, ${WEEKDAYS_TR[weekday(s)]}`;

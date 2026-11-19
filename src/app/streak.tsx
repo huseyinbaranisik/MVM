@@ -16,6 +16,7 @@ import { addDays, MONTHS_TR, today, weekday, WEEKDAYS_SHORT_TR } from '@/service
 import { ensurePermission } from '@/services/notifications';
 import { MAX_FREEZES } from '@/services/streakService';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const DAY_COLOR = { completed: colors.primaryLight, frozen: colors.ice, missed: colors.surface } as const;
@@ -38,10 +39,10 @@ export default function StreakScreen() {
   if (!data?.state) return <LoadingScreen blocks={[120, 320, 90]} />;
   const notif = data.notif;
   const setReminder = async () => {
-    const t = await pickTime(notif.streakReminder ?? '20:00');
-    if (!t) return;
-    if (!(await ensurePermission())) { toast('Bildirim izni verilmedi.'); return; }
-    await setSetting('notifications', { ...notif, streakReminder: t });
+    const time = await pickTime(notif.streakReminder ?? '20:00');
+    if (!time) return;
+    if (!(await ensurePermission())) { toast(t('Bildirim izni verilmedi.')); return; }
+    await setSetting('notifications', { ...notif, streakReminder: time });
   };
   const status = new Map(data.days.map((d) => [d.date, d.status]));
   const cells = [...Array<null>(weekday(first)).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => addDays(first, i))];
@@ -53,28 +54,28 @@ export default function StreakScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Geri">
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Geri')}>
           <Icon name="arrow_back" color={colors.textPrimary} />
         </Pressable>
-        <Text style={type.title}>Seri</Text>
+        <Text style={type.title}>{t('Seri')}</Text>
       </View>
       <ScrollView refreshControl={refresh} contentContainerStyle={styles.body}>
         <View style={styles.stats}>
-          <Stat icon="local_fire_department" color={colors.primaryLight} label="Güncel seri" value={`${data.state.current} gün`} />
-          <Stat icon="emoji_events" color={colors.warning} label="En uzun" value={`${data.state.longest} gün`} />
-          <Stat icon="ac_unit" color={colors.ice} label="Dondurma hakkı" value={`${data.state.freezes_available} / ${MAX_FREEZES}`} />
+          <Stat icon="local_fire_department" color={colors.primaryLight} label={t('Güncel seri')} value={t('{n} gün', { n: data.state.current })} />
+          <Stat icon="emoji_events" color={colors.warning} label={t('En uzun')} value={t('{n} gün', { n: data.state.longest })} />
+          <Stat icon="ac_unit" color={colors.ice} label={t('Dondurma hakkı')} value={`${data.state.freezes_available} / ${MAX_FREEZES}`} />
         </View>
-        <Pressable style={styles.level} onPress={() => router.push('/level')} accessibilityRole="button" accessibilityLabel="Seviye yolu">
+        <Pressable style={styles.level} onPress={() => router.push('/level')} accessibilityRole="button" accessibilityLabel={t('Seviye yolu')}>
           <LevelBar />
         </Pressable>
 
         <View style={styles.card}>
           <View style={styles.monthRow}>
-            <Pressable onPress={() => shift(-1)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Önceki ay">
+            <Pressable onPress={() => shift(-1)} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Önceki ay')}>
               <Icon name="chevron_left" color={colors.textPrimary} />
             </Pressable>
             <Text style={type.subtitle}>{MONTHS_TR[m - 1]} {y}</Text>
-            <Pressable onPress={() => shift(1)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Sonraki ay">
+            <Pressable onPress={() => shift(1)} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Sonraki ay')}>
               <Icon name="chevron_right" color={colors.textPrimary} />
             </Pressable>
           </View>
@@ -86,7 +87,7 @@ export default function StreakScreen() {
                 <View key={d ?? `e${i}`} style={styles.cell}>
                   {d ? (
                     <View style={[styles.day, s && { backgroundColor: DAY_COLOR[s] }, d === now && styles.today]}
-                      accessibilityLabel={`${Number(d.slice(8))}: ${s === 'completed' ? 'tamamlandı' : s === 'frozen' ? 'donduruldu' : s === 'missed' ? 'kaçırıldı' : 'kayıt yok'}`}>
+                      accessibilityLabel={`${Number(d.slice(8))}: ${s === 'completed' ? t('tamamlandı') : s === 'frozen' ? t('donduruldu') : s === 'missed' ? t('kaçırıldı') : t('kayıt yok')}`}>
                       <Text style={[styles.dayText, s === 'missed' && styles.muted]}>{Number(d.slice(8))}</Text>
                     </View>
                   ) : null}
@@ -95,17 +96,17 @@ export default function StreakScreen() {
             })}
           </View>
           <View style={styles.legend}>
-            <Legend color={DAY_COLOR.completed} label="Tamamlandı" />
-            <Legend color={DAY_COLOR.frozen} label="Donduruldu" />
-            <Legend color={DAY_COLOR.missed} label="Kaçırıldı" />
+            <Legend color={DAY_COLOR.completed} label={t('Tamamlandı')} />
+            <Legend color={DAY_COLOR.frozen} label={t('Donduruldu')} />
+            <Legend color={DAY_COLOR.missed} label={t('Kaçırıldı')} />
           </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={type.subtitle}>Akşam hatırlatması</Text>
-          <SheetRow label="Saat" value={notif.streakReminder ?? 'Kapalı'} onPress={setReminder} />
+          <Text style={type.subtitle}>{t('Akşam hatırlatması')}</Text>
+          <SheetRow label={t('Saat')} value={notif.streakReminder ?? t('Kapalı')} onPress={setReminder} />
           {notif.streakReminder ? (
-            <SheetRow label="Hatırlatmayı kapat" onPress={() => setSetting('notifications', { ...notif, streakReminder: null })} />
+            <SheetRow label={t('Hatırlatmayı kapat')} onPress={() => setSetting('notifications', { ...notif, streakReminder: null })} />
           ) : null}
         </View>
       </ScrollView>

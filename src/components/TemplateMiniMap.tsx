@@ -6,6 +6,7 @@ import { body } from '@/data/bodyPaths';
 import { getTemplateMuscles } from '@/db/repos/templates';
 import { useDb } from '@/db/useDb';
 import { spacing } from '@/theme';
+import { t } from '@/i18n';
 
 const MAX_W_RATIO = 1.1; // çok yayvan kadrajlar kartı taşırmasın
 
@@ -20,7 +21,7 @@ export function TemplateMiniMap({ templateId, height = 84 }: { templateId: numbe
     .map((side) => ({ side, crop: focusCrop(body[side], m.primary) }))
     .filter((s) => s.crop);
   return (
-    <View style={styles.row} accessibilityLabel="Çalışan kaslar">
+    <View style={styles.row} accessibilityLabel={t('Çalışan kaslar')}>
       {sides.map(({ side, crop }) => (
         <BodyMap key={side} side={side} mode="part" crop={crop}
           width={Math.min(height * (crop!.w / crop!.h), height * MAX_W_RATIO)}

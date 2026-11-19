@@ -1,9 +1,10 @@
+import { t } from '@/i18n';
 export type HomeCardId = 'workout' | 'water' | 'steps' | 'calories' | 'sleep' | 'checklist';
 export type HomeCardSize = 'small' | 'large';
 export interface HomeItem { id: HomeCardId; size: HomeCardSize }
 
 export const HOME_CARD_NAMES: Record<HomeCardId, string> = {
-  workout: 'Antrenman', water: 'Su', steps: 'Adım', calories: 'Kalori', sleep: 'Uyku', checklist: 'Görevler',
+  workout: t('Antrenman'), water: t('Su'), steps: t('Adım'), calories: t('Kalori'), sleep: t('Uyku'), checklist: t('Görevler'),
 };
 export const ALL_CARDS = Object.keys(HOME_CARD_NAMES) as HomeCardId[];
 /** Küçük/büyük seçilebilen kartlar; diğerleri yalnızca büyük. */

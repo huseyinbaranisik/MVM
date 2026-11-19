@@ -12,6 +12,7 @@ import { muscles, regions } from '@/data/muscleMap';
 import { getExercisesByMuscle, getExercisesByRegion } from '@/db/repos/exercises';
 import { useDb } from '@/db/useDb';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 /** id bir bölge (ör. "chest") veya kas parçası (ör. "chest_upper") olabilir. */
 export default function MuscleDetail() {
@@ -26,7 +27,7 @@ export default function MuscleDetail() {
   const exercises = useDb(() => (region ? getExercisesByRegion(id) : getExercisesByMuscle(id)), [id], ['user_exercises', 'exercise_favorites']);
   const [adding, setAdding] = useState<string | null>(null);
 
-  if (!parentRegion) return <BackHeader title="Bulunamadı" />;
+  if (!parentRegion) return <BackHeader title={t('Bulunamadı')} />;
 
   return (
     <View style={styles.screen}>
@@ -38,11 +39,11 @@ export default function MuscleDetail() {
             <Text style={type.title}>{region ? region.nameTr : muscle!.nameTr}</Text>
             {muscle ? <Text style={styles.latin}>{muscle.nameLatin}</Text> : null}
             <Text style={type.body}>
-              {muscle ? muscle.description : `${region!.nameTr} · ${parts.length} parça`}
+              {muscle ? muscle.description : `${region!.nameTr} · ${t('{n} parça', { n: parts.length })}`}
             </Text>
             {muscle && !region ? (
               <Pressable onPress={() => router.replace(`/muscle/${parentRegion.id}`)} accessibilityRole="button" style={styles.link}>
-                <Text style={styles.linkText}>Bölge: {parentRegion.nameTr} ›</Text>
+                <Text style={styles.linkText}>{t('Bölge: {name}', { name: parentRegion.nameTr })} ›</Text>
               </Pressable>
             ) : null}
           </View>
@@ -62,16 +63,16 @@ export default function MuscleDetail() {
           </View>
         ) : null}
 
-        <Text style={type.title}>Bu kası çalıştıran hareketler</Text>
+        <Text style={type.title}>{t('Bu kası çalıştıran hareketler')}</Text>
         <View style={styles.card}>
           {!exercises ? [0, 1, 2].map((i) => <Skeleton key={i} height={64} rounded={radius.md} style={styles.sk} />) : null}
-          {exercises?.length === 0 ? <Text style={type.caption}>Bu kas için henüz hareket yok.</Text> : null}
+          {exercises?.length === 0 ? <Text style={type.caption}>{t('Bu kas için henüz hareket yok.')}</Text> : null}
           {exercises?.map((e) => (
             <ExerciseRow key={e.id} id={e.id} name={e.name_tr} imageKey={e.image_key} photoUri={null}
-              subtitle={EQUIPMENT_TR[e.equipment]} tag={e.role === 'primary' ? 'Birincil' : 'İkincil'}
+              subtitle={EQUIPMENT_TR[e.equipment]} tag={e.role === 'primary' ? t('Birincil') : t('İkincil')}
               right={
                 <Pressable onPress={() => setAdding(e.id)} hitSlop={10} style={styles.add}
-                  accessibilityRole="button" accessibilityLabel={`${e.name_tr} programıma ekle`}>
+                  accessibilityRole="button" accessibilityLabel={t('{name} programıma ekle', { name: e.name_tr })}>
                   <Icon name="playlist_add" color={colors.accent} />
                 </Pressable>
               } />

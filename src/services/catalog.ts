@@ -4,6 +4,7 @@ import fedb from '@/data/exercises.fedb.json';
 import { mapFedbMuscles } from '@/data/fedbMuscles';
 import { muscles } from '@/data/muscleMap';
 import { seedExercises } from '@/data/seedExercises';
+import { isEn } from '@/i18n';
 
 export interface CatalogExercise {
   id: string;
@@ -35,16 +36,24 @@ let builtIn: CatalogExercise[] | null = null;
 /** Hazır katalog (bir kez kurulur). Seed hareket, aynı id'li free-exercise-db kaydının yerine geçer. */
 export function builtInExercises(): CatalogExercise[] {
   if (builtIn) return builtIn;
-  const seed: CatalogExercise[] = seedExercises.map((s) => ({
-    id: s.id, name_tr: s.nameTr, name_en: null, equipment: s.equipment, mode: s.mode, is_heavy: s.heavy, description: null,
-    instructions_tr: s.instructions, mistakes_tr: s.mistakes, tips_tr: s.tips, instructions_en: [],
-    image_key: s.imageId, photo_uri: null, source: 'seed', primary: s.primary, secondary: s.secondary,
-  }));
+  // İngilizcede görünen ad İngilizce ad olur (name_tr ekranlarda "görünen ad" olarak kullanılıyor);
+  // seed hareketlerin yalnızca Türkçe yazılmış hata/ipucu listeleri İngilizcede gösterilmez.
+  const fedbById = new Map(fedb.map((e) => [e.id, e]));
+  const seed: CatalogExercise[] = seedExercises.map((s) => {
+    const f = fedbById.get(s.id) ?? (s.imageId ? fedbById.get(s.imageId) : undefined);
+    return {
+      id: s.id, name_tr: isEn && f ? f.nameEn : s.nameTr, name_en: f?.nameEn ?? null, equipment: s.equipment, mode: s.mode,
+      is_heavy: s.heavy, description: null,
+      instructions_tr: isEn ? [] : s.instructions, mistakes_tr: isEn ? [] : s.mistakes, tips_tr: isEn ? [] : s.tips,
+      instructions_en: f?.instructions ?? [],
+      image_key: s.imageId, photo_uri: null, source: 'seed', primary: s.primary, secondary: s.secondary,
+    };
+  });
   const seen = new Set(seed.map((s) => s.id));
   const rest: CatalogExercise[] = fedb.filter((e) => !seen.has(e.id)).map((e) => {
     const ms = mapFedbMuscles(e.nameEn, e.primary, e.secondary);
     return {
-      id: e.id, name_tr: e.nameTr, name_en: e.nameEn, equipment: e.equipment, mode: 'reps',
+      id: e.id, name_tr: isEn ? e.nameEn : e.nameTr, name_en: e.nameEn, equipment: e.equipment, mode: 'reps',
       // shortcut: bileşik + ağırlıklı hareketleri "ağır" (120 sn) say; kullanıcı şablonda değiştirebilir
       is_heavy: e.mechanic === 'compound' && e.equipment !== 'bodyweight', description: null,
       instructions_tr: [], mistakes_tr: [], tips_tr: [], instructions_en: e.instructions,
@@ -72,7 +81,7 @@ const sourceRank = (s: CatalogExercise['source']) => (s === 'fedb' ? 1 : 0);
 export function sortForLibrary<T extends CatalogExercise>(list: T[], favorites: ReadonlySet<string>) {
   return [...list].sort((a, b) =>
     Number(favorites.has(b.id)) - Number(favorites.has(a.id)) || sourceRank(a.source) - sourceRank(b.source)
-    || a.name_tr.localeCompare(b.name_tr, 'tr'));
+    || a.name_tr.localeCompare(b.name_tr, isEn ? 'en' : 'tr'));
 }
 
 export const regionsOf = (e: CatalogExercise) => [...new Set([...e.primary, ...e.secondary].map((m) => regionOf.get(m)).filter((r) => r != null))];
@@ -88,7 +97,7 @@ export function exercisesForMuscles(list: CatalogExercise[], muscleIds: Readonly
     else if (e.secondary.some((m) => muscleIds.has(m))) out.push({ e, role: 'secondary' });
   }
   return out.sort((a, b) => (a.role === b.role ? 0 : a.role === 'primary' ? -1 : 1)
-    || Number(favorites.has(b.e.id)) - Number(favorites.has(a.e.id)) || a.e.name_tr.localeCompare(b.e.name_tr, 'tr'));
+    || Number(favorites.has(b.e.id)) - Number(favorites.has(a.e.id)) || a.e.name_tr.localeCompare(b.e.name_tr, isEn ? 'en' : 'tr'));
 }
 
 export const musclesOfRegion = (regionId: string) => new Set(muscles.filter((m) => m.regionId === regionId).map((m) => m.id));

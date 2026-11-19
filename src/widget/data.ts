@@ -8,6 +8,7 @@ import { getTrackerSettings, getTrackerValue } from '@/db/repos/trackers';
 import { getLevel } from '@/db/repos/xp';
 import { supabase } from '@/db/supabase';
 import { today, weekday } from '@/services/dates';
+import { locale, t } from '@/i18n';
 
 export interface WidgetPlan {
   kind: 'workout' | 'walk' | 'rest';
@@ -65,11 +66,11 @@ export async function getWidgetData(): Promise<WidgetData> {
   const stepGoal = ss?.goal ?? 10000;
   const plans = await Promise.all(items.slice(0, 2).map(async (i): Promise<WidgetPlan> => {
     if (i.kind !== 'workout') {
-      return { kind: i.kind, name: i.kind === 'walk' ? 'Yürüyüş' : 'Dinlenme', sub: i.kind === 'walk' ? `Hedef ${stepGoal.toLocaleString('tr-TR')} adım` : '', regions: [] };
+      return { kind: i.kind, name: i.kind === 'walk' ? t('Yürüyüş') : t('Dinlenme'), sub: i.kind === 'walk' ? t('Hedef {n} adım', { n: stepGoal.toLocaleString(locale) }) : '', regions: [] };
     }
     const m = i.templateId ? await getTemplateMuscles(i.templateId) : { primary: [] as string[] };
     return {
-      kind: 'workout', name: i.templateName ?? 'Antrenman', sub: `${i.exerciseCount} hareket`,
+      kind: 'workout', name: i.templateName ?? t('Antrenman'), sub: t('{n} hareket', { n: i.exerciseCount }),
       regions: [...new Set(m.primary.map((id) => regionOf.get(id)).filter((r): r is string => !!r))],
     };
   }));

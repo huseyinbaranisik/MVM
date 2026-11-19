@@ -5,6 +5,7 @@ import { PillButton } from '@/components/ui/PillButton';
 import { Sheet } from '@/components/ui/Sheet';
 import { parseNumber } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { locale, t } from '@/i18n';
 
 /** Tek sayı soran sheet (hedef, bardak hacmi, adım uzunluğu, adım ekleme…). */
 export function NumberPrompt({ visible, title, initial, suffix, min = 0, quick, onSubmit, onClose }: {
@@ -47,10 +48,10 @@ export function NumberPrompt({ visible, title, initial, suffix, min = 0, quick, 
       </View>
       {quick ? (
         <View style={styles.quick}>
-          {quick.map((q) => <PillButton key={q} label={`+${q.toLocaleString('tr-TR')}`} onPress={() => submit(q)} />)}
+          {quick.map((q) => <PillButton key={q} label={`+${q.toLocaleString(locale)}`} onPress={() => submit(q)} />)}
         </View>
       ) : null}
-      <PillButton label="Kaydet" variant="primary" disabled={!valid} onPress={() => valid && submit(value)} />
+      <PillButton label={t('Kaydet')} variant="primary" disabled={!valid} onPress={() => valid && submit(value)} />
     </Sheet>
   );
 }

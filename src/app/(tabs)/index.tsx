@@ -29,6 +29,7 @@ import { syncStepCounter } from '@/services/stepCounter';
 import { syncStepsFromHealthConnect } from '@/services/stepSync';
 import { useAppStore } from '@/stores/useAppStore';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 export default function TodayScreen() {
   const date = useAppStore((s) => s.selectedDate);
@@ -92,15 +93,15 @@ export default function TodayScreen() {
     <Screen>
       <Appear index={0}>
       <View style={styles.header}>
-        <PressableScale onPress={() => router.navigate('/profile')} accessibilityRole="button" accessibilityLabel="Profil">
+        <PressableScale onPress={() => router.navigate('/profile')} accessibilityRole="button" accessibilityLabel={t('Profil')}>
           <Avatar size={48} level={level} />
         </PressableScale>
         <View style={styles.flex}>
           <Text style={type.caption}>{formatLongTR(date)}</Text>
-          <Text style={type.hero} numberOfLines={1} adjustsFontSizeToFit>Selam{name ? `, ${name}` : ''}!</Text>
+          <Text style={type.hero} numberOfLines={1} adjustsFontSizeToFit>{name ? t('Selam, {name}!', { name }) : t('Selam!')}</Text>
         </View>
         <PressableScale style={styles.flame} onPress={() => router.push('/streak')} accessibilityRole="button"
-          accessibilityLabel={`${streak} günlük seri, ayrıntılar`}>
+          accessibilityLabel={t('{n} günlük seri, ayrıntılar', { n: streak })}>
           <Icon name="local_fire_department" size={24} color={streak ? colors.primaryLight : colors.textSecondary} />
           <Text style={[styles.flameText, streak > 0 && styles.flameOn]}>{streak}</Text>
         </PressableScale>
@@ -119,7 +120,7 @@ export default function TodayScreen() {
         visible={morningPrompt}
         date={today()}
         log={null}
-        title="Dün gece nasıl uyudun?"
+        title={t('Dün gece nasıl uyudun?')}
         onClose={() => setMorningPrompt(false)}
         onNeverAsk={async () => { await setSetting('morningSleepPrompt', false); setMorningPrompt(false); }}
       />

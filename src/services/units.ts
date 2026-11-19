@@ -1,3 +1,4 @@
+import { locale, t } from '@/i18n';
 // Saklama birimi sabittir (su: ml, adım: adet); burada sadece gösterim dönüşümü yapılır.
 
 export type WaterUnit = 'glass' | 'liter';
@@ -7,9 +8,9 @@ export type StepUnit = 'steps' | 'km';
 export const DEFAULT_STRIDE_CM = 72;
 export const STRIDE_FACTOR = 0.415;
 
-export const fmtInt = (n: number) => Math.round(n).toLocaleString('tr-TR');
+export const fmtInt = (n: number) => Math.round(n).toLocaleString(locale);
 export const fmtDec = (n: number, digits = 1) =>
-  n.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: digits });
+  n.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: digits });
 
 export function waterToDisplay(ml: number, unit: WaterUnit, glassMl: number) {
   return unit === 'glass' ? ml / glassMl : ml / 1000;
@@ -20,7 +21,7 @@ export function waterFromDisplay(v: number, unit: WaterUnit, glassMl: number) {
 export function formatWater(ml: number, unit: WaterUnit, glassMl: number) {
   return fmtDec(waterToDisplay(ml, unit, glassMl), unit === 'glass' ? 1 : 2);
 }
-export const waterUnitLabel = (unit: WaterUnit) => (unit === 'glass' ? 'bardak' : 'L');
+export const waterUnitLabel = (unit: WaterUnit) => (unit === 'glass' ? t('bardak') : 'L');
 
 export function strideCm(manualCm: number | null, heightCm: number | null) {
   return manualCm ?? (heightCm ? Math.round(heightCm * STRIDE_FACTOR) : DEFAULT_STRIDE_CM);
@@ -31,7 +32,7 @@ export const kmToSteps = (km: number, stride: number) => Math.round((km * 100_00
 export function formatSteps(steps: number, unit: StepUnit, stride: number) {
   return unit === 'steps' ? fmtInt(steps) : fmtDec(stepsToKm(steps, stride), 2);
 }
-export const stepUnitLabel = (unit: StepUnit) => (unit === 'steps' ? 'adım' : 'km');
+export const stepUnitLabel = (unit: StepUnit) => (unit === 'steps' ? t('adım') : 'km');
 
 /** "6,5" veya "6.5" gibi kullanıcı girişini sayıya çevirir; geçersizse null. */
 export function parseNumber(text: string): number | null {
@@ -42,4 +43,4 @@ export function parseNumber(text: string): number | null {
 /** Vücut kitle indeksi: kg / m² */
 export const bmi = (kg: number, cm: number) => kg / (cm / 100) ** 2;
 /** Dünya Sağlık Örgütü yetişkin sınıfları */
-export const bmiLabel = (v: number) => (v < 18.5 ? 'Zayıf' : v < 25 ? 'Normal' : v < 30 ? 'Fazla kilolu' : 'Obez');
+export const bmiLabel = (v: number) => t(v < 18.5 ? 'Zayıf' : v < 25 ? 'Normal' : v < 30 ? 'Fazla kilolu' : 'Obez');

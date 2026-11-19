@@ -5,6 +5,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming, type SharedValu
 
 import { Icon } from '@/components/Icon';
 import { colors, spacing } from '@/theme';
+import { t } from '@/i18n';
 
 /**
  * Sabit satır yüksekliğiyle sürükle-bırak sıralama. Satırı sağdaki tutamaçtan sürükle.
@@ -86,7 +87,7 @@ function Row({ index, count, rowHeight, active, offset, onDrop, children }: {
   return (
     <Animated.View style={[styles.row, { height: rowHeight }, style]}>
       <View style={styles.content}>{children}</View>
-      <View style={styles.handle} accessibilityLabel="Sıralamak için sürükle" {...pan.panHandlers}>
+      <View style={styles.handle} accessibilityLabel={t('Sıralamak için sürükle')} {...pan.panHandlers}>
         <Icon name="drag_indicator" color={colors.textSecondary} />
       </View>
     </Animated.View>

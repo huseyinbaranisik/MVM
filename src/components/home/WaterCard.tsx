@@ -14,6 +14,7 @@ import { addDays } from '@/services/dates';
 import { formatWater, waterFromDisplay, waterToDisplay, waterUnitLabel, type WaterUnit } from '@/services/units';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 export function WaterCard({ date, size = 'small' }: { date: string; size?: 'small' | 'large' }) {
   const data = useDb(async () => ({
@@ -34,7 +35,7 @@ export function WaterCard({ date, size = 'small' }: { date: string; size?: 'smal
   const hit = weekVals.filter((v) => v >= data.s!.goal).length;
   const counter = (
     <Counter
-      minusLabel="Bir bardak çıkar" plusLabel="Bir bardak ekle"
+      minusLabel={t('Bir bardak çıkar')} plusLabel={t('Bir bardak ekle')}
       onMinus={() => applyMl(Math.max(0, ml - glass), () => addTrackerValue('water', date, -glass))}
       onPlus={() => { play('pop'); applyMl(ml + glass, () => addTrackerValue('water', date, glass)); }}
     />
@@ -44,7 +45,7 @@ export function WaterCard({ date, size = 'small' }: { date: string; size?: 'smal
     <>
       <TrackerCard
         resetKey={data.date}
-        title="Su" icon="water_drop" color={colors.accent}
+        title={t('Su')} icon="water_drop" color={colors.accent}
         progress={ml / data.s.goal}
         value={fmt(ml)}
         caption={`/ ${fmt(data.s.goal)} ${waterUnitLabel(unit)}`}
@@ -57,28 +58,28 @@ export function WaterCard({ date, size = 'small' }: { date: string; size?: 'smal
               <WeekBars date={date} values={data.week} goal={data.s.goal} />
             </>
           ),
-          footer: <Text style={type.caption}>Haftalık ort. {fmt(avg)} {waterUnitLabel(unit)} · Hedef {hit}/7 gün</Text>,
+          footer: <Text style={type.caption}>{t('Haftalık ort. {avg} {unit} · Hedef {hit}/7 gün', { avg: fmt(avg), unit: waterUnitLabel(unit), hit })}</Text>,
         } : counterSlot(size, counter))}
       />
-      <Sheet visible={open === 'menu'} onClose={close} title="Su">
-        <SheetRow label="Hedefi değiştir" value={`${fmt(data.s.goal)} ${waterUnitLabel(unit)}`} onPress={() => setOpen('goal')} />
+      <Sheet visible={open === 'menu'} onClose={close} title={t('Su')}>
+        <SheetRow label={t('Hedefi değiştir')} value={`${fmt(data.s.goal)} ${waterUnitLabel(unit)}`} onPress={() => setOpen('goal')} />
         <View style={styles.segment}>
           <SegmentedControl<WaterUnit>
-            options={[{ value: 'glass', label: 'Bardak' }, { value: 'liter', label: 'Litre' }]}
+            options={[{ value: 'glass', label: t('Bardak') }, { value: 'liter', label: t('Litre') }]}
             value={unit}
             onChange={(v) => updateTrackerSettings('water', { display_unit: v })}
           />
         </View>
-        <SheetRow label="Bardak hacmi" value={`${glass} ml`} onPress={() => setOpen('glass')} />
-        <SheetRow label="Geçmişi gör" onPress={() => { close(); router.push('/tracker/water'); }} />
+        <SheetRow label={t('Bardak hacmi')} value={`${glass} ml`} onPress={() => setOpen('glass')} />
+        <SheetRow label={t('Geçmişi gör')} onPress={() => { close(); router.push('/tracker/water'); }} />
       </Sheet>
       <NumberPrompt
-        visible={open === 'goal'} onClose={close} title="Günlük su hedefi" suffix={waterUnitLabel(unit)}
+        visible={open === 'goal'} onClose={close} title={t('Günlük su hedefi')} suffix={waterUnitLabel(unit)}
         initial={Number(waterToDisplay(data.s.goal, unit, glass).toFixed(2))}
         onSubmit={(v) => updateTrackerSettings('water', { goal: Math.round(waterFromDisplay(v, unit, glass)) })}
       />
       <NumberPrompt
-        visible={open === 'glass'} onClose={close} title="Bardak hacmi" suffix="ml" initial={glass} min={49}
+        visible={open === 'glass'} onClose={close} title={t('Bardak hacmi')} suffix="ml" initial={glass} min={49}
         onSubmit={(v) => updateTrackerSettings('water', { unit_size: Math.round(v) })}
       />
     </>

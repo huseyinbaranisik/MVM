@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { addDays, weekday, WEEKDAYS_SHORT_TR } from '@/services/dates';
 import { colors, radius, spacing } from '@/theme';
+import { t } from '@/i18n';
 
 /** Son 7 günün mini çubuk grafiği (bugün en sağda); hedefi tutan gün açık renk, boş gün ince çizgi. */
 export function WeekBars({ date, values, goal, height = 40 }: {
@@ -10,7 +11,7 @@ export function WeekBars({ date, values, goal, height = 40 }: {
   const days = Array.from({ length: 7 }, (_, i) => addDays(date, i - 6));
   const max = Math.max(goal, ...days.map((d) => values.get(d) ?? 0), 1);
   return (
-    <View accessibilityLabel="Son 7 gün">
+    <View accessibilityLabel={t('Son 7 gün')}>
       <View style={[styles.bars, { height }]}>
         {days.map((d) => {
           const v = values.get(d) ?? 0;

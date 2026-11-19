@@ -11,6 +11,7 @@ import { useDb } from '@/db/useDb';
 import { fmtInt } from '@/services/units';
 import { levelReward, RANKS, rankInfo, XP_RULES } from '@/services/xp';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 const NODE = 64;
 const CURRENT = 84;
@@ -19,8 +20,8 @@ const MAX_PATH_LEVEL = 100;
 const BANNER = 64; // rank bandının kapladığı yükseklik
 
 const XP_SOURCES: [string, number][] = [
-  ['Antrenman', XP_RULES.workout], ['Set', XP_RULES.set], ['Su hedefi', XP_RULES.waterDay],
-  ['Adım hedefi', XP_RULES.stepDay], ['Görev', XP_RULES.habit], ['Seri günü', XP_RULES.streakDay],
+  [t('Antrenman'), XP_RULES.workout], [t('Set'), XP_RULES.set], [t('Su hedefi'), XP_RULES.waterDay],
+  [t('Adım hedefi'), XP_RULES.stepDay], [t('Görev'), XP_RULES.habit], [t('Seri günü'), XP_RULES.streakDay],
 ];
 
 /** Seviye yolu: aşağıdan yukarı dik uzanan yol; her seviye bir durak, rank başlarında bant, ödüller durakta. */
@@ -57,16 +58,16 @@ export default function LevelPath() {
 
   return (
     <View style={styles.safe}>
-      <BackHeader title="Seviye yolu" />
+      <BackHeader title={t('Seviye yolu')} />
       <View style={[styles.hero, { borderColor: rank.color }]}>
         <View style={[styles.badge, { backgroundColor: rank.color }]}>
           <Icon name="military_tech" size={34} color="#1A1A1A" />
         </View>
         <View style={styles.flex}>
           <Text style={[styles.rankName, { color: rank.color }]}>{rank.name}</Text>
-          <Text style={type.title}>Seviye {lv.level}</Text>
+          <Text style={type.title}>{t('Seviye {n}', { n: lv.level })}</Text>
           <View style={styles.track}><View style={[styles.fill, { width: `${Math.max(2, ratio * 100)}%`, backgroundColor: rank.color }]} /></View>
-          <Text style={type.caption}>{fmtInt(lv.intoLevel)} / {fmtInt(lv.needed)} XP · toplam {fmtInt(lv.total)}</Text>
+          <Text style={type.caption}>{fmtInt(lv.intoLevel)} / {fmtInt(lv.needed)} XP · {t('toplam {n}', { n: fmtInt(lv.total) })}</Text>
         </View>
       </View>
       <ScrollView ref={scroll} refreshControl={refresh} contentContainerStyle={styles.body} onContentSizeChange={() => {
@@ -93,7 +94,7 @@ export default function LevelPath() {
               <View key={r.name} style={[styles.banner, { top: H - b - BANNER + 8, borderColor: reached ? r.color : colors.divider }]}>
                 <View style={[styles.dot, { backgroundColor: reached ? r.color : colors.divider }]} />
                 <Text style={[type.subtitle, !reached && styles.muted]}>{r.name}</Text>
-                <Text style={[type.caption, styles.end]}>Sv {r.from}{to > r.from ? `–${to}` : ''}</Text>
+                <Text style={[type.caption, styles.end]}>{t('Sv {n}', { n: `${r.from}${to > r.from ? `–${to}` : ''}` })}</Text>
               </View>
             );
           })}
@@ -123,7 +124,7 @@ function Stop({ level, x, y, current, ratio, color }: { level: number; x: number
   const circ = 2 * Math.PI * ring;
   return (
     <View style={[styles.stop, { left: x - size / 2, top: y - size / 2, width: size, height: size }]}
-      accessibilityLabel={`Seviye ${level}${reward?.kind === 'rank' ? `, ${reward.name} rank` : reward?.kind === 'freeze' ? ', seri dondurma' : ''}${done ? ', geçildi' : isCurrent ? ', şu an' : ''}`}>
+      accessibilityLabel={`${t('Seviye {n}', { n: level })}${reward?.kind === 'rank' ? `, ${reward.name} rank` : reward?.kind === 'freeze' ? t(', seri dondurma') : ''}${done ? t(', geçildi') : isCurrent ? t(', şu an') : ''}`}>
       {isCurrent ? (
         <Svg width={CURRENT} height={CURRENT} style={StyleSheet.absoluteFill}>
           <Circle cx={CURRENT / 2} cy={CURRENT / 2} r={ring} stroke={colors.divider} strokeWidth={6} fill="none" />

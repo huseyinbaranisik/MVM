@@ -15,6 +15,7 @@ import { useDb } from '@/db/useDb';
 import { niceAxis } from '@/services/stats';
 import { fmtDec } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { isEn, t } from '@/i18n';
 
 type Metric = 'maxKg' | 'e1rm' | 'volume';
 
@@ -30,16 +31,16 @@ export default function ExerciseDetailScreen() {
 
   // başlangıç ↔ bitiş pozisyonu otomatik geçiş
   useEffect(() => {
-    const t = setInterval(() => setFrame((f) => 1 - f), 1400);
-    return () => clearInterval(t);
+    const id = setInterval(() => setFrame((f) => 1 - f), 1400);
+    return () => clearInterval(id);
   }, []);
 
   if (!data) return <LoadingScreen blocks={[260, 60, 300]} />;
   const e = data.e;
-  if (!e) return <BackHeader title="Hareket bulunamadı" />;
+  if (!e) return <BackHeader title={t('Hareket bulunamadı')} />;
   const src = exerciseImageSource(e.image_key, e.photo_uri, frame);
   const history = data.history.filter((h) => h.maxKg > 0);
-  const youtube = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${e.name_en ?? e.name_tr} egzersiz nasıl yapılır`)}`;
+  const youtube = `https://www.youtube.com/results?search_query=${encodeURIComponent(isEn ? `how to do ${e.name_en ?? e.name_tr} exercise` : `${e.name_en ?? e.name_tr} egzersiz nasıl yapılır`)}`;
 
   return (
     <View style={styles.flex}>
@@ -47,8 +48,8 @@ export default function ExerciseDetailScreen() {
       <ScrollView refreshControl={refresh} contentContainerStyle={styles.content}>
         {src ? (
           <View>
-            <Image source={src} style={styles.image} contentFit="cover" transition={300} accessibilityLabel={`${e.name_tr} ${frame ? 'bitiş' : 'başlangıç'} pozisyonu`} />
-            <Text style={styles.frameLabel}>{frame ? 'Bitiş' : 'Başlangıç'}</Text>
+            <Image source={src} style={styles.image} contentFit="cover" transition={300} accessibilityLabel={`${e.name_tr}: ${frame ? t('bitiş pozisyonu') : t('başlangıç pozisyonu')}`} />
+            <Text style={styles.frameLabel}>{frame ? t('Bitiş') : t('Başlangıç')}</Text>
           </View>
         ) : null}
         <View>
@@ -59,27 +60,27 @@ export default function ExerciseDetailScreen() {
         <View style={styles.card}>
           <BodyMapPair width={Math.min((width - spacing.lg * 4) / 2, 150)} primary={e.primary} secondary={e.secondary} />
           <View style={styles.legend}>
-            <View style={[styles.dot, { backgroundColor: colors.primaryLight }]} /><Text style={type.caption}>Birincil</Text>
-            <View style={[styles.dot, { backgroundColor: colors.primaryLight, opacity: 0.45 }]} /><Text style={type.caption}>İkincil</Text>
+            <View style={[styles.dot, { backgroundColor: colors.primaryLight }]} /><Text style={type.caption}>{t('Birincil')}</Text>
+            <View style={[styles.dot, { backgroundColor: colors.primaryLight, opacity: 0.45 }]} /><Text style={type.caption}>{t('İkincil')}</Text>
           </View>
         </View>
 
         <View style={styles.actions}>
-          <PillButton label="▶ Videoda izle" onPress={() => Linking.openURL(youtube)} style={styles.flex1} />
-          <PillButton label="Plana ekle" variant="primary" onPress={() => setAdding(true)} style={styles.flex1} />
+          <PillButton label={t('▶ Videoda izle')} onPress={() => Linking.openURL(youtube)} style={styles.flex1} />
+          <PillButton label={t('Plana ekle')} variant="primary" onPress={() => setAdding(true)} style={styles.flex1} />
         </View>
 
-        <Text style={type.title}>İlerleme</Text>
+        <Text style={type.title}>{t('İlerleme')}</Text>
         <View style={styles.card}>
           {history.length ? (
             <>
               <View style={styles.records}>
-                <Record label="Rekor" value={`${fmtDec(Math.max(...history.map((h) => h.maxKg)))} kg`} />
-                <Record label="En iyi 1RM" value={`${fmtDec(Math.max(...history.map((h) => h.e1rm)))} kg`} />
-                <Record label="Oturum" value={String(history.length)} />
+                <Record label={t('Rekor')} value={`${fmtDec(Math.max(...history.map((h) => h.maxKg)))} kg`} />
+                <Record label={t('En iyi 1RM')} value={`${fmtDec(Math.max(...history.map((h) => h.e1rm)))} kg`} />
+                <Record label={t('Oturum')} value={String(history.length)} />
               </View>
               <View style={styles.row}>
-                <SegmentedControl<Metric> options={[{ value: 'maxKg', label: 'En ağır' }, { value: 'e1rm', label: '1RM' }, { value: 'volume', label: 'Hacim' }]}
+                <SegmentedControl<Metric> options={[{ value: 'maxKg', label: t('En ağır') }, { value: 'e1rm', label: '1RM' }, { value: 'volume', label: t('Hacim') }]}
                   value={metric} onChange={setMetric} />
               </View>
               {history.length >= 2 ? (
@@ -102,17 +103,17 @@ export default function ExerciseDetailScreen() {
               {history.slice(-5).reverse().map((h) => (
                 <View key={h.date} style={styles.histRow}>
                   <Text style={[type.body, styles.flex1]}>{h.date.slice(8)}.{h.date.slice(5, 7)}</Text>
-                  <Text style={type.caption}>{h.best ? `${fmtDec(h.best.kg)} × ${h.best.reps}` : '—'} · 1RM {fmtDec(h.e1rm)} · {h.sets} set</Text>
+                  <Text style={type.caption}>{h.best ? `${fmtDec(h.best.kg)} × ${h.best.reps}` : '—'} · 1RM {fmtDec(h.e1rm)} · {t('{n} set', { n: h.sets })}</Text>
                 </View>
               ))}
             </>
-          ) : <Text style={type.caption}>Kayıt yok.</Text>}
+          ) : <Text style={type.caption}>{t('Kayıt yok.')}</Text>}
         </View>
 
         {e.description ? <Text style={type.body}>{e.description}</Text> : null}
-        <Section title={e.instructionsAreEnglish ? 'Uygulama (İngilizce)' : 'Uygulama'} items={e.instructions} numbered />
-        <Section title="Sık yapılan hatalar" items={e.mistakes} />
-        <Section title="İpuçları" items={e.tips} />
+        <Section title={e.instructionsAreEnglish && !isEn ? 'Uygulama (İngilizce)' : t('Uygulama')} items={e.instructions} numbered />
+        <Section title={t('Sık yapılan hatalar')} items={e.mistakes} />
+        <Section title={t('İpuçları')} items={e.tips} />
 
       </ScrollView>
       <AddToProgramSheet exerciseId={adding ? e.id : null} onClose={(msg) => { setAdding(false); if (msg) toast(msg); }} />
@@ -134,10 +135,10 @@ function Section({ title, items, numbered }: { title: string; items: string[]; n
   return (
     <View style={styles.section}>
       <Text style={type.title}>{title}</Text>
-      {items.map((t, i) => (
+      {items.map((line, i) => (
         <View key={i} style={styles.item}>
           <Text style={styles.bullet}>{numbered ? `${i + 1}.` : '•'}</Text>
-          <Text style={[type.body, styles.flex1]}>{t}</Text>
+          <Text style={[type.body, styles.flex1]}>{line}</Text>
         </View>
       ))}
     </View>

@@ -9,6 +9,7 @@ import { monthCells } from '@/services/calendar';
 import { formatLongTR, MONTHS_TR, today, WEEKDAYS_SHORT_TR } from '@/services/dates';
 import { fmtInt } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const DAY_BG = { completed: colors.primary, frozen: colors.ice, missed: colors.surfaceElevated } as const;
@@ -31,11 +32,11 @@ export function MiniCalendar() {
   return (
     <View style={styles.card}>
       <View style={styles.monthRow}>
-        <Pressable onPress={() => shift(-1)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Önceki ay">
+        <Pressable onPress={() => shift(-1)} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Önceki ay')}>
           <Icon name="chevron_left" color={colors.textPrimary} />
         </Pressable>
         <Text style={type.subtitle}>{MONTHS_TR[m - 1]} {y}</Text>
-        <Pressable onPress={() => shift(1)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Sonraki ay">
+        <Pressable onPress={() => shift(1)} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Sonraki ay')}>
           <Icon name="chevron_right" color={colors.textPrimary} />
         </Pressable>
       </View>
@@ -64,18 +65,18 @@ export function MiniCalendar() {
         })}
       </View>
       <View style={styles.legend}>
-        <Legend color={colors.primaryLight} label="Antrenman" />
-        <Legend color={colors.ice} label="Su" />
-        <Legend color={colors.success} label="Adım" />
-        <Legend color={colors.warning} label="Görev" />
+        <Legend color={colors.primaryLight} label={t('Antrenman')} />
+        <Legend color={colors.ice} label={t('Su')} />
+        <Legend color={colors.success} label={t('Adım')} />
+        <Legend color={colors.warning} label={t('Görev')} />
       </View>
 
       <Sheet visible={!!open} onClose={() => setOpen(null)} title={open ? formatLongTR(open) : ''}>
-        <SheetRow label="Antrenman" value={sel?.workouts.length ? sel.workouts.join(', ') : '—'} />
-        <SheetRow label="Su" value={sel?.water ? `${fmtInt(sel.water)} ml` : '—'} />
-        <SheetRow label="Adım" value={sel?.steps ? fmtInt(sel.steps) : '—'} />
-        <SheetRow label="Görevler" value={sel?.habits ? String(sel.habits) : '—'} />
-        <SheetRow label="Seri" value={sel?.streak === 'completed' ? 'Tamamlandı' : sel?.streak === 'frozen' ? 'Donduruldu' : sel?.streak === 'missed' ? 'Kaçırıldı' : '—'} />
+        <SheetRow label={t('Antrenman')} value={sel?.workouts.length ? sel.workouts.join(', ') : '—'} />
+        <SheetRow label={t('Su')} value={sel?.water ? `${fmtInt(sel.water)} ml` : '—'} />
+        <SheetRow label={t('Adım')} value={sel?.steps ? fmtInt(sel.steps) : '—'} />
+        <SheetRow label={t('Görevler')} value={sel?.habits ? String(sel.habits) : '—'} />
+        <SheetRow label={t('Seri')} value={sel?.streak === 'completed' ? t('Tamamlandı') : sel?.streak === 'frozen' ? t('Donduruldu') : sel?.streak === 'missed' ? t('Kaçırıldı') : '—'} />
       </Sheet>
     </View>
   );

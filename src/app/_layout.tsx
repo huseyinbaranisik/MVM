@@ -6,6 +6,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Icon } from '@/components/Icon';
+import { PrefsSync } from '@/components/PrefsSync';
 import { Splash, SplashStill } from '@/components/Splash';
 import { SignIn } from '@/components/SignIn';
 import { StreakSync } from '@/components/StreakSync';
@@ -17,6 +18,7 @@ import { ensureUserData } from '@/db/repos/bootstrap';
 import { supabase } from '@/db/supabase';
 import '@/services/notifications'; // bildirim gösterim davranışını kaydeder
 import { colors, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 const navTheme = {
   ...(colors.dark ? DarkTheme : DefaultTheme),
@@ -28,11 +30,11 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <View style={styles.error}>
       <Icon name="error" size={48} color={colors.primaryLight} />
-      <Text style={[type.title, styles.center]}>Bir şeyler ters gitti</Text>
+      <Text style={[type.title, styles.center]}>{t('Bir şeyler ters gitti')}</Text>
       <Text style={[type.caption, styles.center]} numberOfLines={4}>
-        Verilerin güvende. Tekrar denemek genelde sorunu çözer. ({error.message})
+        {t('Verilerin güvende. Tekrar denemek genelde sorunu çözer.')} ({error.message})
       </Text>
-      <PillButton label="Tekrar dene" variant="primary" onPress={retry} />
+      <PillButton label={t('Tekrar dene')} variant="primary" onPress={retry} />
     </View>
   );
 }
@@ -74,9 +76,9 @@ function AuthGate({ children }: { children: ReactNode }) {
     return (
       <View style={styles.error}>
         <Icon name="cloud_off" size={48} color={colors.primaryLight} />
-        <Text style={[type.title, styles.center]}>Sunucuya ulaşılamadı</Text>
-        <Text style={[type.caption, styles.center]}>İnternet bağlantını kontrol edip tekrar dene.</Text>
-        <PillButton label="Tekrar dene" variant="primary" onPress={() => setFailed(false)} />
+        <Text style={[type.title, styles.center]}>{t('Sunucuya ulaşılamadı')}</Text>
+        <Text style={[type.caption, styles.center]}>{t('İnternet bağlantını kontrol edip tekrar dene.')}</Text>
+        <PillButton label={t('Tekrar dene')} variant="primary" onPress={() => setFailed(false)} />
       </View>
     );
   }
@@ -91,6 +93,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <ThemeProvider value={navTheme}>
         <AuthGate>
+            <PrefsSync />
             <StreakSync />
             <WidgetSync />
             <Stack screenOptions={{ headerShown: false, animation: 'ios_from_right', contentStyle: { backgroundColor: colors.background } }}>

@@ -22,6 +22,7 @@ import { today } from '@/services/dates';
 import { MAX_FREEZES } from '@/services/streakService';
 import { bmi, bmiLabel, fmtDec } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 type Prompt = 'weight' | 'height' | 'age' | 'target' | null;
 
@@ -42,7 +43,7 @@ export default function ProfileScreen() {
   const weight = data.weights.at(-1)?.value ?? null;
   const height = data.heights.at(-1)?.value ?? null;
   const index = weight && height ? bmi(weight, height) : null;
-  const summary = [p.age ? `${p.age} yaşında` : null, p.sex === 'male' ? 'Erkek' : p.sex === 'female' ? 'Kadın' : null,
+  const summary = [p.age ? t('{n} yaşında', { n: p.age }) : null, p.sex === 'male' ? t('Erkek') : p.sex === 'female' ? t('Kadın') : null,
     height ? `${Math.round(height)} cm` : null].filter(Boolean).join(' · ');
   const close = () => setPrompt(null);
   const ask = (k: Prompt) => { setInfo(false); setPrompt(k); };
@@ -53,83 +54,83 @@ export default function ProfileScreen() {
   };
   const choosePhoto = async () => {
     setPhoto(false);
-    try { await pickAndUploadAvatar(); } catch { toast('Fotoğraf yüklenemedi'); }
+    try { await pickAndUploadAvatar(); } catch { toast(t('Fotoğraf yüklenemedi')); }
   };
   const dropPhoto = async () => {
     setPhoto(false);
-    if (await confirm({ title: 'Fotoğraf kaldırılsın mı?', confirmLabel: 'Kaldır', destructive: true })) {
-      try { await removeAvatar(); } catch { toast('Fotoğraf kaldırılamadı'); }
+    if (await confirm({ title: t('Fotoğraf kaldırılsın mı?'), confirmLabel: t('Kaldır'), destructive: true })) {
+      try { await removeAvatar(); } catch { toast(t('Fotoğraf kaldırılamadı')); }
     }
   };
 
   return (
     <Screen>
-      <Text style={type.hero}>Profil</Text>
+      <Text style={type.hero}>{t('Profil')}</Text>
 
       <View style={styles.card}>
         <View style={styles.nameRow}>
-          <PressableScale onPress={() => setPhoto(true)} accessibilityRole="button" accessibilityLabel="Profil fotoğrafı">
+          <PressableScale onPress={() => setPhoto(true)} accessibilityRole="button" accessibilityLabel={t('Profil fotoğrafı')}>
             <Avatar size={72} />
           </PressableScale>
           <View style={styles.flex}>
             <TextInput value={name ?? p.name} onChangeText={setName} onEndEditing={saveName} onSubmitEditing={saveName}
-              placeholder="Adın" placeholderTextColor={colors.textSecondary} style={styles.nameInput} maxLength={24} accessibilityLabel="Adın" />
+              placeholder={t('Adın')} placeholderTextColor={colors.textSecondary} style={styles.nameInput} maxLength={24} accessibilityLabel={t('Adın')} />
             {summary ? <Text style={type.caption} numberOfLines={1}>{summary}</Text> : null}
           </View>
-          <Pressable onPress={() => setInfo(true)} hitSlop={12} style={styles.edit} accessibilityRole="button" accessibilityLabel="Bilgileri düzenle">
+          <Pressable onPress={() => setInfo(true)} hitSlop={12} style={styles.edit} accessibilityRole="button" accessibilityLabel={t('Bilgileri düzenle')}>
             <Icon name="edit" color={colors.textSecondary} size={22} />
           </Pressable>
         </View>
-        <PressableScale onPress={() => router.push('/level')} accessibilityRole="button" accessibilityLabel="Seviye yolu">
+        <PressableScale onPress={() => router.push('/level')} accessibilityRole="button" accessibilityLabel={t('Seviye yolu')}>
           <LevelBar />
         </PressableScale>
       </View>
 
-      <PressableScale style={[styles.card, styles.streakRow]} onPress={() => router.push('/streak')} accessibilityRole="button" accessibilityLabel="Seri ayrıntıları">
-        <StreakStat icon="local_fire_department" color={colors.primaryLight} value={data.streak?.current ?? 0} label="Seri" />
-        <StreakStat icon="emoji_events" color={colors.warning} value={data.streak?.longest ?? 0} label="En uzun" />
-        <StreakStat icon="ac_unit" color={colors.ice} value={`${data.streak?.freezes_available ?? 0}/${MAX_FREEZES}`} label="Dondurma" />
+      <PressableScale style={[styles.card, styles.streakRow]} onPress={() => router.push('/streak')} accessibilityRole="button" accessibilityLabel={t('Seri ayrıntıları')}>
+        <StreakStat icon="local_fire_department" color={colors.primaryLight} value={data.streak?.current ?? 0} label={t('Seri')} />
+        <StreakStat icon="emoji_events" color={colors.warning} value={data.streak?.longest ?? 0} label={t('En uzun')} />
+        <StreakStat icon="ac_unit" color={colors.ice} value={`${data.streak?.freezes_available ?? 0}/${MAX_FREEZES}`} label={t('Dondurma')} />
         <Icon name="chevron_right" color={colors.textSecondary} />
       </PressableScale>
 
       <MiniCalendar />
 
       <View style={styles.tiles}>
-        <Tile label="Kilo" value={weight ? `${fmtDec(weight)}` : 'Ekle'} hint={weight ? 'kg' : undefined}
+        <Tile label={t('Kilo')} value={weight ? `${fmtDec(weight)}` : t('Ekle')} hint={weight ? 'kg' : undefined}
           onPress={() => (weight ? router.navigate('/stats') : setPrompt('weight'))} />
-        <Tile label="Hedef" value={p.targetWeightKg ? fmtDec(p.targetWeightKg) : 'Belirle'} hint={p.targetWeightKg ? 'kg' : undefined}
+        <Tile label={t('Hedef')} value={p.targetWeightKg ? fmtDec(p.targetWeightKg) : t('Belirle')} hint={p.targetWeightKg ? 'kg' : undefined}
           onPress={() => setPrompt('target')} />
         <Tile label="BMI" value={index ? fmtDec(index) : '—'} hint={index ? bmiLabel(index) : undefined} />
       </View>
 
       <View style={styles.card}>
-        <LinkRow icon="dashboard_customize" label="Ana ekran düzeni" onPress={() => router.push('/home-layout')} />
-        <LinkRow icon="settings" label="Ayarlar" onPress={() => router.push('/settings')} />
+        <LinkRow icon="dashboard_customize" label={t('Ana ekran düzeni')} onPress={() => router.push('/home-layout')} />
+        <LinkRow icon="settings" label={t('Ayarlar')} onPress={() => router.push('/settings')} />
       </View>
 
-      <Sheet visible={info} onClose={() => setInfo(false)} title="Bilgiler">
-        <SheetRow label="Yaş" value={p.age ? String(p.age) : 'Ekle'} onPress={() => ask('age')} />
+      <Sheet visible={info} onClose={() => setInfo(false)} title={t('Bilgiler')}>
+        <SheetRow label={t('Yaş')} value={p.age ? String(p.age) : t('Ekle')} onPress={() => ask('age')} />
         <SegmentedControl<'male' | 'female' | 'none'>
-          options={[{ value: 'male', label: 'Erkek' }, { value: 'female', label: 'Kadın' }, { value: 'none', label: 'Belirtme' }]}
+          options={[{ value: 'male', label: t('Erkek') }, { value: 'female', label: t('Kadın') }, { value: 'none', label: t('Belirtme') }]}
           value={p.sex ?? 'none'}
           onChange={(v) => saveProfile({ sex: v === 'none' ? null : v })}
         />
-        <SheetRow label="Boy" value={height ? `${Math.round(height)} cm` : 'Ekle'} onPress={() => ask('height')} />
-        <SheetRow label="Hedef kilo" value={p.targetWeightKg ? `${fmtDec(p.targetWeightKg)} kg` : 'Belirle'} onPress={() => ask('target')} />
+        <SheetRow label={t('Boy')} value={height ? `${Math.round(height)} cm` : t('Ekle')} onPress={() => ask('height')} />
+        <SheetRow label={t('Hedef kilo')} value={p.targetWeightKg ? `${fmtDec(p.targetWeightKg)} kg` : t('Belirle')} onPress={() => ask('target')} />
       </Sheet>
 
-      <Sheet visible={photo} onClose={() => setPhoto(false)} title="Profil fotoğrafı">
-        <SheetRow label="Fotoğraf seç" onPress={choosePhoto} />
-        {p.avatarPath ? <SheetRow label="Fotoğrafı kaldır" onPress={dropPhoto} /> : null}
+      <Sheet visible={photo} onClose={() => setPhoto(false)} title={t('Profil fotoğrafı')}>
+        <SheetRow label={t('Fotoğraf seç')} onPress={choosePhoto} />
+        {p.avatarPath ? <SheetRow label={t('Fotoğrafı kaldır')} onPress={dropPhoto} /> : null}
       </Sheet>
 
-      <NumberPrompt visible={prompt === 'weight'} onClose={close} title="Bugünkü kilo" suffix="kg" initial={weight ?? undefined} min={20}
+      <NumberPrompt visible={prompt === 'weight'} onClose={close} title={t('Bugünkü kilo')} suffix="kg" initial={weight ?? undefined} min={20}
         onSubmit={(v) => saveMeasurement('weight', Math.round(v * 10) / 10, today())} />
-      <NumberPrompt visible={prompt === 'height'} onClose={close} title="Boy" suffix="cm" initial={height ?? undefined} min={80}
+      <NumberPrompt visible={prompt === 'height'} onClose={close} title={t('Boy')} suffix="cm" initial={height ?? undefined} min={80}
         onSubmit={(v) => saveMeasurement('height', Math.round(v), today())} />
-      <NumberPrompt visible={prompt === 'age'} onClose={close} title="Yaş" initial={p.age ?? undefined} min={5}
+      <NumberPrompt visible={prompt === 'age'} onClose={close} title={t('Yaş')} initial={p.age ?? undefined} min={5}
         onSubmit={(v) => saveProfile({ age: Math.round(v) })} />
-      <NumberPrompt visible={prompt === 'target'} onClose={close} title="Hedef kilo" suffix="kg" initial={p.targetWeightKg ?? undefined} min={20}
+      <NumberPrompt visible={prompt === 'target'} onClose={close} title={t('Hedef kilo')} suffix="kg" initial={p.targetWeightKg ?? undefined} min={20}
         onSubmit={(v) => saveProfile({ targetWeightKg: Math.round(v * 10) / 10 })} />
     </Screen>
   );

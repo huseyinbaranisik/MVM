@@ -7,9 +7,10 @@ import { Sheet } from '@/components/ui/Sheet';
 import { saveSleep, type SleepLog } from '@/db/repos/sleep';
 import { formatDuration, QUALITY_EMOJI, sleepDuration } from '@/services/sleep';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 /** Uyku girişi. date = uyanılan gün. */
-export function SleepSheet({ visible, date, log, title = 'Uyku', onClose, onNeverAsk }: {
+export function SleepSheet({ visible, date, log, title = t('Uyku'), onClose, onNeverAsk }: {
   visible: boolean;
   date: string;
   log: SleepLog | null;
@@ -33,7 +34,7 @@ export function SleepSheet({ visible, date, log, title = 'Uyku', onClose, onNeve
 
   const timeField = (label: string, value: string, set: (v: string) => void) => (
     <Pressable style={styles.time} accessibilityRole="button" accessibilityLabel={`${label}: ${value}`}
-      onPress={async () => { const t = await pickTime(value); if (t) set(t); }}>
+      onPress={async () => { const v = await pickTime(value); if (v) set(v); }}>
       <Text style={type.caption}>{label}</Text>
       <Text style={styles.timeValue}>{value}</Text>
     </Pressable>
@@ -42,25 +43,25 @@ export function SleepSheet({ visible, date, log, title = 'Uyku', onClose, onNeve
   return (
     <Sheet visible={visible} onClose={onClose} title={title}>
       <View style={styles.row}>
-        {timeField('Yatış', bed, setBed)}
-        {timeField('Kalkış', wake, setWake)}
+        {timeField(t('Yatış'), bed, setBed)}
+        {timeField(t('Kalkış'), wake, setWake)}
       </View>
-      <Text style={[type.subtitle, styles.center]}>Süre: {formatDuration(sleepDuration(bed, wake))}</Text>
-      <Text style={type.caption}>Uyku kalitesi</Text>
+      <Text style={[type.subtitle, styles.center]}>{t('Süre: {v}', { v: formatDuration(sleepDuration(bed, wake)) })}</Text>
+      <Text style={type.caption}>{t('Uyku kalitesi')}</Text>
       <View style={styles.row}>
         {QUALITY_EMOJI.map((e, i) => (
           <Pressable key={e} onPress={() => setQuality(i + 1)}
             style={[styles.emoji, quality === i + 1 && styles.emojiOn]}
-            accessibilityRole="button" accessibilityState={{ selected: quality === i + 1 }} accessibilityLabel={`Kalite ${i + 1} / 5`}>
+            accessibilityRole="button" accessibilityState={{ selected: quality === i + 1 }} accessibilityLabel={t('Kalite {n} / 5', { n: i + 1 })}>
             <Text style={styles.emojiText}>{e}</Text>
           </Pressable>
         ))}
       </View>
-      <PillButton label="Kaydet" variant="primary"
+      <PillButton label={t('Kaydet')} variant="primary"
         onPress={async () => { await saveSleep(date, bed, wake, quality); onClose(); }} />
       {onNeverAsk ? (
         <Pressable onPress={onNeverAsk} style={styles.never} accessibilityRole="button">
-          <Text style={type.caption}>Sabahları bir daha sorma</Text>
+          <Text style={type.caption}>{t('Sabahları bir daha sorma')}</Text>
         </Pressable>
       ) : null}
     </Sheet>

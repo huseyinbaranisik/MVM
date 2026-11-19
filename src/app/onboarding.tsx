@@ -10,6 +10,7 @@ import { getSetting, setSetting } from '@/db/repos/settings';
 import { today } from '@/services/dates';
 import { parseNumber } from '@/services/units';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 /** İlk açılış: isim, sonra yaş, boy ve kilo. Hedefleri kullanıcı uygulamada kendisi girer. Her adım atlanabilir. */
 export default function Onboarding() {
@@ -41,27 +42,27 @@ export default function Onboarding() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.top}>
         <View style={styles.dots}>{[0, 1].map((i) => <View key={i} style={[styles.dot, i === step && styles.dotOn]} />)}</View>
-        <Pressable onPress={() => finish(false)} hitSlop={12} accessibilityRole="button"><Text style={type.caption}>Atla</Text></Pressable>
+        <Pressable onPress={() => finish(false)} hitSlop={12} accessibilityRole="button"><Text style={type.caption}>{t('Atla')}</Text></Pressable>
       </View>
 
       <Appear key={step} style={styles.body}>
         {step === 0 ? (
           <>
-            <Text style={type.hero}>Hoş geldin!</Text>
-            <TextInput value={name} onChangeText={setName} placeholder="Adın" placeholderTextColor={colors.textSecondary}
-              style={styles.input} maxLength={24} autoFocus accessibilityLabel="Adın" onSubmitEditing={() => setStep(1)} />
+            <Text style={type.hero}>{t('Hoş geldin!')}</Text>
+            <TextInput value={name} onChangeText={setName} placeholder={t('Adın')} placeholderTextColor={colors.textSecondary}
+              style={styles.input} maxLength={24} autoFocus accessibilityLabel={t('Adın')} onSubmitEditing={() => setStep(1)} />
           </>
         ) : (
           <>
-            <Text style={type.hero}>Seni tanıyalım</Text>
-            <NumField label="Yaş" suffix="yaşında" value={age} onChange={setAge} autoFocus />
-            <NumField label="Boy" suffix="cm" value={height} onChange={setHeight} />
-            <NumField label="Kilo" suffix="kg" value={weight} onChange={setWeight} decimal />
+            <Text style={type.hero}>{t('Seni tanıyalım')}</Text>
+            <NumField label={t('Yaş')} suffix={t('yaşında')} value={age} onChange={setAge} autoFocus />
+            <NumField label={t('Boy')} suffix="cm" value={height} onChange={setHeight} />
+            <NumField label={t('Kilo')} suffix="kg" value={weight} onChange={setWeight} decimal />
           </>
         )}
       </Appear>
 
-      <PillButton label={step < 1 ? 'Devam' : 'Başla'} variant="primary" style={styles.cta}
+      <PillButton label={step < 1 ? t('Devam') : t('Başla')} variant="primary" style={styles.cta}
         onPress={() => (step < 1 ? setStep(step + 1) : finish(true))} />
     </SafeAreaView>
   );

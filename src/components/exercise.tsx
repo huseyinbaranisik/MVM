@@ -11,9 +11,10 @@ import { setFavorite } from '@/db/repos/exercises';
 import { addTemplateExercise, createTemplate, getTemplates } from '@/db/repos/templates';
 import { useDb } from '@/db/useDb';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 export const EQUIPMENT_TR: Record<string, string> = {
-  dumbbell: 'Dambıl', machine: 'Makine', bodyweight: 'Vücut ağırlığı', barbell: 'Barbell', cable: 'Kablo', other: 'Diğer',
+  dumbbell: t('Dambıl'), machine: t('Makine'), bodyweight: t('Vücut ağırlığı'), barbell: t('Barbell'), cable: t('Kablo'), other: t('Diğer'),
 };
 
 /** Gömülü görsel (free-exercise-db) veya kullanıcının fotoğrafı. frame: 0 = başlangıç, 1 = bitiş. */
@@ -45,7 +46,7 @@ export function ExerciseRow({ id, name, imageKey, photoUri, subtitle, tag, right
         <Text style={type.subtitle} numberOfLines={2}>{name}</Text>
         {subtitle ? <Text style={type.caption} numberOfLines={1}>{subtitle}</Text> : null}
       </View>
-      {tag ? <Text style={[styles.tag, tag === 'Birincil' && styles.tagPrimary]}>{tag}</Text> : null}
+      {tag ? <Text style={[styles.tag, tag === t('Birincil') && styles.tagPrimary]}>{tag}</Text> : null}
       {favorite != null ? <FavoriteButton id={id} name={name} favorite={favorite} /> : null}
       {right}
     </Pressable>
@@ -57,7 +58,7 @@ export function FavoriteButton({ id, name, favorite }: { id: string; name: strin
   return (
     <Pressable onPress={() => setFavorite(id, !favorite)} hitSlop={8} style={styles.star}
       accessibilityRole="button" accessibilityState={{ selected: favorite }}
-      accessibilityLabel={favorite ? `${name} favorilerden çıkar` : `${name} favorilere ekle`}>
+      accessibilityLabel={favorite ? t('{name} favorilerden çıkar', { name }) : t('{name} favorilere ekle', { name })}>
       <Icon name="star" color={favorite ? colors.warning : colors.divider} />
     </Pressable>
   );
@@ -68,7 +69,7 @@ export function BackHeader({ title, right }: { title: string; right?: ReactNode 
   return (
     <SafeAreaView edges={['top']} style={styles.headerSafe}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back} accessibilityRole="button" accessibilityLabel="Geri">
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back} accessibilityRole="button" accessibilityLabel={t('Geri')}>
           <Icon name="arrow_back" />
         </Pressable>
         <Text style={[type.title, styles.flex]} numberOfLines={1}>{title}</Text>
@@ -84,15 +85,15 @@ export function AddToProgramSheet({ exerciseId, onClose }: { exerciseId: string 
   const add = async (templateId: number, name: string) => {
     if (!exerciseId) return;
     await addTemplateExercise(templateId, exerciseId);
-    onClose(`${name} planına eklendi`);
+    onClose(t('{name} planına eklendi', { name }));
   };
   return (
-    <Sheet visible={!!exerciseId} onClose={() => onClose()} title="Plana ekle">
-      {templates.map((t) => (
-        <SheetRow key={t.id} label={t.name} value={`${t.exerciseCount} hareket`} onPress={() => add(t.id, t.name)} />
+    <Sheet visible={!!exerciseId} onClose={() => onClose()} title={t('Plana ekle')}>
+      {templates.map((tp) => (
+        <SheetRow key={tp.id} label={tp.name} value={t('{n} hareket', { n: tp.exerciseCount })} onPress={() => add(tp.id, tp.name)} />
       ))}
-      <SheetRow label="+ Yeni şablon" onPress={async () => {
-        try { await add(await createTemplate('Yeni antrenman'), 'Yeni antrenman'); } catch (e) { onClose(e instanceof Error ? e.message : 'Şablon oluşturulamadı'); }
+      <SheetRow label={t('+ Yeni şablon')} onPress={async () => {
+        try { await add(await createTemplate(t('Yeni antrenman')), t('Yeni antrenman')); } catch (e) { onClose(e instanceof Error ? e.message : t('Şablon oluşturulamadı')); }
       }} />
     </Sheet>
   );

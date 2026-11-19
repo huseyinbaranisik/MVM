@@ -5,6 +5,7 @@ import { avatarUrl } from '@/db/repos/avatar';
 import { getSetting } from '@/db/repos/settings';
 import { useDb } from '@/db/useDb';
 import { colors, radius } from '@/theme';
+import { locale, t } from '@/i18n';
 
 /** Yuvarlak avatar: profil fotoğrafı, yoksa baş harf; `level` verilirse sağ altta seviye rozeti. */
 export function Avatar({ size, level }: { size: number; level?: number }) {
@@ -18,13 +19,13 @@ export function Avatar({ size, level }: { size: number; level?: number }) {
       <View style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}>
         {data?.url ? (
           <Image source={{ uri: data.url, cacheKey: data.key }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150}
-            accessibilityLabel="Profil fotoğrafı" />
+            accessibilityLabel={t('Profil fotoğrafı')} />
         ) : (
-          <Text style={[styles.initial, { fontSize: size * 0.42 }]}>{name.charAt(0).toLocaleUpperCase('tr-TR') || '?'}</Text>
+          <Text style={[styles.initial, { fontSize: size * 0.42 }]}>{name.charAt(0).toLocaleUpperCase(locale) || '?'}</Text>
         )}
       </View>
       {level != null ? (
-        <View style={styles.badge} accessibilityLabel={`Seviye ${level}`}>
+        <View style={styles.badge} accessibilityLabel={t('Seviye {n}', { n: level })}>
           <Text style={styles.badgeText}>{level}</Text>
         </View>
       ) : null}

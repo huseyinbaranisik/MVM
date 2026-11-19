@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressableScale } from '@/components/ui/PressableScale';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 const OFFSCREEN = 900;
 const CLOSE_MS = 200;
@@ -34,8 +35,8 @@ export function Sheet({ visible, onClose, title, children }: {
     }
     fade.value = withTiming(0, { duration: CLOSE_MS });
     y.value = withTiming(OFFSCREEN, { duration: CLOSE_MS });
-    const t = setTimeout(() => setMounted(false), CLOSE_MS);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setMounted(false), CLOSE_MS);
+    return () => clearTimeout(timer);
   }, [visible, fade, y]);
 
   const drag = useMemo(() => PanResponder.create({
@@ -54,12 +55,12 @@ export function Sheet({ visible, onClose, title, children }: {
   return (
     <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
       <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdrop]}>
-        <Pressable style={styles.flex} onPress={onClose} accessibilityLabel="Kapat" />
+        <Pressable style={styles.flex} onPress={onClose} accessibilityLabel={t('Kapat')} />
       </Animated.View>
       {/* Android'de (edge-to-edge) pencere klavyeyle küçülmez: padding olmadan kısa paneller klavyenin arkasında kalıyordu */}
       <KeyboardAvoidingView style={styles.end} behavior="padding" pointerEvents="box-none">
         <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.xl }, sheet]}>
-          <View {...drag.panHandlers} style={styles.grab} accessibilityLabel="Kapatmak için aşağı sürükle">
+          <View {...drag.panHandlers} style={styles.grab} accessibilityLabel={t('Kapatmak için aşağı sürükle')}>
             <View style={styles.handle} />
             {title ? <Text style={type.title}>{title}</Text> : null}
           </View>

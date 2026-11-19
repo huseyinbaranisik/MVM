@@ -7,6 +7,7 @@ import { Icon } from '@/components/Icon';
 import { RingGauge } from '@/components/RingGauge';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 type IconName = Parameters<typeof Icon>[0]['name'];
 
@@ -65,7 +66,7 @@ export function TrackerCard({ title, icon, color, progress, value, caption, onMe
       <View style={styles.header}>
         <Icon name={icon} size={18} color={color} />
         <Text style={[type.subtitle, styles.title]}>{title}</Text>
-        <Pressable onPress={onMenu} hitSlop={12} style={styles.menu} accessibilityRole="button" accessibilityLabel={`${title} menüsü`}>
+        <Pressable onPress={onMenu} hitSlop={12} style={styles.menu} accessibilityRole="button" accessibilityLabel={t('{title} menüsü', { title })}>
           <Icon name="more_horiz" size={22} color={colors.textSecondary} />
         </Pressable>
       </View>
@@ -75,7 +76,7 @@ export function TrackerCard({ title, icon, color, progress, value, caption, onMe
         <View style={styles.ringWrap}>{ring}</View>
       )}
       <Animated.View style={[styles.badge, badgeStyle]} pointerEvents="none">
-        <Text style={styles.badgeText}>🎉 Hedef tamam!</Text>
+        <Text style={styles.badgeText}>{t('🎉 Hedef tamam!')}</Text>
       </Animated.View>
       {footer}
     </Pressable>

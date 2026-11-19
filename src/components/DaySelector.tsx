@@ -6,6 +6,7 @@ import { getWorkoutDates } from '@/db/repos/sessions';
 import { useDb } from '@/db/useDb';
 import { addDays, diffDays, MONTHS_TR, today, weekday, WEEKDAYS_SHORT_TR, type DateStr } from '@/services/dates';
 import { colors, radius, spacing, type } from '@/theme';
+import { isEn, t } from '@/i18n';
 
 const SWIPE_PX = 40;
 
@@ -13,12 +14,13 @@ const mondayOf = (d: DateStr) => addDays(d, -weekday(d));
 
 function weekLabel(monday: DateStr) {
   const delta = diffDays(monday, mondayOf(today())) / 7;
-  if (delta === 0) return 'Bu hafta';
-  if (delta === -1) return 'Geçen hafta';
-  if (delta === 1) return 'Gelecek hafta';
+  if (delta === 0) return t('Bu hafta');
+  if (delta === -1) return t('Geçen hafta');
+  if (delta === 1) return t('Gelecek hafta');
   const sunday = addDays(monday, 6);
   const m1 = MONTHS_TR[Number(monday.slice(5, 7)) - 1];
   const m2 = MONTHS_TR[Number(sunday.slice(5, 7)) - 1];
+  if (isEn) return `${m1} ${Number(monday.slice(8))} – ${m1 === m2 ? '' : `${m2} `}${Number(sunday.slice(8))}`;
   return `${Number(monday.slice(8))}${m1 === m2 ? '' : ` ${m1}`} – ${Number(sunday.slice(8))} ${m2}`;
 }
 
@@ -34,7 +36,7 @@ export function DaySelector({ value, onChange }: { value: DateStr; onChange: (d:
     setPrevValue(value);
     if (mondayOf(value) !== monday) setMonday(mondayOf(value));
   }
-  const t = today();
+  const td = today();
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(monday, i)), [monday]);
   const trained = useDb(() => getWorkoutDates(days[0], days[6]), [days], ['workout_sessions']) ?? new Set<string>();
 
@@ -53,13 +55,13 @@ export function DaySelector({ value, onChange }: { value: DateStr; onChange: (d:
   return (
     <View style={styles.card} {...swipe.panHandlers}>
       <View style={styles.header}>
-        <Pressable onPress={() => shift(-1)} hitSlop={12} style={styles.arrow} accessibilityRole="button" accessibilityLabel="Önceki hafta">
+        <Pressable onPress={() => shift(-1)} hitSlop={12} style={styles.arrow} accessibilityRole="button" accessibilityLabel={t('Önceki hafta')}>
           <Icon name="chevron_left" color={colors.textSecondary} />
         </Pressable>
-        <Pressable onPress={() => { setMonday(mondayOf(t)); onChange(t); }} accessibilityRole="button" accessibilityLabel="Bugüne dön">
+        <Pressable onPress={() => { setMonday(mondayOf(td)); onChange(td); }} accessibilityRole="button" accessibilityLabel={t('Bugüne dön')}>
           <Text style={type.caption}>{weekLabel(monday)}</Text>
         </Pressable>
-        <Pressable onPress={() => shift(1)} hitSlop={12} style={styles.arrow} accessibilityRole="button" accessibilityLabel="Sonraki hafta">
+        <Pressable onPress={() => shift(1)} hitSlop={12} style={styles.arrow} accessibilityRole="button" accessibilityLabel={t('Sonraki hafta')}>
           <Icon name="chevron_right" color={colors.textSecondary} />
         </Pressable>
       </View>
@@ -70,7 +72,7 @@ export function DaySelector({ value, onChange }: { value: DateStr; onChange: (d:
           return (
             <Pressable key={d} onPress={() => onChange(d)} style={styles.day}
               accessibilityRole="button" accessibilityState={{ selected }}
-              accessibilityLabel={`${d}${trained.has(d) ? ', antrenman yapıldı' : ''}`}>
+              accessibilityLabel={`${d}${trained.has(d) ? t(', antrenman yapıldı') : ''}`}>
               <Text style={[styles.wd, isToday && styles.todayText]}>{WEEKDAYS_SHORT_TR[i]}</Text>
               {/* key: Android (Fabric) sonradan eklenen arka plana borderRadius uygulamıyor, kare çiziyordu; yeniden oluşturmak düzeltir */}
               <View key={selected ? 'num-on' : 'num'} style={[styles.num, selected && styles.selected, !selected && isToday && styles.todayRing]}>

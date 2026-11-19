@@ -9,6 +9,7 @@ import { PillButton, SegmentedControl } from '@/components/ui/PillButton';
 import { supabase } from '@/db/supabase';
 import { authError, isEmail, passwordStrength, STRENGTH_LABELS } from '@/services/auth';
 import { colors, radius, spacing, type } from '@/theme';
+import { t } from '@/i18n';
 
 type Mode = 'in' | 'up';
 type IconName = Parameters<typeof Icon>[0]['name'];
@@ -24,9 +25,9 @@ export function SignIn() {
 
   const strength = passwordStrength(password);
   const errors = {
-    email: !email.trim() ? 'E-posta gerekli.' : !isEmail(email) ? 'Geçerli bir e-posta gir.' : null,
-    password: password.length < 6 ? 'En az 6 karakter.' : null,
-    repeat: mode === 'up' && repeat !== password ? 'Şifreler aynı değil.' : null,
+    email: !email.trim() ? t('E-posta gerekli.') : !isEmail(email) ? t('Geçerli bir e-posta gir.') : null,
+    password: password.length < 6 ? t('En az 6 karakter.') : null,
+    repeat: mode === 'up' && repeat !== password ? t('Şifreler aynı değil.') : null,
   };
   const valid = !errors.email && !errors.password && !errors.repeat;
 
@@ -41,9 +42,9 @@ export function SignIn() {
     try {
       const { data, error } = mode === 'in' ? await supabase.auth.signInWithPassword(creds) : await supabase.auth.signUp(creds);
       if (error) setMessage({ text: authError(error.message) });
-      else if (mode === 'up' && !data.session) setMessage({ text: 'Onay e-postası gönderildi.', ok: true });
+      else if (mode === 'up' && !data.session) setMessage({ text: t('Onay e-postası gönderildi.'), ok: true });
     } catch {
-      setMessage({ text: 'Sunucuya ulaşılamadı.' });
+      setMessage({ text: t('Sunucuya ulaşılamadı.') });
     } finally {
       setBusy(false);
     }
@@ -55,7 +56,7 @@ export function SignIn() {
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
     setBusy(false);
     if (error) setMessage({ text: authError(error.message) });
-    else toast('Şifre sıfırlama e-postası gönderildi.');
+    else toast(t('Şifre sıfırlama e-postası gönderildi.'));
   };
 
   return (
@@ -68,29 +69,29 @@ export function SignIn() {
           </View>
 
           <View style={styles.row}>
-            <SegmentedControl<Mode> options={[{ value: 'in', label: 'Giriş yap' }, { value: 'up', label: 'Kayıt ol' }]} value={mode} onChange={switchMode} />
+            <SegmentedControl<Mode> options={[{ value: 'in', label: t('Giriş yap') }, { value: 'up', label: t('Kayıt ol') }]} value={mode} onChange={switchMode} />
           </View>
 
-          <Field icon="mail" label="E-posta" value={email} onChangeText={setEmail} error={touched ? errors.email : null}
+          <Field icon="mail" label={t('E-posta')} value={email} onChangeText={setEmail} error={touched ? errors.email : null}
             keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" returnKeyType="next" />
-          <Field icon="lock" label="Şifre" value={password} onChangeText={setPassword} error={touched ? errors.password : null} secret
+          <Field icon="lock" label={t('Şifre')} value={password} onChangeText={setPassword} error={touched ? errors.password : null} secret
             autoComplete={mode === 'in' ? 'current-password' : 'new-password'} textContentType={mode === 'in' ? 'password' : 'newPassword'}
             returnKeyType={mode === 'in' ? 'go' : 'next'} onSubmitEditing={mode === 'in' ? submit : undefined} />
 
           {mode === 'up' ? (
             <>
-              <View style={styles.strength} accessibilityLabel={`Şifre gücü: ${STRENGTH_LABELS[strength]}`}>
+              <View style={styles.strength} accessibilityLabel={t('Şifre gücü: {v}', { v: STRENGTH_LABELS[strength] })}>
                 {[1, 2, 3, 4].map((i) => (
                   <View key={i} style={[styles.bar, { backgroundColor: strength >= i ? STRENGTH_COLORS[strength] : colors.divider }]} />
                 ))}
                 <Text style={[type.caption, styles.strengthLabel]}>{password ? STRENGTH_LABELS[strength] : ''}</Text>
               </View>
-              <Field icon="lock_reset" label="Şifre tekrar" value={repeat} onChangeText={setRepeat} error={touched ? errors.repeat : null} secret
+              <Field icon="lock_reset" label={t('Şifre tekrar')} value={repeat} onChangeText={setRepeat} error={touched ? errors.repeat : null} secret
                 autoComplete="new-password" textContentType="newPassword" returnKeyType="go" onSubmitEditing={submit} />
             </>
           ) : (
             <Pressable onPress={forgot} disabled={busy} hitSlop={8} style={styles.forgot} accessibilityRole="button">
-              <Text style={styles.link}>Şifremi unuttum</Text>
+              <Text style={styles.link}>{t('Şifremi unuttum')}</Text>
             </Pressable>
           )}
 
@@ -101,7 +102,7 @@ export function SignIn() {
             </View>
           ) : null}
 
-          <PillButton label={busy ? 'Bekle…' : mode === 'in' ? 'Giriş yap' : 'Hesap oluştur'} variant="primary" disabled={busy} onPress={submit} />
+          <PillButton label={busy ? t('Bekle…') : mode === 'in' ? t('Giriş yap') : t('Hesap oluştur')} variant="primary" disabled={busy} onPress={submit} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -120,7 +121,7 @@ function Field({ icon, label, error, secret, ...input }: TextInputProps & { icon
         <TextInput {...input} secureTextEntry={secret && hidden} placeholderTextColor={colors.textSecondary}
           style={styles.input} accessibilityLabel={label} />
         {secret ? (
-          <Pressable onPress={() => setHidden(!hidden)} hitSlop={10} accessibilityRole="button" accessibilityLabel={hidden ? 'Şifreyi göster' : 'Şifreyi gizle'}>
+          <Pressable onPress={() => setHidden(!hidden)} hitSlop={10} accessibilityRole="button" accessibilityLabel={hidden ? t('Şifreyi göster') : t('Şifreyi gizle')}>
             <Icon name={hidden ? 'visibility' : 'visibility_off'} size={20} color={colors.textSecondary} />
           </Pressable>
         ) : null}

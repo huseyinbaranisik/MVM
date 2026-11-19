@@ -68,7 +68,7 @@ export function DaySelector({ value, onChange }: { value: DateStr; onChange: (d:
       <View style={styles.row}>
         {days.map((d, i) => {
           const selected = d === value;
-          const isToday = d === t;
+          const isToday = d === td;
           return (
             <Pressable key={d} onPress={() => onChange(d)} style={styles.day}
               accessibilityRole="button" accessibilityState={{ selected }}

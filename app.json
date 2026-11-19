@@ -2,7 +2,7 @@
   "expo": {
     "name": "MVM",
     "slug": "mvmapp",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mvmapp",
@@ -10,6 +10,7 @@
     "ios": {},
     "android": {
       "package": "com.mvm.app",
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#0E0C0B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -20,7 +21,11 @@
       "permissions": [
         "ACTIVITY_RECOGNITION",
         "SCHEDULE_EXACT_ALARM",
-        "android.permission.health.READ_STEPS"
+        "android.permission.health.READ_STEPS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "web": {
@@ -80,6 +85,17 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "backgroundColor": "#0E0C0B"
+    "backgroundColor": "#0E0C0B",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "62413fc2-edf1-4b3f-8166-5705bcc4fbc2"
+      }
+    },
+    "owner": "gloooooo"
   }
 }

@@ -43,14 +43,14 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 /** Kök layout'ta bir kez render edilir. */
 export function OverlayHost() {
-  const { dialog, toast: t, time } = useOverlay();
+  const { dialog, toast: current, time } = useOverlay();
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    if (!t) return;
+    if (!current) return;
     const timer = setTimeout(() => useOverlay.setState({ toast: null }), 2400);
     return () => clearTimeout(timer);
-  }, [t]);
+  }, [current]);
 
   const answer = (ok: boolean) => { dialog?.resolve(ok); useOverlay.setState({ dialog: null }); };
 
@@ -75,10 +75,10 @@ export function OverlayHost() {
 
       {time ? <TimeSheet key={time.initial} initial={time.initial} onDone={(v) => { time.resolve(v); useOverlay.setState({ time: null }); }} /> : null}
 
-      {t ? (
-        <Animated.View key={t.id} entering={FadeInUp.duration(260)} exiting={FadeOutUp.duration(200)}
+      {current ? (
+        <Animated.View key={current.id} entering={FadeInUp.duration(260)} exiting={FadeOutUp.duration(200)}
           style={[styles.toast, { top: insets.top + spacing.sm }]} pointerEvents="none" accessibilityLiveRegion="polite">
-          <Text style={styles.toastText}>{t.message}</Text>
+          <Text style={styles.toastText}>{current.message}</Text>
         </Animated.View>
       ) : null}
     </>

@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# EAS yerel imza bilgisi (önceki APK'larla aynı imza: Expo şablonunun debug.keystore'u)
+credentials.json

@@ -22,8 +22,8 @@ const TITLES: Record<TrackerType, string> = { water: t('Su geçmişi'), steps: t
 const BAR_COLOR: Record<TrackerType, string> = { water: colors.accent, steps: colors.primaryLight, sleep: colors.primary, calories: colors.warning };
 
 export default function TrackerHistory() {
-  const { type: t } = useLocalSearchParams<{ type: TrackerType }>();
-  const kind: TrackerType = t === 'steps' || t === 'sleep' || t === 'calories' ? t : 'water';
+  const { type: param } = useLocalSearchParams<{ type: TrackerType }>();
+  const kind: TrackerType = param === 'steps' || param === 'sleep' || param === 'calories' ? param : 'water';
   const [days, setDays] = useState<'14' | '30'>('14');
   const { width } = useWindowDimensions();
   const to = today();

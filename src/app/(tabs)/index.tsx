@@ -56,7 +56,7 @@ export default function TodayScreen() {
       if (st === 'active') { syncStepCounter(); syncStepsFromHealthConnect(); }
     });
     (async () => {
-      const counter = await syncStepCounter();
+      const counter = (await syncStepCounter()) !== 'none';
       await autoConnectHealthConnect();
       const health = await syncStepsFromHealthConnect();
       if (cancelled) return;

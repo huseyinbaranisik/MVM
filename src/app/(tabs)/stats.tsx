@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Screen } from '@/components/Screen';
-import { StatChart } from '@/components/StatChart';
+import { savedChartKind, StatChart, CHART_KEY, type ChartKind } from '@/components/StatChart';
 import { NumberPrompt } from '@/components/ui/NumberPrompt';
 import { confirm } from '@/components/ui/overlays';
 import { SegmentedControl } from '@/components/ui/PillButton';
@@ -26,6 +26,11 @@ const fmtVolume = (kg: number) => (kg >= 10_000 ? `${fmtDec(kg / 1000)} t` : `${
 
 export default function StatsScreen() {
   const [range, setRange] = useState<Range>('30');
+  const [chart, setChartState] = useState<ChartKind>(savedChartKind);
+  const setChart = (k: ChartKind) => {
+    setChartState(k);
+    try { localStorage.setItem(CHART_KEY, k); } catch { /* depolama yoksa yalnızca bu oturumda */ }
+  };
   const [prompt, setPrompt] = useState<'weight' | 'height' | 'target' | null>(null);
   const to = today();
   const from = addDays(to, -(Number(range) - 1));
@@ -53,6 +58,13 @@ export default function StatsScreen() {
           onChange={setRange}
         />
       </View>
+      <View style={styles.row}>
+        <SegmentedControl<ChartKind>
+          options={[{ value: 'line', label: t('Çizgi') }, { value: 'bar', label: t('Sütun') }]}
+          value={chart}
+          onChange={setChart}
+        />
+      </View>
       {!d || !body ? [0, 1, 2].map((i) => <Skeleton key={i} height={i ? 240 : 180} />) : (
         <>
           <Appear index={0} style={styles.grid}>
@@ -64,7 +76,7 @@ export default function StatsScreen() {
 
           <Appear index={1}><Text style={styles.section}>{t('Vücut')}</Text></Appear>
           <Appear index={2}>
-            <StatChart title={t('Kilo')} unit="kg" digits={1} points={b(d.weight)} color={colors.primaryLight} goal={target}
+            <StatChart kind={chart} title={t('Kilo')} unit="kg" digits={1} points={b(d.weight)} color={colors.primaryLight} goal={target}
               right={<AddButton label={t('Bugünkü kiloyu ekle')} onPress={() => setPrompt('weight')} />}>
               <View style={styles.bodyTiles}>
                 <BodyTile label={t('Hedef')} value={target != null ? `${fmtDec(target)} kg` : t('Belirle')} onPress={() => setPrompt('target')} />
@@ -86,14 +98,14 @@ export default function StatsScreen() {
           </Appear>
 
           <Appear index={3}><Text style={styles.section}>{t('Antrenman')}</Text></Appear>
-          <Appear index={4}><StatChart title={t('Haftalık antrenman')} unit="" digits={1} bars points={weeklyTotals(d.workouts, from, to)} color={colors.primaryLight} height={110} /></Appear>
-          <Appear index={5}><StatChart title={t('Haftalık hacim')} unit="kg" bars points={weeklyTotals(d.volume, from, to)} color={colors.accent} height={110} /></Appear>
+          <Appear index={4}><StatChart kind={chart} title={t('Haftalık antrenman')} unit="" digits={1} bars points={weeklyTotals(d.workouts, from, to)} color={colors.primaryLight} height={110} /></Appear>
+          <Appear index={5}><StatChart kind={chart} title={t('Haftalık hacim')} unit="kg" bars points={weeklyTotals(d.volume, from, to)} color={colors.accent} height={110} /></Appear>
 
           <Appear index={6}><Text style={styles.section}>{t('Günlük')}</Text></Appear>
-          <Appear index={7}><StatChart title={t('Adım')} unit="" points={b(d.steps)} color={colors.success} goal={d.goals.steps} height={110} /></Appear>
-          <Appear index={8}><StatChart title={t('Su')} unit="ml" points={b(d.water)} color={colors.ice} goal={d.goals.water} height={110} /></Appear>
-          <Appear index={9}><StatChart title={t('Uyku')} unit={t('sa')} digits={1} points={b(d.sleep)} color={colors.primary} goal={d.goals.sleep != null ? d.goals.sleep / 60 : null} height={110} /></Appear>
-          <Appear index={10}><StatChart title={t('Kalori')} unit="kcal" points={b(d.calories)} color={colors.warning} goal={d.goals.calories} height={110} /></Appear>
+          <Appear index={7}><StatChart kind={chart} title={t('Adım')} unit="" points={b(d.steps)} color={colors.success} goal={d.goals.steps} height={110} /></Appear>
+          <Appear index={8}><StatChart kind={chart} title={t('Su')} unit="ml" points={b(d.water)} color={colors.ice} goal={d.goals.water} height={110} /></Appear>
+          <Appear index={9}><StatChart kind={chart} title={t('Uyku')} unit={t('sa')} digits={1} points={b(d.sleep)} color={colors.primary} goal={d.goals.sleep != null ? d.goals.sleep / 60 : null} height={110} /></Appear>
+          <Appear index={10}><StatChart kind={chart} title={t('Kalori')} unit="kcal" points={b(d.calories)} color={colors.warning} goal={d.goals.calories} height={110} /></Appear>
         </>
       )}
 

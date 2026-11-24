@@ -15,7 +15,7 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
   if (props.widgetAction === 'WIDGET_DELETED') return;
   try {
     // widget yenilenirken (30 dk'da bir ve dokununca) donanım sayacını da oku: uygulama hiç açılmasa da adımlar güne düşer
-    if (props.widgetAction === 'WIDGET_UPDATE' || props.widgetAction === 'WIDGET_CLICK') await syncStepCounter().catch(() => false);
+    if (props.widgetAction === 'WIDGET_UPDATE' || props.widgetAction === 'WIDGET_CLICK') await syncStepCounter().catch(() => 'idle');
     if (props.widgetAction === 'WIDGET_CLICK' && props.clickAction === 'ADD_WATER') {
       const d = await getWidgetData();
       if (d.signedIn) await addTrackerValue('water', today(), d.glassMl);

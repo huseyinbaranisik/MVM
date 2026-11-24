@@ -45,7 +45,7 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
   const counter = (
     <Counter
       minusLabel={t('{n} adım çıkar', { n: STEP_DECREMENT })} plusLabel={t('Adım ekle')}
-      onMinus={() => applySteps(Math.max(0, steps - STEP_DECREMENT), () => addTrackerValue('steps', date, -STEP_DECREMENT))}
+      onMinus={() => applySteps((v: number) => Math.max(0, v - STEP_DECREMENT), () => addTrackerValue('steps', date, -STEP_DECREMENT))}
       onPlus={() => setOpen('add')}
     />
   );
@@ -109,7 +109,7 @@ export function StepsCard({ date, size = 'small' }: { date: string; size?: 'smal
       <NumberPrompt
         visible={open === 'add'} onClose={close} title={t('Adım ekle')}
         suffix={t('adım')} quick={[500, 1000, 2000]}
-        onSubmit={(v) => applySteps(steps + Math.round(v), () => addTrackerValue('steps', date, Math.round(v)))}
+        onSubmit={(v) => applySteps((cur: number) => cur + Math.round(v), () => addTrackerValue('steps', date, Math.round(v)))}
       />
     </>
   );

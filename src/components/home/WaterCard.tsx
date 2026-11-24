@@ -36,8 +36,8 @@ export function WaterCard({ date, size = 'small' }: { date: string; size?: 'smal
   const counter = (
     <Counter
       minusLabel={t('Bir bardak çıkar')} plusLabel={t('Bir bardak ekle')}
-      onMinus={() => applyMl(Math.max(0, ml - glass), () => addTrackerValue('water', date, -glass))}
-      onPlus={() => { play('pop'); applyMl(ml + glass, () => addTrackerValue('water', date, glass)); }}
+      onMinus={() => applyMl((v: number) => Math.max(0, v - glass), () => addTrackerValue('water', date, -glass))}
+      onPlus={() => { play('pop'); applyMl((v: number) => v + glass, () => addTrackerValue('water', date, glass)); }}
     />
   );
 

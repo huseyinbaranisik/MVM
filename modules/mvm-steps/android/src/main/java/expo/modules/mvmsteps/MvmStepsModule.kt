@@ -14,7 +14,8 @@ import expo.modules.kotlin.modules.ModuleDefinition
 
 /**
  * Telefonun donanım adım sayacı (TYPE_STEP_COUNTER): son açılıştan beri toplam adım. Uygulama kapalıyken de
- * sayar; uygulama açılınca okunur ve önceki okumayla farkı alınır. Sensör yoksa ya da 4 sn içinde değer gelmezse null.
+ * sayar; uygulama açılınca okunur ve önceki okumayla farkı alınır. Sensör yoksa null.
+ * Bazı telefonlar değeri yalnızca yeni adımda gönderir: 4 sn içinde değer gelmezse steps = -1 ("sensör var, şimdi okunamadı").
  */
 class MvmStepsModule : Module() {
   override fun definition() = ModuleDefinition {
@@ -47,7 +48,7 @@ class MvmStepsModule : Module() {
         if (!done) {
           done = true
           sm.unregisterListener(listener)
-          promise.resolve(null)
+          promise.resolve(mapOf("steps" to -1.0, "bootTime" to 0.0))
         }
       }, 4000)
     }

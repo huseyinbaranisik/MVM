@@ -66,9 +66,10 @@ export function CalorieCard({ date, size = 'large' }: { date: string; size?: 'sm
         onPress={() => { setQuery(''); setCat(null); setOpen('search'); }}
         side={
           <>
-            <Info label="Protein" value={protein ? `${fmtInt(total.protein)} / ${protein} g` : `${fmtInt(total.protein)} g`} />
-            <Info label={t('Yağ')} value={`${fmtInt(total.fat)} g`} />
-            <Info label={t('Karbonhidrat')} value={`${fmtInt(total.carbs)} g`} />
+            <MacroBar protein={total.protein} carbs={total.carbs} fat={total.fat} goal={goal} />
+            <Info color={MACRO_COLORS.protein} label="Protein" value={protein ? `${fmtInt(total.protein)} / ${protein} g` : `${fmtInt(total.protein)} g`} />
+            <Info color={MACRO_COLORS.fat} label={t('Yağ')} value={`${fmtInt(total.fat)} g`} />
+            <Info color={MACRO_COLORS.carbs} label={t('Karbonhidrat')} value={`${fmtInt(total.carbs)} g`} />
           </>
         }
         footer={
@@ -192,10 +193,34 @@ function NewFoodSheet({ visible, onClose, initialName, save, onSaved }: {
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+const MACRO_COLORS = { protein: colors.success, carbs: colors.ice, fat: colors.warning };
+
+/**
+ * Hedef kaloriyi tek çubukta gösterir: protein (4 kcal/g), karbonhidrat (4 kcal/g) ve yağ (9 kcal/g)
+ * kendi renginde, yan yana. Hedef aşılınca çubuk toplam kaloriye göre ölçeklenir.
+ */
+function MacroBar({ protein, carbs, fat, goal }: { protein: number; carbs: number; fat: number; goal: number }) {
+  const parts = [
+    { key: 'protein', kcal: protein * 4, color: MACRO_COLORS.protein },
+    { key: 'carbs', kcal: carbs * 4, color: MACRO_COLORS.carbs },
+    { key: 'fat', kcal: fat * 9, color: MACRO_COLORS.fat },
+  ];
+  const scale = Math.max(goal, parts.reduce((a, p) => a + p.kcal, 0), 1);
+  return (
+    <View style={styles.macroTrack}
+      accessibilityLabel={t('Makrolar: protein {p} kcal, karbonhidrat {c} kcal, yağ {f} kcal', { p: fmtInt(parts[0].kcal), c: fmtInt(parts[1].kcal), f: fmtInt(parts[2].kcal) })}>
+      {parts.map((p) => (p.kcal > 0 ? <View key={p.key} style={{ width: `${(p.kcal / scale) * 100}%`, backgroundColor: p.color }} /> : null))}
+    </View>
+  );
+}
+
+function Info({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <View style={styles.info}>
-      <Text style={type.caption}>{label}</Text>
+      <View style={styles.infoLabel}>
+        {color ? <View style={[styles.dot, { backgroundColor: color }]} /> : null}
+        <Text style={type.caption}>{label}</Text>
+      </View>
       <Text style={type.subtitle}>{value}</Text>
     </View>
   );
@@ -203,6 +228,9 @@ function Info({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   info: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  infoLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  macroTrack: { flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden', backgroundColor: colors.surfaceElevated },
   input: {
     minHeight: 52, borderRadius: radius.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.divider,
     paddingHorizontal: spacing.lg, color: colors.textPrimary, fontSize: 16,

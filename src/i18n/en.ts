@@ -612,6 +612,9 @@ const en: Record<string, string> = {
   'Tatlı yeme': 'No sweets',
   'Protein hedefi': 'Protein goal',
   'Esneme': 'Stretching',
+  'Makrolar: protein {p} kcal, karbonhidrat {c} kcal, yağ {f} kcal': 'Macros: protein {p} kcal, carbs {c} kcal, fat {f} kcal',
+  'Çizgi': 'Line',
+  'Sütun': 'Bar',
 };
 
 export default en;

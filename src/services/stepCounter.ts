@@ -25,17 +25,24 @@ export function counterDelta(prev: CounterState | null, cur: CounterState) {
 let busy = false;
 
 /**
+ * 'ok': okundu · 'idle': sayaç var ama şu an değer göndermedi (sonra yine denenir) ·
+ * 'none': sayaç yok (Expo Go, sensörsüz cihaz) ya da izin yok — yalnızca bu durumda canlı sayıma geçilmeli,
+ * yoksa aynı adımlar hem canlı sayımdan hem sayaçtan iki kez eklenir.
+ */
+export type CounterResult = 'ok' | 'idle' | 'none';
+
+/**
  * Donanım adım sayacını okur ve son okumadan beri atılan adımları bugüne ekler (uygulama kapalıyken atılanlar dahil).
- * Sayaç yoksa (Expo Go, sensörsüz cihaz) ya da izin verilmediyse false.
  * shortcut: kapalıyken atılan adımların hepsi okunduğu güne yazılır; gece yarısını aşan aralık bölünmez.
  */
-export async function syncStepCounter(): Promise<boolean> {
-  if (busy) return true;
+export async function syncStepCounter(): Promise<CounterResult> {
+  if (busy) return 'ok';
   busy = true;
   try {
-    if (!(await Pedometer.requestPermissionsAsync()).granted) return false;
+    if (!(await Pedometer.requestPermissionsAsync()).granted) return 'none';
     const r = await readStepCounter();
-    if (!r) return false;
+    if (!r) return 'none';
+    if (r.steps < 0) return 'idle';
     let prev: CounterState | null = null;
     try { prev = JSON.parse(localStorage.getItem(KEY) ?? 'null'); } catch { prev = null; }
     const d = counterDelta(prev, r);
@@ -45,10 +52,10 @@ export async function syncStepCounter(): Promise<boolean> {
       await addTrackerValue('steps', today(), d);
       notify('daily_trackers');
     }
-    return true;
+    return 'ok';
   } catch (e) {
     console.warn('Adım sayacı okunamadı', e);
-    return false;
+    return 'idle';
   } finally {
     busy = false;
   }

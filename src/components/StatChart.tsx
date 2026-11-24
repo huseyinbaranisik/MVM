@@ -7,13 +7,25 @@ import { niceAxis, summarize, type Point } from '@/services/stats';
 import { colors, radius, spacing, type } from '@/theme';
 import { isEn, t } from '@/i18n';
 
+export type ChartKind = 'line' | 'bar';
+export const CHART_KEY = 'mvm.statsChart';
+/** İstatistik ekranında seçilen grafik türü (cihazda saklanır). */
+export function savedChartKind(): ChartKind {
+  try { return localStorage.getItem(CHART_KEY) === 'bar' ? 'bar' : 'line'; } catch { return 'line'; }
+}
+
 const label = (d: string) => (isEn ? `${Number(d.slice(5, 7))}/${Number(d.slice(8))}` : `${Number(d.slice(8))}.${Number(d.slice(5, 7))}`);
 
-/** Başlık, son/ortalama/değişim ve çizgi (ya da çubuk) grafiği olan istatistik kartı. */
-export function StatChart({ title, unit, points, color, goal, bars, digits = 0, right, height = 140, children }: {
-  title: string; unit: string; points: Point[]; color: string; goal?: number | null; bars?: boolean; digits?: number; right?: ReactNode;
-  height?: number; children?: ReactNode;
+/**
+ * Başlık, son/ortalama/değişim ve çizgi (ya da sütun) grafiği olan istatistik kartı.
+ * `bars`: seri toplamlardan oluşur (değişim gösterilmez, hepsi sıfırsa kayıt yok sayılır); varsayılan çizimi sütundur.
+ * `kind`: verilirse çizim türünü belirler (istatistik ekranındaki Çizgi/Sütun seçimi).
+ */
+export function StatChart({ title, unit, points, color, goal, bars, kind, digits = 0, right, height = 140, children }: {
+  title: string; unit: string; points: Point[]; color: string; goal?: number | null; bars?: boolean; kind?: ChartKind; digits?: number;
+  right?: ReactNode; height?: number; children?: ReactNode;
 }) {
+  const asBars = kind ? kind === 'bar' : !!bars;
   const { width } = useWindowDimensions();
   // çubukta hepsi sıfırsa kayıt yok say
   const sum = bars && points.every((p) => !p.value) ? null : summarize(points);
@@ -24,7 +36,7 @@ export function StatChart({ title, unit, points, color, goal, bars, digits = 0, 
   const min = points.length ? Math.min(...points.map((p) => p.value), goal ?? Infinity) : 0;
   const max = points.length ? Math.max(...points.map((p) => p.value), goal ?? 0) : 0;
   // kilo/boy gibi dar aralıklı seriler ekrana yayılsın: alt sınır veriye yakın; eksen her zaman yuvarlak adımlarla
-  const narrow = !bars && min > 0 && max - min < min * 0.3;
+  const narrow = !asBars && min > 0 && max - min < min * 0.3;
   const axis = niceAxis(min, Math.max(max, min + 1), 3, !narrow);
   const axisProps = {
     noOfSections: 3, maxValue: axis.max - axis.offset, stepValue: axis.step, yAxisOffset: axis.offset,
@@ -44,10 +56,13 @@ export function StatChart({ title, unit, points, color, goal, bars, digits = 0, 
             <Num label={t('Ortalama')} value={`${fmt(sum.avg)} ${unit}`} />
             {!bars ? <Num label={t('Değişim')} value={`${sum.change > 0 ? '+' : ''}${fmt(sum.change)} ${unit}`} /> : null}
           </View>
-          {points.length >= 2 || (points.length && goal != null && !bars) ? (bars ? (
-            <BarChart data={data} width={chartWidth} height={height} frontColor={color} barWidth={Math.max(6, Math.min(22, chartWidth / points.length - 6))}
-              spacing={Math.max(3, Math.min(14, chartWidth / points.length / 3))} yAxisThickness={0} xAxisColor={colors.divider}
-              rulesColor={colors.divider} yAxisTextStyle={styles.axis} xAxisLabelTextStyle={styles.axis} {...axisProps} barBorderRadius={4} />
+          {points.length >= 2 || (points.length && goal != null && !bars) ? (asBars ? (
+            <BarChart data={data} width={chartWidth} height={height} frontColor={color} barWidth={Math.max(3, Math.min(22, chartWidth / points.length - 6))}
+              spacing={Math.max(2, Math.min(14, chartWidth / points.length / 3))} yAxisThickness={0} xAxisColor={colors.divider}
+              rulesColor={colors.divider} yAxisTextStyle={styles.axis} xAxisLabelTextStyle={styles.axis} {...axisProps} barBorderRadius={4}
+              showReferenceLine1={goal != null} referenceLine1Position={goal ?? 0}
+              referenceLine1Config={{ color: colors.accent, type: 'solid', thickness: 2, labelText: goal != null ? t('Hedef {v}', { v: fmt(goal) }) : undefined,
+                labelTextStyle: styles.goalLabel }} />
           ) : (
             <LineChart data={data} width={chartWidth} height={height} color={color} dataPointsColor={color} thickness={2}
               spacing={Math.max(8, chartWidth / Math.max(1, points.length - 1))} initialSpacing={8} hideDataPoints={points.length > 31}

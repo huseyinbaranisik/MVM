@@ -2,7 +2,7 @@
   "expo": {
     "name": "MVM",
     "slug": "mvmapp",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mvmapp",
@@ -10,7 +10,7 @@
     "ios": {},
     "android": {
       "package": "com.mvm.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#0E0C0B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
